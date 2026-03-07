@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { supabaseAdmin } from "@/lib/supabase";
 import { asignarNumerosParticipante } from "@/lib/numeros";
+import { enviarTicketCompra, enviarConfirmacionAdmin } from "@/lib/email";
 
 const client = process.env.MP_ACCESS_TOKEN
   ? new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN })
@@ -26,7 +27,7 @@ async function procesarPago(paymentId) {
 
   const { data: participante, error: partError } = await supabaseAdmin
     .from("participantes")
-    .select("id, rifa_id, cantidad_boletos, nombre, email, estado_pago")
+    .select("id, rifa_id, cantidad_boletos, nombre, email, estado_pago, total_pagado")
     .eq("id", participanteId)
     .single();
 
@@ -60,17 +61,22 @@ async function procesarPago(paymentId) {
       throw new Error(updateError.message);
     }
 
-    if (participante.email && process.env.RESEND_API_KEY) {
+    const { data: rifa } = await supabaseAdmin
+      .from("rifas")
+      .select("id, nombre, precio_boleto")
+      .eq("id", rifaId)
+      .single();
+
+    if (rifa) {
       try {
-        const ticketUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/confirmacion?participante=${participante.id}`;
-        await enviarTicketEmail({
-          to: participante.email,
-          nombre: participante.nombre,
-          numeros,
-          qrUrl: ticketUrl,
-        });
+        await enviarTicketCompra(participante, rifa, numeros);
       } catch (emailErr) {
-        console.error("Error enviando email:", emailErr);
+        console.error("Error enviando ticket al comprador:", emailErr);
+      }
+      try {
+        await enviarConfirmacionAdmin(participante, rifa);
+      } catch (emailErr) {
+        console.error("Error enviando notificación al admin:", emailErr);
       }
     }
 
