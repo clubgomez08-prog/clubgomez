@@ -7,7 +7,7 @@ import QRCode from "qrcode";
 
 function ConfirmacionContent() {
   const searchParams = useSearchParams();
-  const participanteId = searchParams.get("participante");
+  const participanteId = searchParams.get("participante") || searchParams.get("external_reference");
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);

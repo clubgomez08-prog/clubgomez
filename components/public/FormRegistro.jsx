@@ -51,6 +51,11 @@ export default function FormRegistro({ rifa, cantidadBoletos, onSuccess }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al registrar");
 
+      if (data.init_point) {
+        window.location.href = data.init_point;
+        return;
+      }
+
       onSuccess?.(data);
     } catch (err) {
       setError(err.message);
