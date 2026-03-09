@@ -37,8 +37,8 @@ export default function ComoFunciona() {
           <Image
             src="/rifex-phone.png"
             alt="App RIFEX"
-            width={320}
-            height={600}
+            width={480}
+            height={900}
             className="object-contain drop-shadow-2xl"
           />
         </div>
@@ -48,8 +48,8 @@ export default function ComoFunciona() {
           <Image
             src="/rifex-phone.png"
             alt="App RIFEX"
-            width={240}
-            height={450}
+            width={320}
+            height={600}
             className="object-contain drop-shadow-xl"
           />
         </div>
