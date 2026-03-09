@@ -56,18 +56,18 @@ export default function LandingPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="w-12 h-12 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      <main className="min-h-screen bg-[#071521] flex items-center justify-center">
+        <div className="w-12 h-12 border-2 border-brand-gold border-t-transparent rounded-full animate-spin" />
       </main>
     );
   }
 
   if (!rifa) {
     return (
-      <main className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
+      <main className="min-h-screen bg-[#071521] flex items-center justify-center px-4">
         <div className="text-center max-w-md">
-          <h1 className="font-display text-3xl md:text-4xl text-white mb-4">
-            No hay rifas activas
+          <h1 className="text-white font-extrabold text-3xl md:text-4xl mb-4">
+            No hay rifas activas en RIFEX
           </h1>
           <p className="text-zinc-400">
             No hay rifas activas en este momento. Vuelve pronto para participar.
@@ -78,7 +78,7 @@ export default function LandingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950">
+    <main className="min-h-screen bg-[#071521]">
       <Hero
         rifa={rifa}
         stats={stats}

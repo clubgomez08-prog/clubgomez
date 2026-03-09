@@ -43,27 +43,27 @@ export default function Contador({ rifa, initialStats }) {
   const total = rifa?.total_numeros ?? 10000;
 
   return (
-    <section className="py-16 px-4 bg-zinc-950">
+    <section className="py-16 px-4 bg-[#0B1F33]">
       <div className="max-w-4xl mx-auto">
-        <h2 className="font-display text-3xl md:text-4xl text-white text-center mb-10">
+        <h2 className="text-white font-extrabold text-3xl md:text-4xl text-center mb-10">
           EN TIEMPO REAL
         </h2>
         <div className="grid grid-cols-3 gap-4 md:gap-6">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center">
+          <div className="bg-[#071521] border border-[#1E3A8A] rounded-2xl p-4 md:p-6 text-center min-w-0 overflow-hidden">
             <p className="text-zinc-500 text-sm mb-1">Boletos vendidos</p>
-            <p className="font-display text-3xl md:text-4xl text-amber-500 tabular-nums">
+            <p className="text-xl sm:text-2xl md:text-4xl text-[#F2B233] tabular-nums font-extrabold min-w-0">
               {new Intl.NumberFormat("es-CO").format(stats.vendidos)}
             </p>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center">
+          <div className="bg-[#071521] border border-[#1E3A8A] rounded-2xl p-4 md:p-6 text-center min-w-0 overflow-hidden">
             <p className="text-zinc-500 text-sm mb-1">Disponibles</p>
-            <p className="font-display text-3xl md:text-4xl text-white tabular-nums">
+            <p className="text-xl sm:text-2xl md:text-4xl text-[#FFD166] tabular-nums font-extrabold min-w-0">
               {new Intl.NumberFormat("es-CO").format(stats.disponibles)}
             </p>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center">
+          <div className="bg-[#071521] border border-[#1E3A8A] rounded-2xl p-4 md:p-6 text-center min-w-0 overflow-hidden">
             <p className="text-zinc-500 text-sm mb-1">% completado</p>
-            <p className="font-display text-3xl md:text-4xl text-amber-500 tabular-nums">
+            <p className="text-xl sm:text-2xl md:text-4xl text-[#F2B233] tabular-nums font-extrabold min-w-0">
               {stats.porcentaje}%
             </p>
           </div>

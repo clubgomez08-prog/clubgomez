@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 const PASOS = [
   { numero: 1, titulo: "Elige tu paquete", desc: "Selecciona la cantidad de boletos que deseas" },
   { numero: 2, titulo: "Regístrate y paga", desc: "Completa tus datos y paga de forma segura" },
@@ -9,24 +11,35 @@ const PASOS = [
 
 export default function ComoFunciona() {
   return (
-    <section className="py-16 px-4 bg-zinc-950">
-      <div className="max-w-4xl mx-auto">
-        <h2 className="font-display text-3xl md:text-4xl text-white text-center mb-10">
-          CÓMO FUNCIONA
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {PASOS.map((paso) => (
-            <div
-              key={paso.numero}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center"
-            >
-              <span className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-500 text-zinc-950 font-display text-2xl">
-                {paso.numero}
-              </span>
-              <h3 className="font-semibold text-white mt-4">{paso.titulo}</h3>
-              <p className="text-sm text-zinc-400 mt-2">{paso.desc}</p>
-            </div>
-          ))}
+    <section className="py-16 px-4 bg-[#0B1F33]">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div>
+          <h2 className="text-white font-extrabold text-3xl md:text-4xl mb-2">
+            ¿Cómo Funciona?
+          </h2>
+          <p className="text-[#FFD166] text-lg mb-10">Es fácil ganar en grande</p>
+          <div className="space-y-6">
+            {PASOS.map((paso) => (
+              <div key={paso.numero} className="flex gap-4 items-start">
+                <span className="flex-shrink-0 w-10 h-10 rounded-full bg-[#F2B233] text-black font-extrabold flex items-center justify-center">
+                  {paso.numero}
+                </span>
+                <div>
+                  <h3 className="font-semibold text-white">{paso.titulo}</h3>
+                  <p className="text-sm text-zinc-400 mt-1">{paso.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="hidden lg:flex items-center justify-center min-h-[600px]">
+          <Image
+            src="/rifex-phone.png"
+            alt="App RIFEX"
+            width={560}
+            height={1050}
+            className="object-contain drop-shadow-2xl mx-auto w-full max-w-[560px]"
+          />
         </div>
       </div>
     </section>
