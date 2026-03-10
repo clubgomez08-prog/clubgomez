@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const PAQUETES = [5, 10, 25, 50, 100, 500];
 const MIN_TICKETS = 1;
 const MAX_MANUAL = 10000;
 
 export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refProp, divisa, setDivisa, convertirPrecio, cargandoTasas }) {
+  const router = useRouter();
   if (!rifa) return null;
 
   const total = rifa.total_numeros ?? 0;
@@ -181,7 +183,10 @@ export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refPr
         {/* Botón final */}
         <button
           type="button"
-          onClick={() => onSelect(cantidadActual)}
+          onClick={() => {
+            onSelect(cantidadActual);
+            router.push(`/formulario?cantidad=${cantidadActual}&monto=${montoTotal}&divisa=${divisa}`);
+          }}
           style={{
             display: "block",
             width: "100%",

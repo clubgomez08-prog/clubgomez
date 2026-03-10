@@ -22,7 +22,7 @@ export default function InicioPage() {
         style={{
           position: "absolute",
           inset: 0,
-          backgroundColor: "rgba(0,0,0,0.45)",
+          backgroundColor: "rgba(0,0,0,0.6)",
           pointerEvents: "none",
           zIndex: 1,
         }}
@@ -129,8 +129,9 @@ export default function InicioPage() {
             textShadow: "0 0 8px rgba(255,255,255,0.6), 0 0 16px rgba(255,255,255,0.35)",
           }}
         >
-          <img src="/rifex-chest.png" alt="" style={{ width: "88px", height: "88px", objectFit: "contain" }} />
+          <img src="/iPhone%2017.PNG" alt="" style={{ width: "88px", height: "88px", objectFit: "contain" }} />
           Sorteo abierto
+          <img src="/iPhone%2017.PNG" alt="" style={{ width: "88px", height: "88px", objectFit: "contain" }} />
         </a>
 
         {/* Botón Comprar tickets */}
