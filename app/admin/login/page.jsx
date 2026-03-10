@@ -24,7 +24,13 @@ export default function AdminLoginPage() {
     setLoading(false);
 
     if (authError) {
-      setError(authError.message);
+      if (authError.message.includes('Invalid login')) {
+        setError('Credenciales incorrectas. Verifica tu email y contraseña.');
+      } else if (authError.message.includes('Email not confirmed')) {
+        setError('Email no confirmado. Revisa tu bandeja de entrada.');
+      } else {
+        setError('Error al iniciar sesión: ' + authError.message);
+      }
       return;
     }
 

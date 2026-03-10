@@ -46,6 +46,7 @@ export async function POST(request) {
     premios_anticipados: Array.isArray(body.premios_anticipados)
       ? body.premios_anticipados
       : [],
+    serie_actual: 0,
   };
 
   if (!rifa.nombre || rifa.precio_boleto == null) {

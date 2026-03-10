@@ -150,7 +150,7 @@ export default function SorteoPage() {
   }
 
   function notificarGanador() {
-    console.log("Ganador state:", ganador);
+    // console.log("Ganador state:", ganador) — deshabilitado en producción
     if (!ganador?.sorteo_id) return;
     setNotificando(true);
     fetch("/api/admin/notificar-ganador", {

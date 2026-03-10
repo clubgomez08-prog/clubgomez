@@ -71,12 +71,12 @@ async function procesarPago(paymentId) {
       try {
         await enviarTicketCompra(participante, rifa, numeros);
       } catch (emailErr) {
-        console.error("Error enviando ticket al comprador:", emailErr);
+        console.error("[Webhook MP] Error enviando ticket:", emailErr?.message || "Error desconocido");
       }
       try {
         await enviarConfirmacionAdmin(participante, rifa);
       } catch (emailErr) {
-        console.error("Error enviando notificación al admin:", emailErr);
+        console.error("[Webhook] Error notificación admin:", emailErr?.message || "Error desconocido");
       }
     }
 
@@ -105,7 +105,7 @@ export async function POST(request) {
 
     return NextResponse.json({ received: true });
   } catch (err) {
-    console.error("Webhook MercadoPago error:", err);
+    console.error("[Webhook MP] Error:", err?.message || "Error desconocido");
     return NextResponse.json(
       { error: err.message || "Error procesando webhook" },
       { status: 500 }
@@ -125,7 +125,7 @@ export async function GET(request) {
 
     return NextResponse.json({ received: true });
   } catch (err) {
-    console.error("Webhook MercadoPago GET error:", err);
+    console.error("[Webhook MP] Error GET:", err?.message || "Error desconocido");
     return NextResponse.json(
       { error: err.message || "Error procesando webhook" },
       { status: 500 }

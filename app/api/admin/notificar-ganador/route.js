@@ -41,7 +41,7 @@ export async function POST(request) {
     await enviarEmailGanador(participante, rifa, numeroBoleto);
     return NextResponse.json({ success: true, message: "Email enviado" });
   } catch (err) {
-    console.error("Error notificando ganador:", err);
+    console.error("[Notificar] Error:", err?.message || "Error desconocido");
     return NextResponse.json(
       { error: err.message || "Error enviando email" },
       { status: 500 }

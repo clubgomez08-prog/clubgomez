@@ -1,3 +1,5 @@
+// Nota: logo-rifex.png en /public es archivo legacy
+// Los logos activos son: logo_principal.png y logo_hero.png
 import { Poppins } from "next/font/google";
 import "./globals.css";
 

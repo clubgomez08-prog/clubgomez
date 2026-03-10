@@ -1,11 +1,16 @@
 import { MercadoPagoConfig, Preference } from 'mercadopago'
 import { supabaseAdmin } from '@/lib/supabase'
 
-const client = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN
-})
-
 export async function POST(request) {
+  const accessToken = process.env.MP_ACCESS_TOKEN
+  if (!accessToken) {
+    return Response.json(
+      { error: 'Configuración de pagos no disponible' },
+      { status: 500 }
+    )
+  }
+  const client = new MercadoPagoConfig({ accessToken })
+
   try {
     const body = await request.json()
     const {
@@ -56,11 +61,11 @@ export async function POST(request) {
         },
         external_reference: participante_id,
         back_urls: {
-          success: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://rifas-sistema.vercel.app'}/confirmacion?participante=${participante_id}`,
-          failure: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://rifas-sistema.vercel.app'}/formulario`,
-          pending: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://rifas-sistema.vercel.app'}/confirmacion?participante=${participante_id}`
+          success: `${process.env.NEXT_PUBLIC_APP_URL || 'https://rifas-sistema.vercel.app'}/confirmacion?participante=${participante_id}`,
+          failure: `${process.env.NEXT_PUBLIC_APP_URL || 'https://rifas-sistema.vercel.app'}/formulario`,
+          pending: `${process.env.NEXT_PUBLIC_APP_URL || 'https://rifas-sistema.vercel.app'}/confirmacion?participante=${participante_id}`
         },
-        notification_url: `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://rifas-sistema.vercel.app'}/api/webhooks/mercadopago`,
+        notification_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://rifas-sistema.vercel.app'}/api/webhooks/mercadopago`,
         auto_return: 'approved'
       }
     })
@@ -71,7 +76,7 @@ export async function POST(request) {
     })
 
   } catch (error) {
-    console.error('Error crear-preferencia:', error)
+    console.error('[crear-preferencia] Error:', error?.message || 'Error desconocido')
     return Response.json(
       { error: 'Error al crear preferencia de pago' },
       { status: 500 }

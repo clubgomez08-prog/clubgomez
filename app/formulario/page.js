@@ -80,8 +80,14 @@ function FormularioContent() {
         })
       })
 
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || 'Error al procesar el pago')
+      }
+
       const { init_point, error: mpError } = await res.json()
       if (mpError) throw new Error(mpError)
+      if (!init_point) throw new Error('No se recibió enlace de pago')
 
       setInitPoint(init_point)
       setMostrarTerminos(true)

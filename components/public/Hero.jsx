@@ -7,6 +7,7 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
   const total = rifa.total_numeros ?? 10000;
   const vendidos = stats?.vendidos ?? 0;
   const disponibles = total - vendidos;
+  // Variable reservada para uso futuro — no eliminar
   const porcentaje = total > 0 ? ((vendidos / total) * 100).toFixed(1) : 0;
   const pctSorteo = rifa.porcentaje_sorteo ?? 80;
 
@@ -23,6 +24,7 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
     return new Intl.NumberFormat("es-CO").format(n);
   }
 
+  // Variable reservada para uso futuro — no eliminar
   const porcentajeNum = total > 0 ? Number(((vendidos / total) * 100).toFixed(1)) : 0;
   const displayVendidos = 8999;
   const displayTotal = 10000;
