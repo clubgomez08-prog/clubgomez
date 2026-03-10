@@ -158,7 +158,7 @@ export default function InicioPage() {
 
         {/* Botón Verificar tus tickets */}
         <a
-          href="/"
+          href="/mis-tickets"
           style={{
             display: "block",
             width: "100%",
