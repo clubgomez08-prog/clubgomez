@@ -1,14 +1,29 @@
-"use client";
+'use client'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function ComprarPage() {
+  const router = useRouter()
+
+  useEffect(() => {
+    router.replace('/')
+  }, [router])
+
   return (
-    <main className="min-h-screen py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-8">Comprar boletos</h1>
-        <p className="text-center text-gray-600 mb-8">
-          Completa el formulario para adquirir tus boletos
-        </p>
-      </div>
-    </main>
-  );
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#071521',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <span style={{
+        color: '#F2B233',
+        fontSize: '16px',
+        fontFamily: 'Poppins, sans-serif'
+      }}>
+        Redirigiendo...
+      </span>
+    </div>
+  )
 }

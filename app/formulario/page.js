@@ -56,8 +56,8 @@ function FormularioContent() {
           email: form.email,
           telefono: form.telefono,
           ciudad: form.ciudad,
-          cantidad_tickets: parseInt(cantidad),
-          monto_total: parseInt(String(monto).replace(/\D/g, '')),
+          cantidad_boletos: parseInt(cantidad),
+          total_pagado: parseInt(String(monto).replace(/\D/g, '')),
           rifa_id: rifa.id,
           estado_pago: 'pendiente'
         })

@@ -1,3 +1,5 @@
+// COMPONENTE LEGACY — No se usa actualmente
+// Conservado por compatibilidad. No importar en nuevas páginas.
 "use client";
 
 const ITEMS = [

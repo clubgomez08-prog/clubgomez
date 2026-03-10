@@ -107,7 +107,7 @@ export default function InicioPage() {
 
         {/* Botón Sorteo abierto */}
         <a
-          href="https://rifas-sistema.vercel.app"
+          href="/"
           className={styles.sorteoAbiertoBtn}
           style={{
             display: "flex",
@@ -136,7 +136,7 @@ export default function InicioPage() {
 
         {/* Botón Comprar tickets */}
         <a
-          href="https://rifas-sistema.vercel.app"
+          href="/"
           style={{
             display: "block",
             width: "100%",
@@ -158,7 +158,7 @@ export default function InicioPage() {
 
         {/* Botón Verificar tus tickets */}
         <a
-          href="https://rifas-sistema.vercel.app"
+          href="/"
           style={{
             display: "block",
             width: "100%",
@@ -180,7 +180,7 @@ export default function InicioPage() {
 
         {/* Botón Canal de Instagram */}
         <a
-          href="https://rifas-sistema.vercel.app"
+          href="https://instagram.com"
           style={{
             display: "flex",
             width: "100%",
@@ -212,7 +212,7 @@ export default function InicioPage() {
         {/* Botón Soporte — pequeño y redondo */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
           <a
-            href="https://rifas-sistema.vercel.app"
+            href="https://wa.me/573000000000"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -247,7 +247,7 @@ export default function InicioPage() {
           }}
         >
           <a
-            href="https://rifas-sistema.vercel.app"
+            href="https://instagram.com"
             style={{
               color: "white",
               fontSize: "15px",
@@ -265,7 +265,7 @@ export default function InicioPage() {
             Reels
           </a>
           <a
-            href="https://rifas-sistema.vercel.app"
+            href="https://youtube.com"
             style={{
               color: "white",
               fontSize: "15px",
@@ -287,7 +287,7 @@ export default function InicioPage() {
         {/* Términos y Condiciones */}
         <div style={{ display: "flex", justifyContent: "center" }}>
           <a
-            href="https://rifas-sistema.vercel.app"
+            href="#terminos"
             style={{
               border: "1px solid rgba(255,255,255,0.25)",
               borderRadius: "999px",
