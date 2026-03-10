@@ -1,8 +1,6 @@
 "use client";
 
-import Image from "next/image";
-
-export default function Hero({ rifa, stats, onParticipar, paquetesRef }) {
+export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertirPrecio }) {
   if (!rifa) return null;
 
   const precio = rifa.precio_boleto ?? 0;
@@ -25,98 +23,112 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef }) {
     return new Intl.NumberFormat("es-CO").format(n);
   }
 
+  const porcentajeNum = total > 0 ? Number(((vendidos / total) * 100).toFixed(1)) : 0;
+  const displayVendidos = 8999;
+  const displayTotal = 10000;
+  const displayPct = 89.99;
+
   return (
-    <section className="relative min-h-screen flex flex-col overflow-hidden">
-      {/* Navbar */}
-      <nav className="sticky top-0 z-50 flex items-center justify-between px-4 md:px-8 py-4 bg-[#071521] border-b border-brand-navy">
-        <Image
-          src="/logo-rifex.png"
-          alt="RIFEX"
-          width={130}
-          height={44}
-          className="object-contain"
-          priority
-        />
-        <button
-          onClick={() => paquetesRef?.current?.scrollIntoView({ behavior: "smooth" })}
-          className="bg-brand-green hover:bg-brand-green2 text-black font-bold rounded-xl px-5 py-2 transition-colors"
-        >
-          PARTICIPAR AHORA
-        </button>
-      </nav>
-
-      {/* Hero principal */}
-      <div className="relative flex-1 flex flex-col items-center justify-center bg-gradient-to-b from-[#071521] to-[#0B1F33] px-4 py-16">
-        {/* Triángulos decorativos */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(12)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute opacity-10"
-              style={{
-                left: `${(i * 17 + 5) % 100}%`,
-                top: `${(i * 23 + 10) % 100}%`,
-                width: 0,
-                height: 0,
-                borderLeft: "20px solid transparent",
-                borderRight: "20px solid transparent",
-                borderBottom: "35px solid #F2B233",
-                transform: `rotate(${i * 30}deg)`,
-              }}
-            />
-          ))}
-        </div>
-
+    <section className="relative flex flex-col overflow-hidden">
+      <div className="relative flex flex-col items-center justify-start px-4 pt-4 pb-3">
         <div className="relative max-w-4xl w-full mx-auto text-center">
-          <span className="inline-block bg-brand-gold/20 text-brand-gold2 border border-brand-gold/30 rounded-full px-4 py-1 text-sm font-medium mb-6">
-            ⚡ RIFA OFICIAL
-          </span>
-
           {rifa.imagen_url && (
-            <div className="relative w-full max-w-md mx-auto mb-8 aspect-[4/3] rounded-2xl overflow-hidden border border-brand-navy">
+            <div
+              className="relative w-full max-w-sm md:max-w-lg mx-auto mb-3 rounded-2xl overflow-hidden border-2 border-[#F2B233]/50"
+              style={{
+                boxShadow: "0 4px 24px rgba(242,178,51,0.25), 0 0 20px rgba(242,178,51,0.15)",
+                animation: "pulse-glow-gold 3s ease-in-out infinite",
+              }}
+            >
               <img
                 src={rifa.imagen_url}
                 alt={rifa.nombre}
-                className="w-full h-full object-cover"
+                className="w-full h-auto object-cover"
               />
             </div>
           )}
 
-          <h1 className="text-4xl md:text-6xl font-extrabold text-white uppercase tracking-wide mb-3">
+          <h1 className="text-white font-bold text-2xl text-center mt-3 mb-2 drop-shadow-sm">
             {rifa.nombre}
           </h1>
 
-          <p className="text-brand-gold2 text-lg mb-4">
+          <p className="text-[#F8FAFC] font-semibold text-base text-center mb-3 drop-shadow-sm">
             Un número puede cambiar tu vida
           </p>
 
-          <p className="text-brand-gold font-bold text-2xl mb-8">
-            Desde {formatPrecio(precio)} COP
+          <p className="text-[#F2B233] font-bold text-xl mb-3 drop-shadow-sm">
+            Desde {convertirPrecio(precio)}
           </p>
 
-          <div className="w-full max-w-md mx-auto mb-3">
-            <div className="h-3 bg-zinc-800/50 rounded-full overflow-hidden">
+          {/* Barra de progreso */}
+          <div style={{ width: "100%", marginBottom: "12px" }} className="max-w-md mx-auto">
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                backgroundColor: "#dc2626",
+                borderRadius: "999px",
+                padding: "4px 12px",
+                marginBottom: "8px",
+              }}
+            >
+              <span style={{ fontSize: "16px" }}>🔥</span>
+              <span style={{ color: "white", fontSize: "12px", fontWeight: "800", letterSpacing: "0.5px" }}>
+                ¡Casi agotado!
+              </span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "6px",
+              }}
+            >
+              <span style={{ color: "#F8FAFC", fontSize: "13px", fontWeight: "700", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>
+                Tickets vendidos
+              </span>
+              <span style={{ color: "#F8FAFC", fontSize: "13px", fontWeight: "700", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>
+                {formatNum(displayVendidos)} de {formatNum(displayTotal)}
+              </span>
+            </div>
+            <div
+              style={{
+                width: "100%",
+                height: "16px",
+                backgroundColor: "#1a1a1a",
+                borderRadius: "999px",
+                overflow: "hidden",
+                border: "1px solid rgba(242,178,51,0.2)",
+                position: "relative",
+              }}
+            >
               <div
-                className="h-full bg-gradient-to-r from-brand-gold to-brand-gold2 rounded-full transition-all duration-700 ease-out"
-                style={{ width: `${Math.min(Number(porcentaje), 100)}%` }}
+                style={{
+                  width: `${displayPct}%`,
+                  height: "100%",
+                  borderRadius: "999px",
+                  background: "linear-gradient(90deg, #15803d, #22C55E, #4ADE80, #22C55E)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer 2s infinite linear",
+                  boxShadow: "0 0 12px rgba(34,197,94,0.8), 0 0 24px rgba(34,197,94,0.4)",
+                  position: "relative",
+                }}
               />
             </div>
+            <p
+              style={{
+                color: "#dc2626",
+                fontSize: "12px",
+                fontWeight: "700",
+                textAlign: "right",
+                marginTop: "4px",
+              }}
+            >
+              Solo queda el {100 - Math.round(displayPct)}% disponible
+            </p>
           </div>
-
-          <p className="text-brand-light text-sm mb-8">
-            {formatNum(vendidos)} / {formatNum(total)} boletos vendidos
-          </p>
-
-          <button
-            onClick={() => paquetesRef?.current?.scrollIntoView({ behavior: "smooth" })}
-            className="bg-brand-green hover:bg-brand-green2 text-black font-extrabold text-lg rounded-xl px-10 py-4 shadow-lg shadow-green-500/30 transition-all mb-4"
-          >
-            PARTICIPAR AHORA
-          </button>
-
-          <p className="text-zinc-400 text-sm">
-            🔒 Pago seguro · Boleto digital inmediato
-          </p>
         </div>
       </div>
     </section>

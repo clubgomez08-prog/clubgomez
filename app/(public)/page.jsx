@@ -2,18 +2,17 @@
 
 import { useEffect, useState, useRef } from "react";
 import Hero from "@/components/public/Hero";
-import Contador from "@/components/public/Contador";
 import PaquetesBoletos from "@/components/public/PaquetesBoletos";
 import PremiosAnticipados from "@/components/public/PremiosAnticipados";
-import ComoFunciona from "@/components/public/ComoFunciona";
-import Seguridad from "@/components/public/Seguridad";
-import FormRegistro from "@/components/public/FormRegistro";
 
 export default function LandingPage() {
   const [rifa, setRifa] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState(null);
+  const [divisa, setDivisa] = useState("COP");
+  const [tasas, setTasas] = useState({ COP: 1, USD: 1, VES: 1, EUR: 1, MXN: 1 });
+  const [cargandoTasas, setCargandoTasas] = useState(true);
   const paquetesRef = useRef(null);
 
   useEffect(() => {
@@ -49,14 +48,66 @@ export default function LandingPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    const obtenerTasas = async () => {
+      try {
+        setCargandoTasas(true);
+        const res = await fetch("https://api.frankfurter.app/latest?from=COP&to=USD,EUR,MXN");
+        const data = await res.json();
+
+        const tasaVES = 0.000025;
+
+        setTasas({
+          COP: 1,
+          USD: data.rates.USD,
+          EUR: data.rates.EUR,
+          MXN: data.rates.MXN,
+          VES: tasaVES,
+        });
+      } catch (error) {
+        setTasas({
+          COP: 1,
+          USD: 0.00025,
+          EUR: 0.00023,
+          MXN: 0.0043,
+          VES: 0.000025,
+        });
+      } finally {
+        setCargandoTasas(false);
+      }
+    };
+    obtenerTasas();
+  }, []);
+
+  const convertirPrecio = (precioEnCOP) => {
+    if (!precioEnCOP) return "0";
+    const convertido = precioEnCOP * tasas[divisa];
+
+    const formatos = {
+      COP: { locale: "es-CO", currency: "COP", decimals: 0 },
+      USD: { locale: "en-US", currency: "USD", decimals: 2 },
+      EUR: { locale: "de-DE", currency: "EUR", decimals: 2 },
+      MXN: { locale: "es-MX", currency: "MXN", decimals: 0 },
+      VES: { locale: "es-VE", currency: "VES", decimals: 2 },
+    };
+
+    const fmt = formatos[divisa];
+    return new Intl.NumberFormat(fmt.locale, {
+      style: "currency",
+      currency: fmt.currency,
+      minimumFractionDigits: fmt.decimals,
+      maximumFractionDigits: fmt.decimals,
+    }).format(convertido);
+  };
+
   function handlePackageSelect(cantidad) {
     setSelectedPackage(cantidad);
-    document.getElementById("formulario")?.scrollIntoView({ behavior: "smooth" });
+    paquetesRef.current?.scrollIntoView({ behavior: "smooth" });
   }
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#071521] flex items-center justify-center">
+      <main className="min-h-screen bg-[#F1F5F9] flex items-center justify-center">
         <div className="w-12 h-12 border-2 border-brand-gold border-t-transparent rounded-full animate-spin" />
       </main>
     );
@@ -64,12 +115,12 @@ export default function LandingPage() {
 
   if (!rifa) {
     return (
-      <main className="min-h-screen bg-[#071521] flex items-center justify-center px-4">
+      <main className="min-h-screen bg-[#F1F5F9] flex items-center justify-center px-4">
         <div className="text-center max-w-md">
-          <h1 className="text-white font-extrabold text-3xl md:text-4xl mb-4">
+          <h1 className="text-[#071521] font-extrabold text-3xl md:text-4xl mb-4">
             No hay rifas activas en RIFEX
           </h1>
-          <p className="text-zinc-400">
+          <p className="text-[#334155]">
             No hay rifas activas en este momento. Vuelve pronto para participar.
           </p>
         </div>
@@ -78,31 +129,29 @@ export default function LandingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#071521]">
+    <main className="min-h-screen" style={{
+          backgroundImage: "url('/fondo_principalino.jpeg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}>
       <Hero
         rifa={rifa}
         stats={stats}
         onParticipar={() => paquetesRef.current?.scrollIntoView({ behavior: "smooth" })}
         paquetesRef={paquetesRef}
+        convertirPrecio={convertirPrecio}
       />
-      <Contador rifa={rifa} initialStats={stats} />
       <PremiosAnticipados premios={rifa.premios_anticipados} />
       <PaquetesBoletos
         rifa={rifa}
         selectedPackage={selectedPackage}
         onSelect={handlePackageSelect}
         refProp={paquetesRef}
-      />
-      <ComoFunciona />
-      <Seguridad />
-      <FormRegistro
-        rifa={rifa}
-        cantidadBoletos={selectedPackage}
-        onSuccess={(data) => {
-          if (typeof window !== "undefined") {
-            window.location.href = `/confirmacion?participante=${data.id}`;
-          }
-        }}
+        divisa={divisa}
+        setDivisa={setDivisa}
+        convertirPrecio={convertirPrecio}
+        cargandoTasas={cargandoTasas}
       />
     </main>
   );

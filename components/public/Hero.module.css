@@ -1,0 +1,39 @@
+@keyframes heroImageGlowPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(242, 178, 51, 0.7), 0 0 40px rgba(242, 178, 51, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(242, 178, 51, 0.95), 0 0 56px rgba(242, 178, 51, 0.65);
+  }
+}
+
+.heroImageGlow {
+  animation: heroImageGlowPulse 2.5s ease-in-out infinite;
+}
+
+/* Barra de boletos — brillante con animación de relleno en bucle */
+.barFillBright {
+  background: linear-gradient(
+    90deg,
+    #F2B233 0%,
+    #FFD166 20%,
+    #22C55E 40%,
+    #FFD166 60%,
+    #F2B233 80%,
+    #22C55E 100%
+  );
+  background-size: 200% 100%;
+  animation: barFillLoop 2.5s ease-in-out infinite;
+  box-shadow: 0 0 14px rgba(242, 178, 51, 0.9), 0 0 28px rgba(34, 197, 94, 0.6);
+}
+
+@keyframes barFillLoop {
+  0%, 100% {
+    background-position: 0% 0;
+    box-shadow: 0 0 14px rgba(242, 178, 51, 0.9), 0 0 28px rgba(34, 197, 94, 0.6);
+  }
+  50% {
+    background-position: 100% 0;
+    box-shadow: 0 0 18px rgba(242, 178, 51, 1), 0 0 36px rgba(34, 197, 94, 0.8);
+  }
+}

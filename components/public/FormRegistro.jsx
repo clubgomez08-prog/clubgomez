@@ -65,21 +65,21 @@ export default function FormRegistro({ rifa, cantidadBoletos, onSuccess }) {
   }
 
   const inputClass =
-    "w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500";
+    "w-full px-4 py-3 bg-white border border-[#334155]/30 rounded-lg text-[#071521] placeholder-[#334155]/60 focus:outline-none focus:ring-2 focus:ring-[#F2B233]/50 focus:border-[#F2B233]";
 
   return (
-    <section className="py-16 px-4 bg-zinc-950" id="formulario">
+    <section className="py-10 px-4 bg-[#F1F5F9]" id="formulario">
       <div className="max-w-lg mx-auto">
-        <h2 className="font-display text-3xl md:text-4xl text-white text-center mb-10">
-          COMPLETA TU REGISTRO
+        <h2 className="font-display text-3xl md:text-4xl text-[#071521] text-center mb-10">
+          Completa tu registro
         </h2>
 
         <form
           onSubmit={handleSubmit}
-          className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4"
+          className="bg-white shadow-lg border border-[#F2B233]/40 rounded-xl p-6 space-y-4"
         >
           <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-2">
+            <label className="block text-sm font-medium text-[#334155] mb-2">
               Nombre completo *
             </label>
             <input
@@ -93,7 +93,7 @@ export default function FormRegistro({ rifa, cantidadBoletos, onSuccess }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-2">
+            <label className="block text-sm font-medium text-[#334155] mb-2">
               Email *
             </label>
             <input
@@ -107,7 +107,7 @@ export default function FormRegistro({ rifa, cantidadBoletos, onSuccess }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-2">
+            <label className="block text-sm font-medium text-[#334155] mb-2">
               Teléfono *
             </label>
             <input
@@ -123,7 +123,7 @@ export default function FormRegistro({ rifa, cantidadBoletos, onSuccess }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-2">
+            <label className="block text-sm font-medium text-[#334155] mb-2">
               Ciudad *
             </label>
             <input
@@ -137,7 +137,7 @@ export default function FormRegistro({ rifa, cantidadBoletos, onSuccess }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-400 mb-2">
+            <label className="block text-sm font-medium text-[#334155] mb-2">
               Cédula *
             </label>
             <input
@@ -150,11 +150,11 @@ export default function FormRegistro({ rifa, cantidadBoletos, onSuccess }) {
             />
           </div>
 
-          <div className="p-4 bg-zinc-800 rounded-lg border border-zinc-700">
-            <p className="text-zinc-400 text-sm">Resumen del pedido</p>
-            <p className="text-white font-medium mt-1">
+          <div className="p-4 bg-[#F1F5F9] rounded-lg border border-[#334155]/20">
+            <p className="text-[#334155] text-sm">Resumen del pedido</p>
+            <p className="text-[#071521] font-medium mt-1">
               {cantidadBoletos} boletos × {formatPrecio(precioUnit)} ={" "}
-              <span className="text-amber-500">{formatPrecio(total)}</span>
+              <span className="text-[#22C55E]">{formatPrecio(total)}</span>
             </p>
           </div>
 
@@ -167,9 +167,9 @@ export default function FormRegistro({ rifa, cantidadBoletos, onSuccess }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 text-lg font-semibold text-zinc-950 bg-amber-500 hover:bg-amber-400 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-4 text-lg font-semibold text-black bg-[#22C55E] hover:bg-[#4ADE80] rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? "Procesando..." : "CONFIRMAR Y PAGAR"}
+            {loading ? "Procesando..." : "Confirmar y pagar"}
           </button>
         </form>
       </div>
