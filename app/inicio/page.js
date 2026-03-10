@@ -35,7 +35,7 @@ export default function InicioPage() {
         className={styles.desktopLogo}
         style={{
           position: "absolute",
-          top: "25%",
+          top: "var(--logo-hero-top-mobile)",
           left: "50%",
           transform: "translateX(-50%)",
           width: "100%",
@@ -108,22 +108,28 @@ export default function InicioPage() {
         {/* Botón Sorteo abierto */}
         <a
           href="https://rifas-sistema.vercel.app"
+          className={styles.sorteoAbiertoBtn}
           style={{
-            display: "block",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "12px",
             width: "100%",
-            backgroundColor: "#F2B233",
-            color: "black",
+            backgroundColor: "#000000",
+            color: "#ffffff",
             fontWeight: "700",
-            fontSize: "18px",
-            padding: "18px 16px",
+            fontSize: "20px",
+            padding: "8px 16px",
             borderRadius: "14px",
             textAlign: "center",
             marginBottom: "12px",
             textDecoration: "none",
             boxSizing: "border-box",
-            boxShadow: "0 0 24px rgba(242, 178, 51, 0.65), 0 0 40px rgba(242, 178, 51, 0.3), inset 0 1px 0 rgba(255,255,255,0.35)",
+            border: "2px solid #F2B233",
+            textShadow: "0 0 8px rgba(255,255,255,0.6), 0 0 16px rgba(255,255,255,0.35)",
           }}
         >
+          <img src="/rifex-chest.png" alt="" style={{ width: "88px", height: "88px", objectFit: "contain" }} />
           Sorteo abierto
         </a>
 
@@ -136,8 +142,8 @@ export default function InicioPage() {
             backgroundColor: "#22C55E",
             color: "black",
             fontWeight: "700",
-            fontSize: "18px",
-            padding: "18px 16px",
+            fontSize: "17px",
+            padding: "14px 16px",
             borderRadius: "14px",
             textAlign: "center",
             marginBottom: "12px",
@@ -158,8 +164,8 @@ export default function InicioPage() {
             backgroundColor: "#F2B233",
             color: "black",
             fontWeight: "700",
-            fontSize: "18px",
-            padding: "18px 16px",
+            fontSize: "16px",
+            padding: "12px 16px",
             borderRadius: "14px",
             textAlign: "center",
             marginBottom: "12px",
