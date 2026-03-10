@@ -1,14 +1,59 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 const PAQUETES = [5, 10, 25, 50, 100, 500];
+const MIN_TICKETS = 1;
+const MAX_MANUAL = 10000;
 
 export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refProp, divisa, setDivisa, convertirPrecio, cargandoTasas }) {
   if (!rifa) return null;
 
+  const total = rifa.total_numeros ?? 0;
+  const vendidos = rifa.boletos_vendidos ?? 0;
+  const maxTickets = total > 0 ? Math.max(MIN_TICKETS, total - vendidos) : 10000;
+  const maxManual = Math.min(maxTickets, MAX_MANUAL);
+
   const precioUnit = rifa.precio_boleto ?? 0;
-  const cantidadActual = selectedPackage ?? PAQUETES[0];
-  const idxActual = PAQUETES.indexOf(cantidadActual);
+  const cantidadActual = Math.max(MIN_TICKETS, Math.min(maxManual, selectedPackage ?? PAQUETES[0]));
   const montoTotal = cantidadActual * precioUnit;
+
+  const [inputValue, setInputValue] = useState(String(cantidadActual));
+
+  useEffect(() => {
+    setInputValue(String(cantidadActual));
+  }, [cantidadActual]);
+
+  function handleInputChange(e) {
+    const val = e.target.value.replace(/\D/g, "");
+    setInputValue(val === "" ? "" : val);
+    if (val === "") {
+      onSelect(MIN_TICKETS);
+      return;
+    }
+    const num = parseInt(val, 10);
+    if (!isNaN(num)) {
+      onSelect(Math.max(MIN_TICKETS, Math.min(maxManual, num)));
+    }
+  }
+
+  function handleInputBlur() {
+    const val = inputValue.replace(/\D/g, "");
+    if (val === "") {
+      onSelect(MIN_TICKETS);
+      setInputValue(String(MIN_TICKETS));
+      return;
+    }
+    const num = parseInt(val, 10);
+    if (isNaN(num) || num < MIN_TICKETS) {
+      onSelect(MIN_TICKETS);
+      setInputValue(String(MIN_TICKETS));
+    } else {
+      const clamped = Math.min(maxManual, num);
+      onSelect(clamped);
+      setInputValue(String(clamped));
+    }
+  }
 
   return (
     <section ref={refProp} className="py-4 px-4 scroll-mt-20 overflow-visible rounded-2xl">
@@ -19,7 +64,7 @@ export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refPr
 
         {/* Grid de cantidades */}
         <div className="grid grid-cols-3 gap-3 mb-4">
-          {PAQUETES.map((cantidad) => {
+          {PAQUETES.filter((c) => c <= maxManual).map((cantidad) => {
             const selected = selectedPackage === cantidad;
             return (
               <button
@@ -40,12 +85,13 @@ export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refPr
           })}
         </div>
 
-        {/* Fila de controles: menos, cantidad, más */}
+        {/* Fila de controles: menos, input manual, más */}
         <div className="flex items-center justify-center gap-3 mt-2 mb-3">
           <button
             type="button"
-            onClick={() => onSelect(PAQUETES[Math.max(0, idxActual - 1)])}
-            className="w-14 h-14 rounded-xl bg-red-500 text-white font-bold text-2xl flex items-center justify-center shadow-md"
+            onClick={() => onSelect(Math.max(MIN_TICKETS, cantidadActual - 1))}
+            disabled={cantidadActual <= MIN_TICKETS}
+            className="w-14 h-14 rounded-xl bg-red-500 text-white font-bold text-2xl flex items-center justify-center shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
             −
           </button>
@@ -62,24 +108,32 @@ export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refPr
               justifyContent: "center",
             }}
           >
-            <span
+            <input
+              type="text"
+              inputMode="numeric"
+              value={inputValue}
+              onChange={handleInputChange}
+              onBlur={handleInputBlur}
               style={{
+                backgroundColor: "transparent",
+                border: "none",
                 color: "#F2B233",
                 fontSize: "26px",
                 fontWeight: "800",
-                lineHeight: 1,
+                textAlign: "center",
+                width: "100%",
+                outline: "none",
               }}
-            >
-              {cantidadActual}
-            </span>
+            />
             <span style={{ color: "rgba(248,250,252,0.5)", fontSize: "10px", marginTop: "2px" }}>
               tickets
             </span>
           </div>
           <button
             type="button"
-            onClick={() => onSelect((selectedPackage ?? PAQUETES[0]) + 1)}
-            className="w-14 h-14 rounded-xl bg-[#22C55E] text-[#071521] font-bold text-2xl flex items-center justify-center shadow-md"
+            onClick={() => onSelect(Math.min(maxManual, cantidadActual + 1))}
+            disabled={cantidadActual >= maxManual}
+            className="w-14 h-14 rounded-xl bg-[#22C55E] text-[#071521] font-bold text-2xl flex items-center justify-center shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
           >
             +
           </button>
