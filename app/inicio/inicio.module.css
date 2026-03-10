@@ -1,0 +1,35 @@
+/* Desktop-only: mejoras para pantallas grandes. Móvil permanece intacto. */
+@media (min-width: 768px) {
+  .desktopRoot {
+    align-items: center;
+  }
+  .desktopLogo {
+    max-width: 480px !important;
+    top: 20% !important;
+  }
+  .desktopPanel {
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+    padding: 0 24px 48px 24px !important;
+  }
+  .desktopLetrero {
+    font-size: 24px !important;
+    margin-bottom: 14px !important;
+  }
+  .desktopBar {
+    margin-bottom: 18px !important;
+  }
+  .desktopBarInner span {
+    font-size: 14px !important;
+  }
+  .desktopBarInner {
+    padding-left: 18px !important;
+  }
+  .desktopPanel > a {
+    margin-bottom: 14px !important;
+  }
+  .desktopPanel > div {
+    margin-bottom: 14px !important;
+  }
+}
