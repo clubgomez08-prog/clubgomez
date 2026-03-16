@@ -58,10 +58,6 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
             Un número puede cambiar tu vida
           </p>
 
-          <p className="text-[#F2B233] font-bold text-xl mb-3 drop-shadow-sm">
-            Desde {convertirPrecio(precio)}
-          </p>
-
           {/* Barra de progreso */}
           <div style={{ width: "100%", marginBottom: "12px" }} className="max-w-md mx-auto">
             <div
@@ -69,10 +65,11 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "6px",
-                backgroundColor: "#dc2626",
+                background: "linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 35%, transparent 65%), #ef4444",
                 borderRadius: "999px",
                 padding: "4px 12px",
                 marginBottom: "8px",
+                boxShadow: "0 -2px 6px rgba(255,180,100,0.3), 0 3px 12px rgba(239,68,68,0.5)",
               }}
             >
               <span style={{ fontSize: "16px" }}>🔥</span>
@@ -136,3 +133,4 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
     </section>
   );
 }
+

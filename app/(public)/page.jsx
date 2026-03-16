@@ -5,6 +5,15 @@ import Hero from "@/components/public/Hero";
 import PaquetesBoletos from "@/components/public/PaquetesBoletos";
 import PremiosAnticipados from "@/components/public/PremiosAnticipados";
 
+const comprasEnVivo = [
+  { nombre: "Carlos M.", cantidad: 10, tiempo: "hace 2 min" },
+  { nombre: "Valentina R.", cantidad: 25, tiempo: "hace 5 min" },
+  { nombre: "Juan P.", cantidad: 5, tiempo: "hace 8 min" },
+  { nombre: "Daniela S.", cantidad: 50, tiempo: "hace 12 min" },
+  { nombre: "Andrés G.", cantidad: 100, tiempo: "hace 15 min" },
+  { nombre: "María L.", cantidad: 10, tiempo: "hace 18 min" },
+];
+
 export default function LandingPage() {
   const [rifas, setRifas] = useState([]);
   const [rifaActual, setRifaActual] = useState(0);
@@ -146,7 +155,142 @@ export default function LandingPage() {
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
         }}>
-      <Hero
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(1.3); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scrollLeft {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
+
+      {/* Header fijo */}
+      <div style={{
+        position: "fixed",
+        top: 0, left: 0, right: 0,
+        zIndex: 100,
+        minHeight: "56px",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        backgroundColor: "rgba(0,0,0,0.25)",
+        borderBottom: "1px solid rgba(242,178,51,0.15)",
+        padding: "4px 16px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}>
+        <img
+          src="/logo_principal.png"
+          alt="RIFEX"
+          style={{
+            height: "40px",
+            objectFit: "contain",
+            transform: "scale(2.2)",
+            transformOrigin: "left center",
+          }}
+        />
+        <a href="/mis-tickets" style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          backgroundColor: "transparent",
+          border: "1.5px solid #F2B233",
+          borderRadius: "999px",
+          padding: "6px 14px",
+          color: "#F2B233",
+          fontSize: "13px",
+          fontWeight: "700",
+          textDecoration: "none",
+          fontFamily: "Poppins, sans-serif",
+        }}>
+          🎟 Mis tickets
+        </a>
+      </div>
+
+      {/* Contenedor con paddingTop para no quedar debajo del header */}
+      <div style={{ paddingTop: "56px" }}>
+        {/* Barra EN VIVO */}
+        <div style={{
+          backgroundColor: "rgba(1,4,9,0.98)",
+          borderBottom: "1px solid rgba(242,178,51,0.2)",
+          padding: "8px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          overflow: "hidden",
+        }}>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+            flexShrink: 0,
+          }}>
+            <svg width="20" height="14" viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+              <polyline
+                points="0,10 3,10 5,4 7,12 9,2 11,8 13,6 15,9 17,5 20,5"
+                stroke="#22C55E"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            </svg>
+            <span style={{
+              color: "#22C55E",
+              fontSize: "11px",
+              fontWeight: "800",
+              letterSpacing: "0.5px",
+            }}>
+              EN VIVO
+            </span>
+          </div>
+          <div style={{
+            width: "1px", height: "16px",
+            backgroundColor: "rgba(242,178,51,0.3)",
+            flexShrink: 0,
+          }} />
+          <div style={{
+            overflow: "hidden",
+            flex: 1,
+            maskImage: "linear-gradient(to right, transparent, black 10%, black 90%, transparent)",
+            WebkitMaskImage: "linear-gradient(to right, transparent, black 10%, black 90%, transparent)",
+          }}>
+            <div style={{
+              display: "flex",
+              gap: "40px",
+              animation: "scrollLeft 18s linear infinite",
+              width: "max-content",
+            }}>
+              {[...comprasEnVivo, ...comprasEnVivo].map((c, i) => (
+                <span key={i} style={{
+                  color: "#F8FAFC",
+                  fontSize: "12px",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}>
+                  <span style={{ color: "#F2B233", fontWeight: "700" }}>
+                    {c.nombre}
+                  </span>
+                  {" compró "}
+                  <span style={{ color: "#22C55E", fontWeight: "700" }}>
+                    {c.cantidad} tickets
+                  </span>
+                  <span style={{ color: "rgba(248,250,252,0.4)", marginLeft: "4px" }}>
+                    · {c.tiempo}
+                  </span>
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <Hero
         rifa={rifa}
         stats={stats}
         onParticipar={() => paquetesRef.current?.scrollIntoView({ behavior: "smooth" })}
@@ -200,6 +344,7 @@ export default function LandingPage() {
         convertirPrecio={convertirPrecio}
         cargandoTasas={cargandoTasas}
       />
+      </div>
     </main>
   );
 }

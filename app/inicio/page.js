@@ -54,24 +54,6 @@ export default function InicioPage() {
           padding: "0 16px 28px 16px",
         }}
       >
-        {/* Letrero 10000 OPORTUNIDADES */}
-        <p
-          className={styles.desktopLetrero}
-          style={{
-            color: "white",
-            fontSize: "20px",
-            fontWeight: "700",
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
-            textShadow: "0 2px 4px rgba(0,0,0,0.5)",
-            marginBottom: "10px",
-            marginTop: "0",
-            textAlign: "center",
-          }}
-        >
-          10000 OPORTUNIDADES
-        </p>
-
         {/* Barra de progreso — ayuda visual de marketing */}
         <div
           className={styles.desktopBar}
@@ -180,7 +162,9 @@ export default function InicioPage() {
 
         {/* Botón Canal de Instagram */}
         <a
-          href="https://instagram.com"
+          href="https://www.instagram.com/clubrifex?igsh=b2lhbGxkOW5hcGhu"
+          target="_blank"
+          rel="noopener noreferrer"
           style={{
             display: "flex",
             width: "100%",
@@ -212,7 +196,9 @@ export default function InicioPage() {
         {/* Botón Soporte — pequeño y redondo */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
           <a
-            href="https://wa.me/573000000000"
+            href="https://www.instagram.com/clubrifex?igsh=b2lhbGxkOW5hcGhu"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -247,7 +233,9 @@ export default function InicioPage() {
           }}
         >
           <a
-            href="https://instagram.com"
+            href="https://www.instagram.com/clubrifex?igsh=b2lhbGxkOW5hcGhu"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               color: "white",
               fontSize: "15px",
@@ -265,7 +253,9 @@ export default function InicioPage() {
             Reels
           </a>
           <a
-            href="https://youtube.com"
+            href="https://www.instagram.com/clubrifex?igsh=b2lhbGxkOW5hcGhu"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
               color: "white",
               fontSize: "15px",
