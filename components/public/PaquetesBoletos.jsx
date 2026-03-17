@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const PAQUETES = [5, 10, 25, 50, 100, 500];
+const PAQUETES = [10, 25, 50, 75, 100, 500];
 const MIN_TICKETS = 1;
 const MAX_MANUAL = 10000;
 
