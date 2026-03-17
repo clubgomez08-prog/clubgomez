@@ -1,7 +1,16 @@
 "use client";
 
+import { useState } from "react";
+
 export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertirPrecio }) {
+  const [imagenActual, setImagenActual] = useState(0);
+
   if (!rifa) return null;
+
+  const todasImagenes = [
+    ...(rifa?.imagen_url ? [rifa.imagen_url] : []),
+    ...(Array.isArray(rifa?.imagenes_url) ? rifa.imagenes_url : []),
+  ].filter(Boolean);
 
   const precio = rifa.precio_boleto ?? 0;
   const total = rifa.total_numeros ?? 10000;
@@ -34,21 +43,110 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
     <section className="relative flex flex-col overflow-hidden">
       <div className="relative flex flex-col items-center justify-start px-4 pt-4 pb-3">
         <div className="relative max-w-4xl w-full mx-auto text-center">
-          {rifa.imagen_url && (
-            <div
-              className="relative w-full max-w-sm md:max-w-lg mx-auto mb-3 rounded-2xl overflow-hidden border-2 border-[#F2B233]/50"
-              style={{
-                boxShadow: "0 4px 24px rgba(242,178,51,0.25), 0 0 20px rgba(242,178,51,0.15)",
-                animation: "pulse-glow-gold 3s ease-in-out infinite",
-              }}
-            >
+          <div style={{ position: "relative", width: "100%" }} className="max-w-sm md:max-w-lg mx-auto mb-3">
+            {todasImagenes.length > 0 && (
               <img
-                src={rifa.imagen_url}
-                alt={rifa.nombre}
-                className="w-full h-auto object-cover"
+                src={todasImagenes[imagenActual]}
+                alt={rifa?.nombre}
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  objectFit: "cover",
+                  borderRadius: "16px",
+                  border: "2px solid rgba(242,178,51,0.5)",
+                  boxShadow: "0 0 24px rgba(242,178,51,0.2)",
+                  display: "block",
+                }}
               />
-            </div>
-          )}
+            )}
+
+            {todasImagenes.length > 1 && (
+              <>
+                <button
+                  onClick={() =>
+                    setImagenActual((prev) =>
+                      prev === 0 ? todasImagenes.length - 1 : prev - 1
+                    )
+                  }
+                  style={{
+                    position: "absolute",
+                    left: "8px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    backgroundColor: "rgba(10,10,10,0.7)",
+                    border: "1.5px solid rgba(242,178,51,0.5)",
+                    borderRadius: "50%",
+                    width: "36px",
+                    height: "36px",
+                    color: "#F2B233",
+                    fontSize: "20px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 10,
+                  }}
+                >
+                  ‹
+                </button>
+
+                <button
+                  onClick={() =>
+                    setImagenActual((prev) =>
+                      prev === todasImagenes.length - 1 ? 0 : prev + 1
+                    )
+                  }
+                  style={{
+                    position: "absolute",
+                    right: "8px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    backgroundColor: "rgba(10,10,10,0.7)",
+                    border: "1.5px solid rgba(242,178,51,0.5)",
+                    borderRadius: "50%",
+                    width: "36px",
+                    height: "36px",
+                    color: "#F2B233",
+                    fontSize: "20px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    zIndex: 10,
+                  }}
+                >
+                  ›
+                </button>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "6px",
+                    marginTop: "8px",
+                  }}
+                >
+                  {todasImagenes.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setImagenActual(i)}
+                      style={{
+                        width: i === imagenActual ? "20px" : "7px",
+                        height: "7px",
+                        borderRadius: "999px",
+                        backgroundColor:
+                          i === imagenActual ? "#F2B233" : "rgba(242,178,51,0.3)",
+                        border: "none",
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                        padding: 0,
+                      }}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
 
           <h1 className="text-white font-bold text-2xl text-center mt-3 mb-2 drop-shadow-sm">
             {rifa.nombre}

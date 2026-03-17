@@ -1,17 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import * as XLSX from "xlsx";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 const PAGE_SIZE = 20;
 
 export default function ParticipantesPage() {
   const [participantes, setParticipantes] = useState([]);
+  const [filaExpandida, setFilaExpandida] = useState(null);
+  const [boletosParticipante, setBoletosParticipante] = useState({});
   const [rifas, setRifas] = useState([]);
   const [total, setTotal] = useState(0);
   const [paginas, setPaginas] = useState(0);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [notificando, setNotificando] = useState(null);
+  const [modalConfirmacion, setModalConfirmacion] = useState(null);
+  const [mensajeNotificacion, setMensajeNotificacion] = useState("");
 
   const [filtros, setFiltros] = useState({
     buscar: "",
@@ -90,6 +96,51 @@ export default function ParticipantesPage() {
     );
   }
 
+  const verBoletos = async (participanteId) => {
+    if (filaExpandida === participanteId) {
+      setFilaExpandida(null);
+      return;
+    }
+    if (!boletosParticipante[participanteId]) {
+      const { data } = await supabaseBrowser
+        .from("boletos")
+        .select("numero, estado")
+        .eq("participante_id", participanteId)
+        .order("numero", { ascending: true });
+      setBoletosParticipante((prev) => ({
+        ...prev,
+        [participanteId]: data || [],
+      }));
+    }
+    setFilaExpandida(participanteId);
+  };
+
+  const notificarGanador = async (participante) => {
+    setNotificando(participante.id);
+    setMensajeNotificacion("");
+    try {
+      const res = await fetch("/api/admin/notificar-ganador", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          participante_id: participante.id,
+          rifa_id: participante.rifa_id || participante.rifas?.id,
+        }),
+      });
+      const data = await res.json();
+      if (data.success || res.ok) {
+        setMensajeNotificacion("✅ Ganador notificado correctamente");
+      } else {
+        setMensajeNotificacion("❌ Error: " + (data.error || "Intenta de nuevo"));
+      }
+    } catch (err) {
+      setMensajeNotificacion("❌ Error de conexión");
+    } finally {
+      setNotificando(null);
+      setModalConfirmacion(null);
+    }
+  };
+
   async function handleExportar() {
     setExporting(true);
     try {
@@ -144,7 +195,7 @@ export default function ParticipantesPage() {
       <div className="mb-6 flex flex-wrap gap-4">
         <input
           type="text"
-          placeholder="Buscar por nombre, email o cédula..."
+          placeholder="Buscar por nombre, email, cédula o número de ticket..."
           value={filtros.buscar}
           onChange={(e) =>
             setFiltros((f) => ({ ...f, buscar: e.target.value, page: 1 }))
@@ -189,8 +240,14 @@ export default function ParticipantesPage() {
             No hay participantes que coincidan con los filtros
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div
+            style={{
+              overflowX: "auto",
+              WebkitOverflowScrolling: "touch",
+              borderRadius: "12px",
+            }}
+          >
+            <table className="w-full" style={{ minWidth: "800px" }}>
               <thead>
                 <tr className="border-b border-zinc-800">
                   <th className="px-6 py-4 text-left text-xs font-medium text-zinc-400 uppercase">
@@ -220,38 +277,164 @@ export default function ParticipantesPage() {
                   <th className="px-6 py-4 text-left text-xs font-medium text-zinc-400 uppercase">
                     Fecha
                   </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-zinc-400 uppercase">
+                    Ver tickets
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {participantes.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="border-b border-zinc-800 hover:bg-zinc-800/50"
-                  >
-                    <td className="px-6 py-4 text-white">{p.nombre || "-"}</td>
-                    <td className="px-6 py-4 text-zinc-300">{p.email || "-"}</td>
-                    <td className="px-6 py-4 text-zinc-300">
-                      {p.telefono || "-"}
-                    </td>
-                    <td className="px-6 py-4 text-zinc-300">
-                      {p.ciudad || "-"}
-                    </td>
-                    <td className="px-6 py-4 text-zinc-300">
-                      {p.rifas?.nombre || "-"}
-                    </td>
-                    <td className="px-6 py-4 text-zinc-300">
-                      {p.cantidad_boletos ?? 0}
-                    </td>
-                    <td className="px-6 py-4 text-amber-400">
-                      {formatPrecio(p.total_pagado)}
-                    </td>
-                    <td className="px-6 py-4">
-                      {badgeEstado(p.estado_pago)}
-                    </td>
-                    <td className="px-6 py-4 text-zinc-400 text-sm">
-                      {formatFecha(p.created_at)}
-                    </td>
-                  </tr>
+                  <Fragment key={p.id}>
+                    <tr
+                      className="border-b border-zinc-800 hover:bg-zinc-800/50"
+                    >
+                      <td className="px-6 py-4 text-white">{p.nombre || "-"}</td>
+                      <td className="px-6 py-4 text-zinc-300">{p.email || "-"}</td>
+                      <td className="px-6 py-4 text-zinc-300">
+                        {p.telefono || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-zinc-300">
+                        {p.ciudad || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-zinc-300">
+                        {p.rifas?.nombre || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-zinc-300">
+                        {p.cantidad_boletos ?? 0}
+                      </td>
+                      <td className="px-6 py-4 text-amber-400">
+                        {formatPrecio(p.total_pagado)}
+                      </td>
+                      <td className="px-6 py-4">
+                        {badgeEstado(p.estado_pago)}
+                      </td>
+                      <td className="px-6 py-4 text-zinc-400 text-sm">
+                        {formatFecha(p.created_at)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => verBoletos(p.id)}
+                          style={{
+                            backgroundColor: "transparent",
+                            border: "1px solid rgba(242,178,51,0.4)",
+                            borderRadius: "6px",
+                            color: "#F2B233",
+                            fontSize: "11px",
+                            padding: "4px 8px",
+                            cursor: "pointer",
+                            fontFamily: "Poppins, sans-serif",
+                          }}
+                        >
+                          {filaExpandida === p.id ? "▲ Ocultar" : "🎟 Ver tickets"}
+                        </button>
+                        <button
+                          onClick={() => setModalConfirmacion(p)}
+                          style={{
+                            backgroundColor: "transparent",
+                            border: "1px solid rgba(34,197,94,0.4)",
+                            borderRadius: "6px",
+                            color: "#22C55E",
+                            fontSize: "11px",
+                            padding: "4px 8px",
+                            cursor: "pointer",
+                            fontFamily: "Poppins, sans-serif",
+                            marginLeft: "6px",
+                          }}
+                        >
+                          🏆 Notificar ganador
+                        </button>
+                      </td>
+                    </tr>
+                    {filaExpandida === p.id && (
+                      <tr>
+                        <td
+                          colSpan={10}
+                          style={{
+                            backgroundColor: "rgba(242,178,51,0.05)",
+                            padding: "12px 16px",
+                            borderTop: "1px solid rgba(242,178,51,0.1)",
+                          }}
+                        >
+                          {boletosParticipante[p.id]?.length > 0 ? (
+                            <div>
+                              <p
+                                style={{
+                                  color: "rgba(248,250,252,0.6)",
+                                  fontSize: "12px",
+                                  margin: "0 0 8px",
+                                  fontWeight: "600",
+                                }}
+                              >
+                                Números asignados ({boletosParticipante[p.id].length}):
+                              </p>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: "6px",
+                                }}
+                              >
+                                {boletosParticipante[p.id].map((b, i) => (
+                                  <span
+                                    key={i}
+                                    style={{
+                                      backgroundColor: "#0B1F33",
+                                      border: "1.5px solid rgba(242,178,51,0.5)",
+                                      borderRadius: "6px",
+                                      padding: "3px 8px",
+                                      color: "#F2B233",
+                                      fontSize: "13px",
+                                      fontWeight: "700",
+                                    }}
+                                  >
+                                    {b.numero}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <p
+                              style={{
+                                color: "rgba(248,250,252,0.4)",
+                                fontSize: "12px",
+                                margin: 0,
+                                fontStyle: "italic",
+                              }}
+                            >
+                              Sin números asignados aún
+                            </p>
+                          )}
+                          <div
+                            style={{
+                              marginTop: "12px",
+                              borderTop: "1px solid rgba(242,178,51,0.1)",
+                              paddingTop: "10px",
+                            }}
+                          >
+                            <button
+                              onClick={() => setModalConfirmacion(p)}
+                              style={{
+                                backgroundColor: "rgba(34,197,94,0.1)",
+                                border: "1px solid rgba(34,197,94,0.4)",
+                                borderRadius: "8px",
+                                color: "#22C55E",
+                                fontSize: "13px",
+                                fontWeight: "600",
+                                padding: "8px 16px",
+                                cursor: "pointer",
+                                fontFamily: "Poppins, sans-serif",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "6px",
+                              }}
+                            >
+                              🏆 Notificar como ganador
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
@@ -292,6 +475,162 @@ export default function ParticipantesPage() {
           </div>
         )}
       </div>
+
+      {modalConfirmacion && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.85)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#1a1a1a",
+              border: "1.5px solid rgba(34,197,94,0.4)",
+              borderRadius: "20px",
+              padding: "28px 24px",
+              width: "100%",
+              maxWidth: "420px",
+            }}
+          >
+            <div style={{ textAlign: "center", marginBottom: "16px" }}>
+              <span style={{ fontSize: "48px" }}>🏆</span>
+            </div>
+
+            <h2
+              style={{
+                color: "#F8FAFC",
+                fontSize: "20px",
+                fontWeight: "800",
+                textAlign: "center",
+                margin: "0 0 8px",
+              }}
+            >
+              ¿Confirmar ganador?
+            </h2>
+
+            <div
+              style={{
+                backgroundColor: "rgba(34,197,94,0.08)",
+                border: "1px solid rgba(34,197,94,0.2)",
+                borderRadius: "12px",
+                padding: "14px",
+                marginBottom: "16px",
+                textAlign: "center",
+              }}
+            >
+              <p
+                style={{
+                  color: "#22C55E",
+                  fontWeight: "700",
+                  fontSize: "18px",
+                  margin: "0 0 4px",
+                }}
+              >
+                {modalConfirmacion.nombre}
+              </p>
+              <p
+                style={{
+                  color: "rgba(248,250,252,0.6)",
+                  fontSize: "13px",
+                  margin: "0 0 2px",
+                }}
+              >
+                {modalConfirmacion.email}
+              </p>
+              <p
+                style={{
+                  color: "rgba(248,250,252,0.5)",
+                  fontSize: "12px",
+                  margin: 0,
+                }}
+              >
+                {modalConfirmacion.rifas?.nombre || "Sorteo RIFEX"}
+              </p>
+            </div>
+
+            <p
+              style={{
+                color: "rgba(248,250,252,0.5)",
+                fontSize: "13px",
+                textAlign: "center",
+                margin: "0 0 20px",
+              }}
+            >
+              Se enviará un email de notificación al ganador. Esta acción no se
+              puede deshacer.
+            </p>
+
+            {mensajeNotificacion && (
+              <p
+                style={{
+                  color: mensajeNotificacion.includes("✅") ? "#22C55E" : "#f87171",
+                  fontSize: "13px",
+                  textAlign: "center",
+                  margin: "0 0 12px",
+                  fontWeight: "600",
+                }}
+              >
+                {mensajeNotificacion}
+              </p>
+            )}
+
+            <button
+              onClick={() => notificarGanador(modalConfirmacion)}
+              disabled={notificando === modalConfirmacion.id}
+              style={{
+                width: "100%",
+                background:
+                  notificando === modalConfirmacion.id
+                    ? "rgba(34,197,94,0.4)"
+                    : "linear-gradient(135deg, #22C55E, #16a34a)",
+                color: "white",
+                fontWeight: "800",
+                fontSize: "16px",
+                padding: "14px",
+                borderRadius: "12px",
+                border: "none",
+                cursor: notificando ? "not-allowed" : "pointer",
+                marginBottom: "10px",
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
+              {notificando === modalConfirmacion.id
+                ? "Enviando..."
+                : "✅ Sí, notificar ganador"}
+            </button>
+
+            <button
+              onClick={() => {
+                setModalConfirmacion(null);
+                setMensajeNotificacion("");
+              }}
+              style={{
+                width: "100%",
+                backgroundColor: "transparent",
+                border: "1px solid rgba(255,255,255,0.15)",
+                borderRadius: "12px",
+                color: "rgba(248,250,252,0.5)",
+                fontSize: "14px",
+                padding: "12px",
+                cursor: "pointer",
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

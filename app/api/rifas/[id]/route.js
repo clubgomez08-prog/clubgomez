@@ -37,6 +37,8 @@ export async function PATCH(request, { params }) {
       : undefined,
   };
   if (body.estado != null) rifa.estado = body.estado;
+  if (body.imagenes_url !== undefined) rifa.imagenes_url = body.imagenes_url;
+  if (body.premios_anticipados !== undefined) rifa.premios_anticipados = body.premios_anticipados;
 
   const cleaned = Object.fromEntries(
     Object.entries(rifa).filter(([, v]) => v !== undefined)

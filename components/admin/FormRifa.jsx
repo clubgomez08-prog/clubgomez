@@ -16,9 +16,13 @@ export default function FormRifa({ rifaId }) {
     total_numeros: 10000,
     porcentaje_sorteo: 80,
     imagen_url: "",
+    imagenes_url: [],
     premios_anticipados: [],
   });
-  const [premioInput, setPremioInput] = useState("");
+  const [subiendoImagenAdicional, setSubiendoImagenAdicional] = useState(false);
+  const [subiendoImagenPremio, setSubiendoImagenPremio] = useState(null);
+  const [nuevoPremioMonto, setNuevoPremioMonto] = useState("");
+  const [nuevoPremioDesc, setNuevoPremioDesc] = useState("");
 
   useEffect(() => {
     if (rifaId) {
@@ -32,9 +36,12 @@ export default function FormRifa({ rifaId }) {
             total_numeros: data.total_numeros ?? 10000,
             porcentaje_sorteo: data.porcentaje_sorteo ?? 80,
             imagen_url: data.imagen_url || "",
-            premios_anticipados: Array.isArray(data.premios_anticipados)
-              ? data.premios_anticipados
-              : [],
+            imagenes_url: data.imagenes_url || [],
+            premios_anticipados: (data.premios_anticipados || []).map((p) =>
+              typeof p === "string"
+                ? { monto: p, desc: "", imagen_url: "" }
+                : { monto: p.monto ?? "", desc: p.desc ?? "", imagen_url: p.imagen_url ?? "" }
+            ),
           });
         })
         .catch(() => setError("Error al cargar rifa"))
@@ -42,23 +49,83 @@ export default function FormRifa({ rifaId }) {
     }
   }, [rifaId]);
 
-  function addPremio() {
-    const texto = premioInput.trim();
-    if (texto) {
-      setForm((f) => ({
-        ...f,
-        premios_anticipados: [...f.premios_anticipados, texto],
-      }));
-      setPremioInput("");
+  const subirImagenAdicional = async (file) => {
+    if (!file) return;
+    setSubiendoImagenAdicional(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload/rifa", {
+        method: "POST",
+        body: formData,
+      });
+      const { url } = await res.json();
+      if (url) {
+        setForm((prev) => ({
+          ...prev,
+          imagenes_url: [...(prev.imagenes_url || []), url],
+        }));
+      }
+    } catch (err) {
+      console.error("Error subiendo imagen:", err.message);
+    } finally {
+      setSubiendoImagenAdicional(false);
     }
-  }
+  };
 
-  function removePremio(index) {
-    setForm((f) => ({
-      ...f,
-      premios_anticipados: f.premios_anticipados.filter((_, i) => i !== index),
+  const eliminarImagenAdicional = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      imagenes_url: prev.imagenes_url.filter((_, i) => i !== index),
     }));
-  }
+  };
+
+  const subirImagenPremio = async (file, index) => {
+    if (!file) return;
+    setSubiendoImagenPremio(index);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload/rifa", {
+        method: "POST",
+        body: formData,
+      });
+      const { url } = await res.json();
+      if (url) {
+        const nuevos = [...form.premios_anticipados];
+        nuevos[index] = { ...nuevos[index], imagen_url: url };
+        setForm((prev) => ({ ...prev, premios_anticipados: nuevos }));
+      }
+    } catch (err) {
+      console.error("Error subiendo imagen premio:", err.message);
+    } finally {
+      setSubiendoImagenPremio(null);
+    }
+  };
+
+  const agregarPremio = () => {
+    if (!nuevoPremioMonto.trim()) return;
+    setForm((prev) => ({
+      ...prev,
+      premios_anticipados: [
+        ...prev.premios_anticipados,
+        {
+          monto: nuevoPremioMonto.trim(),
+          desc: nuevoPremioDesc.trim(),
+          imagen_url: "",
+        },
+      ],
+    }));
+    setNuevoPremioMonto("");
+    setNuevoPremioDesc("");
+  };
+
+  const eliminarPremio = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      premios_anticipados: prev.premios_anticipados.filter((_, i) => i !== index),
+    }));
+  };
 
   async function handleImageChange(e) {
     const file = e.target.files?.[0];
@@ -96,7 +163,8 @@ export default function FormRifa({ rifaId }) {
       total_numeros: Number(form.total_numeros) || 10000,
       porcentaje_sorteo: Number(form.porcentaje_sorteo) || 80,
       imagen_url: form.imagen_url || null,
-      premios_anticipados: form.premios_anticipados,
+      imagenes_url: form.imagenes_url || [],
+      premios_anticipados: form.premios_anticipados || [],
     };
 
     if (!payload.nombre || !payload.precio_boleto) {
@@ -254,48 +322,381 @@ export default function FormRifa({ rifaId }) {
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Premios anticipados
-            </label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={premioInput}
-                onChange={(e) => setPremioInput(e.target.value)}
-                onKeyDown={(e) =>
-                  e.key === "Enter" && (e.preventDefault(), addPremio())
-                }
-                placeholder="Ej: 1er lugar: iPhone"
-                className="flex-1 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
-              />
-              <button
-                type="button"
-                onClick={addPremio}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-900 font-medium rounded-lg"
-              >
-                Agregar
-              </button>
+          <div style={{ marginTop: "20px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginBottom: "10px",
+              }}
+            >
+              <span style={{ fontSize: "18px" }}>🖼️</span>
+              <div>
+                <p
+                  style={{
+                    color: "#F8FAFC",
+                    fontWeight: "700",
+                    fontSize: "14px",
+                    margin: 0,
+                  }}
+                >
+                  Imágenes adicionales del premio
+                </p>
+                <p
+                  style={{
+                    color: "rgba(248,250,252,0.4)",
+                    fontSize: "11px",
+                    margin: 0,
+                  }}
+                >
+                  Se mostrarán en un carrusel junto a la imagen principal
+                </p>
+              </div>
             </div>
-            {form.premios_anticipados.length > 0 && (
-              <ul className="space-y-2">
-                {form.premios_anticipados.map((p, i) => (
-                  <li
-                    key={i}
-                    className="flex items-center justify-between py-2 px-3 bg-zinc-800 rounded-lg text-zinc-300"
-                  >
-                    <span>{p}</span>
+
+            {form.imagenes_url?.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "8px",
+                  marginBottom: "12px",
+                }}
+              >
+                {form.imagenes_url.map((url, i) => (
+                  <div key={i} style={{ position: "relative" }}>
+                    <img
+                      src={url}
+                      alt={`Imagen ${i + 1}`}
+                      style={{
+                        width: "72px",
+                        height: "72px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                        border: "2px solid rgba(242,178,51,0.4)",
+                      }}
+                    />
                     <button
                       type="button"
-                      onClick={() => removePremio(i)}
-                      className="text-red-400 hover:text-red-300 text-sm"
+                      onClick={() => eliminarImagenAdicional(i)}
+                      style={{
+                        position: "absolute",
+                        top: "-6px",
+                        right: "-6px",
+                        backgroundColor: "#ef4444",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "50%",
+                        width: "20px",
+                        height: "20px",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: "700",
+                      }}
                     >
-                      Eliminar
+                      ×
                     </button>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
+
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                backgroundColor: "rgba(242,178,51,0.08)",
+                border: "1.5px dashed rgba(242,178,51,0.4)",
+                borderRadius: "12px",
+                padding: "12px 16px",
+                cursor: "pointer",
+                marginTop: "8px",
+              }}
+            >
+              <span style={{ fontSize: "24px" }}>📷</span>
+              <div>
+                <p
+                  style={{
+                    color: "#F2B233",
+                    fontWeight: "600",
+                    fontSize: "14px",
+                    margin: "0 0 2px",
+                  }}
+                >
+                  {subiendoImagenAdicional
+                    ? "Subiendo imagen..."
+                    : "+ Agregar imagen del premio"}
+                </p>
+                <p
+                  style={{
+                    color: "rgba(248,250,252,0.4)",
+                    fontSize: "11px",
+                    margin: 0,
+                  }}
+                >
+                  JPG, PNG o WEBP — máx 5MB
+                </p>
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={subiendoImagenAdicional}
+                onChange={(e) => subirImagenAdicional(e.target.files?.[0])}
+                style={{ display: "none" }}
+              />
+            </label>
+          </div>
+
+          <div style={{ marginTop: "20px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginBottom: "10px",
+              }}
+            >
+              <span style={{ fontSize: "18px" }}>🏆</span>
+              <div>
+                <p
+                  style={{
+                    color: "#F8FAFC",
+                    fontWeight: "700",
+                    fontSize: "14px",
+                    margin: 0,
+                  }}
+                >
+                  Premios anticipados
+                </p>
+                <p
+                  style={{
+                    color: "rgba(248,250,252,0.4)",
+                    fontSize: "11px",
+                    margin: 0,
+                  }}
+                >
+                  Agrega premios con imagen opcional para cada lugar
+                </p>
+              </div>
+            </div>
+
+            {form.premios_anticipados.map((premio, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "10px",
+                  backgroundColor: "rgba(242,178,51,0.05)",
+                  border: "1px solid rgba(242,178,51,0.2)",
+                  borderRadius: "10px",
+                  padding: "10px",
+                  marginBottom: "8px",
+                }}
+              >
+                {premio.imagen_url ? (
+                  <img
+                    src={premio.imagen_url}
+                    alt={premio.monto}
+                    style={{
+                      width: "52px",
+                      height: "52px",
+                      objectFit: "cover",
+                      borderRadius: "8px",
+                      border: "1px solid rgba(242,178,51,0.3)",
+                      flexShrink: 0,
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "52px",
+                      height: "52px",
+                      backgroundColor: "rgba(242,178,51,0.08)",
+                      border: "1px dashed rgba(242,178,51,0.3)",
+                      borderRadius: "8px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      fontSize: "20px",
+                    }}
+                  >
+                    🏆
+                  </div>
+                )}
+
+                <div style={{ flex: 1 }}>
+                  <p
+                    style={{
+                      color: "#F8FAFC",
+                      fontWeight: "600",
+                      fontSize: "14px",
+                      margin: "0 0 2px",
+                    }}
+                  >
+                    {premio.monto}
+                  </p>
+                  {premio.desc && (
+                    <p
+                      style={{
+                        color: "rgba(248,250,252,0.5)",
+                        fontSize: "12px",
+                        margin: "0 0 6px",
+                      }}
+                    >
+                      {premio.desc}
+                    </p>
+                  )}
+                  <label
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      backgroundColor: "rgba(242,178,51,0.08)",
+                      border: "1px solid rgba(242,178,51,0.3)",
+                      borderRadius: "8px",
+                      padding: "4px 10px",
+                      cursor: "pointer",
+                      marginTop: "4px",
+                    }}
+                  >
+                    <span style={{ fontSize: "12px" }}>📷</span>
+                    <span
+                      style={{
+                        color: "#F2B233",
+                        fontSize: "11px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      {subiendoImagenPremio === i
+                        ? "Subiendo..."
+                        : premio.imagen_url
+                          ? "Cambiar imagen"
+                          : "Agregar imagen"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={subiendoImagenPremio === i}
+                      onChange={(e) =>
+                        subirImagenPremio(e.target.files?.[0], i)
+                      }
+                      style={{ display: "none" }}
+                    />
+                  </label>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => eliminarPremio(i)}
+                  style={{
+                    backgroundColor: "rgba(239,68,68,0.15)",
+                    border: "1px solid rgba(239,68,68,0.3)",
+                    borderRadius: "6px",
+                    color: "#f87171",
+                    padding: "4px 8px",
+                    cursor: "pointer",
+                    fontSize: "12px",
+                    flexShrink: 0,
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+
+            <div
+              style={{
+                backgroundColor: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(242,178,51,0.15)",
+                borderRadius: "12px",
+                padding: "14px",
+                marginTop: "8px",
+              }}
+            >
+              <p
+                style={{
+                  color: "#F2B233",
+                  fontSize: "13px",
+                  fontWeight: "700",
+                  margin: "0 0 10px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                🏆 Agregar nuevo premio
+              </p>
+
+              <input
+                type="text"
+                placeholder="Ej: 1er lugar: iPhone 17 Pro"
+                value={nuevoPremioMonto}
+                onChange={(e) => setNuevoPremioMonto(e.target.value)}
+                style={{
+                  width: "100%",
+                  backgroundColor: "#1a1a1a",
+                  border: "1.5px solid rgba(242,178,51,0.25)",
+                  borderRadius: "10px",
+                  color: "#F8FAFC",
+                  fontSize: "14px",
+                  padding: "10px 14px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  marginBottom: "8px",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              />
+
+              <input
+                type="text"
+                placeholder="Descripción opcional (ej: Incluye accesorios)"
+                value={nuevoPremioDesc}
+                onChange={(e) => setNuevoPremioDesc(e.target.value)}
+                style={{
+                  width: "100%",
+                  backgroundColor: "#1a1a1a",
+                  border: "1.5px solid rgba(242,178,51,0.25)",
+                  borderRadius: "10px",
+                  color: "#F8FAFC",
+                  fontSize: "14px",
+                  padding: "10px 14px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  marginBottom: "10px",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              />
+
+              <button
+                type="button"
+                onClick={agregarPremio}
+                style={{
+                  width: "100%",
+                  backgroundColor: "#F2B233",
+                  color: "#071521",
+                  border: "none",
+                  borderRadius: "10px",
+                  padding: "10px 16px",
+                  cursor: "pointer",
+                  fontWeight: "700",
+                  fontSize: "14px",
+                  fontFamily: "Poppins, sans-serif",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                }}
+              >
+                + Agregar premio
+              </button>
+            </div>
           </div>
         </div>
 

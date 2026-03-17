@@ -2,8 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import ModalConfirm from "@/components/admin/ModalConfirm";
+import { useToast } from "@/components/admin/Toast";
 
 export default function RifasPage() {
+  const router = useRouter();
+  const { addToast } = useToast();
   const [rifas, setRifas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(null);
@@ -12,6 +17,9 @@ export default function RifasPage() {
   const [mensajePrueba, setMensajePrueba] = useState("");
   const [mostrarFormPrueba, setMostrarFormPrueba] = useState(false);
   const [rifaPrueba, setRifaPrueba] = useState(null);
+  const [modalEliminar, setModalEliminar] = useState(null);
+  const [modalToggle, setModalToggle] = useState(null);
+  const [menuAbierto, setMenuAbierto] = useState(null);
 
   function loadRifas() {
     setLoading(true);
@@ -29,8 +37,7 @@ export default function RifasPage() {
   }, []);
 
   async function handleDelete(rifa) {
-    if (!confirm("¿Estás seguro de eliminar esta rifa?")) return;
-
+    if (!rifa) return;
     setDeleting(rifa.id);
     try {
       const res = await fetch(`/api/rifas/${rifa.id}`, { method: "DELETE" });
@@ -38,9 +45,10 @@ export default function RifasPage() {
         const data = await res.json();
         throw new Error(data.error || "Error al eliminar");
       }
+      addToast("Rifa eliminada correctamente", "success");
       loadRifas();
     } catch (err) {
-      alert(err.message);
+      addToast(err.message || "Error al eliminar", "error");
     } finally {
       setDeleting(null);
     }
@@ -60,6 +68,27 @@ export default function RifasPage() {
     if (total === 0) return 0;
     return ((vendidos / total) * 100).toFixed(1);
   }
+
+  const toggleEstadoRifa = async (rifa) => {
+    if (!rifa) return;
+    const nuevoEstado = rifa.estado === "activa" ? "finalizada" : "activa";
+    try {
+      const res = await fetch(`/api/rifas/${rifa.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+      if (res.ok) {
+        addToast(`Rifa ${nuevoEstado} correctamente`, "success");
+        loadRifas();
+      } else {
+        const data = await res.json();
+        addToast(data.error || "Error al cambiar estado", "error");
+      }
+    } catch (err) {
+      addToast(err?.message || "Error al cambiar estado", "error");
+    }
+  };
 
   const enviarEmailPrueba = async () => {
     if (!emailPrueba || !emailPrueba.includes("@")) {
@@ -94,6 +123,12 @@ export default function RifasPage() {
 
   return (
     <div>
+      <style>{`
+        @media (max-width: 767px) {
+          .admin-botones-desktop { display: none !important; }
+          .admin-botones-movil { display: block !important; }
+        }
+      `}</style>
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-semibold text-white">Lista de rifas</h1>
         <Link
@@ -148,54 +183,249 @@ export default function RifasPage() {
                     >
                       {rifa.estado || "activa"}
                     </span>
-                    <span>{pctVendido(rifa)}% vendido</span>
+                  </div>
+                  <div style={{ marginTop: "8px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: "rgba(248,250,252,0.5)",
+                          fontSize: "11px",
+                        }}
+                      >
+                        Vendido
+                      </span>
+                      <span
+                        style={{
+                          color: "#F2B233",
+                          fontSize: "11px",
+                          fontWeight: "700",
+                        }}
+                      >
+                        {pctVendido(rifa)}%
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "6px",
+                        backgroundColor: "rgba(255,255,255,0.08)",
+                        borderRadius: "999px",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${Math.min(parseFloat(pctVendido(rifa)), 100)}%`,
+                          height: "100%",
+                          background:
+                            parseFloat(pctVendido(rifa)) >= 80
+                              ? "linear-gradient(to right, #22C55E, #4ADE80)"
+                              : parseFloat(pctVendido(rifa)) >= 50
+                                ? "linear-gradient(to right, #F2B233, #FFD166)"
+                                : "linear-gradient(to right, #60a5fa, #93c5fd)",
+                          borderRadius: "999px",
+                          transition: "width 0.5s ease",
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="flex gap-2 flex-shrink-0">
-                <Link
-                  href={`/admin/rifas/${rifa.id}`}
-                  className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-white text-sm rounded-lg"
+              <div style={{ position: "relative" }} className="flex-shrink-0">
+                <div
+                  className="admin-botones-desktop"
+                  style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}
                 >
-                  Editar
-                </Link>
-                <a
-                  href={`/?rifa=${rifa.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-sm rounded-lg"
+                  <Link
+                    href={`/admin/rifas/${rifa.id}`}
+                    className="bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg"
+                    style={{
+                      fontSize: "12px",
+                      padding: "6px 10px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Editar
+                  </Link>
+                  <a
+                    href={`/?rifa=${rifa.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 rounded-lg"
+                    style={{
+                      fontSize: "12px",
+                      padding: "6px 10px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Ver página
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setModalEliminar(rifa)}
+                    disabled={deleting === rifa.id}
+                    className="bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      fontSize: "12px",
+                      padding: "6px 10px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {deleting === rifa.id ? "..." : "Eliminar"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalToggle(rifa)}
+                    style={{
+                      backgroundColor:
+                        rifa.estado === "activa"
+                          ? "rgba(239,68,68,0.15)"
+                          : "rgba(34,197,94,0.15)",
+                      border:
+                        rifa.estado === "activa"
+                          ? "1px solid rgba(239,68,68,0.4)"
+                          : "1px solid rgba(34,197,94,0.4)",
+                      borderRadius: "6px",
+                      color: rifa.estado === "activa" ? "#f87171" : "#22C55E",
+                      fontSize: "12px",
+                      padding: "6px 10px",
+                      cursor: "pointer",
+                      fontFamily: "Poppins, sans-serif",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {rifa.estado === "activa" ? "⏸ Desactivar" : "▶ Activar"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRifaPrueba(rifa);
+                      setMostrarFormPrueba(true);
+                      setMensajePrueba("");
+                    }}
+                    style={{
+                      backgroundColor: "transparent",
+                      border: "1px solid rgba(242,178,51,0.4)",
+                      borderRadius: "8px",
+                      color: "#F2B233",
+                      fontSize: "12px",
+                      padding: "6px 10px",
+                      cursor: "pointer",
+                      fontFamily: "Poppins, sans-serif",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    📧 Email prueba
+                  </button>
+                </div>
+
+                <div
+                  className="admin-botones-movil"
+                  style={{ position: "relative", display: "none" }}
                 >
-                  Ver página
-                </a>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(rifa)}
-                  disabled={deleting === rifa.id}
-                  className="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {deleting === rifa.id ? "..." : "Eliminar"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRifaPrueba(rifa);
-                    setMostrarFormPrueba(true);
-                    setMensajePrueba("");
-                  }}
-                  style={{
-                    backgroundColor: "transparent",
-                    border: "1px solid rgba(242,178,51,0.4)",
-                    borderRadius: "8px",
-                    color: "#F2B233",
-                    fontSize: "13px",
-                    padding: "6px 14px",
-                    cursor: "pointer",
-                    fontFamily: "Poppins, sans-serif",
-                    marginTop: "8px",
-                  }}
-                >
-                  📧 Enviar email de prueba
-                </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setMenuAbierto(menuAbierto === rifa.id ? null : rifa.id)
+                    }
+                    style={{
+                      backgroundColor: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      borderRadius: "8px",
+                      color: "#F8FAFC",
+                      width: "36px",
+                      height: "36px",
+                      fontSize: "18px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    ⋮
+                  </button>
+
+                  {menuAbierto === rifa.id && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        right: 0,
+                        top: "40px",
+                        backgroundColor: "#1a1a1a",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: "12px",
+                        padding: "6px",
+                        zIndex: 50,
+                        minWidth: "160px",
+                        boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                      }}
+                    >
+                      {[
+                        {
+                          label: "✏️ Editar",
+                          action: () => router.push(`/admin/rifas/${rifa.id}`),
+                        },
+                        {
+                          label: "👁 Ver página",
+                          action: () => window.open(`/?rifa=${rifa.id}`),
+                        },
+                        {
+                          label:
+                            rifa.estado === "activa"
+                              ? "⏸ Desactivar"
+                              : "▶ Activar",
+                          action: () => setModalToggle(rifa),
+                        },
+                        {
+                          label: "📧 Email prueba",
+                          action: () => {
+                            setRifaPrueba(rifa);
+                            setMostrarFormPrueba(true);
+                          },
+                        },
+                        {
+                          label: "🗑️ Eliminar",
+                          action: () => {
+                            setModalEliminar(rifa);
+                          },
+                          color: "#f87171",
+                        },
+                      ].map((item, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            item.action();
+                            setMenuAbierto(null);
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            width: "100%",
+                            backgroundColor: "transparent",
+                            border: "none",
+                            borderRadius: "8px",
+                            padding: "10px 12px",
+                            color: item.color || "#F8FAFC",
+                            fontSize: "13px",
+                            cursor: "pointer",
+                            fontFamily: "Poppins, sans-serif",
+                            textAlign: "left",
+                          }}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -337,6 +567,36 @@ export default function RifasPage() {
           </div>
         </div>
       )}
+
+      <ModalConfirm
+        visible={!!modalEliminar}
+        titulo="¿Eliminar rifa?"
+        mensaje={`¿Estás seguro de eliminar "${modalEliminar?.nombre}"? Esta acción no se puede deshacer.`}
+        labelConfirmar="Sí, eliminar"
+        labelCancelar="Cancelar"
+        tipo="danger"
+        onConfirmar={() => {
+          const r = modalEliminar;
+          setModalEliminar(null);
+          if (r) handleDelete(r);
+        }}
+        onCancelar={() => setModalEliminar(null)}
+      />
+
+      <ModalConfirm
+        visible={!!modalToggle}
+        titulo={`¿${modalToggle?.estado === "activa" ? "Desactivar" : "Activar"} rifa?`}
+        mensaje={`¿Cambiar estado de "${modalToggle?.nombre}" a ${modalToggle?.estado === "activa" ? "finalizada" : "activa"}?`}
+        labelConfirmar="Sí, cambiar"
+        labelCancelar="Cancelar"
+        tipo="warning"
+        onConfirmar={() => {
+          const r = modalToggle;
+          setModalToggle(null);
+          if (r) toggleEstadoRifa(r);
+        }}
+        onCancelar={() => setModalToggle(null)}
+      />
     </div>
   );
 }

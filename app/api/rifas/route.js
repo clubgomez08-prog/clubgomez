@@ -40,12 +40,11 @@ export async function POST(request) {
     nombre: body.nombre,
     descripcion: body.descripcion ?? null,
     imagen_url: body.imagen_url ?? null,
+    imagenes_url: body.imagenes_url || [],
     precio_boleto: body.precio_boleto,
     total_numeros: body.total_numeros ?? 10000,
     porcentaje_sorteo: body.porcentaje_sorteo ?? 80,
-    premios_anticipados: Array.isArray(body.premios_anticipados)
-      ? body.premios_anticipados
-      : [],
+    premios_anticipados: body.premios_anticipados || [],
     serie_actual: 0,
   };
 

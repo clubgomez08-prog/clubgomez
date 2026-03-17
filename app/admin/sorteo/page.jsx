@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import confetti from "canvas-confetti";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 function formatPrecio(n) {
   return new Intl.NumberFormat("es-CO", {
@@ -32,6 +33,18 @@ export default function SorteoPage() {
   const [notificando, setNotificando] = useState(false);
   const [notificados, setNotificados] = useState({});
   const [error, setError] = useState("");
+  const [numeroGanador, setNumeroGanador] = useState("");
+  const [buscandoGanador, setBuscandoGanador] = useState(false);
+  const [ganadorEncontrado, setGanadorEncontrado] = useState(null);
+  const [errorBusqueda, setErrorBusqueda] = useState("");
+  const [modalConfirmacion, setModalConfirmacion] = useState(false);
+  const [mensajeNotificacion, setMensajeNotificacion] = useState("");
+  const [boletosGanador, setBoletosGanador] = useState([]);
+  const [premiosAnticipados, setPremiosAnticipados] = useState([]);
+  const [busquedasPremios, setBusquedasPremios] = useState({});
+  const [ganadoresPremios, setGanadoresPremios] = useState({});
+  const [notificandoPremio, setNotificandoPremio] = useState(null);
+  const [mensajesPremios, setMensajesPremios] = useState({});
 
   useEffect(() => {
     fetch("/api/rifas")
@@ -52,11 +65,45 @@ export default function SorteoPage() {
     if (!rifaId) {
       setStats(null);
       setHistorial([]);
+      setPremiosAnticipados([]);
+      setBusquedasPremios({});
+      setGanadoresPremios({});
+      setMensajesPremios({});
       return;
     }
 
     const rifa = rifas.find((r) => r.id === rifaId);
     if (!rifa) return;
+
+    // Cargar premios anticipados de la rifa
+    supabaseBrowser
+      .from("rifas")
+      .select("premios_anticipados")
+      .eq("id", rifaId)
+      .single()
+      .then(({ data: rifaData }) => {
+        if (rifaData?.premios_anticipados?.length > 0) {
+          setPremiosAnticipados(
+            rifaData.premios_anticipados.map((p, i) => ({
+              index: i,
+              monto: typeof p === "string" ? p : (p.monto || p.nombre || ""),
+              desc: typeof p === "string" ? "" : (p.desc || p.descripcion || ""),
+              imagen_url: typeof p === "string" ? "" : (p.imagen_url || ""),
+            }))
+          );
+        } else {
+          setPremiosAnticipados([]);
+        }
+        setBusquedasPremios({});
+        setGanadoresPremios({});
+        setMensajesPremios({});
+      })
+      .catch(() => {
+        setPremiosAnticipados([]);
+        setBusquedasPremios({});
+        setGanadoresPremios({});
+        setMensajesPremios({});
+      });
 
     // Obtener stats reales desde el API
     fetch(`/api/rifas/${rifaId}/stats`)
@@ -149,26 +196,180 @@ export default function SorteoPage() {
       });
   }
 
-  function notificarGanador() {
-    // console.log("Ganador state:", ganador) — deshabilitado en producción
-    if (!ganador?.sorteo_id) return;
+  const buscarNumeroGanador = async (e) => {
+    e.preventDefault();
+    if (!numeroGanador.trim()) return;
+    setBuscandoGanador(true);
+    setErrorBusqueda("");
+    setGanadorEncontrado(null);
+    setBoletosGanador([]);
+    setMensajeNotificacion("");
+
+    try {
+      const { data: boletos, error: err } = await supabaseBrowser
+        .from("boletos")
+        .select(
+          `
+          numero,
+          estado,
+          participante_id,
+          participantes (
+            id,
+            nombre,
+            cedula,
+            email,
+            telefono,
+            ciudad,
+            cantidad_boletos,
+            total_pagado,
+            estado_pago,
+            rifa_id
+          )
+        `
+        )
+        .eq("numero", numeroGanador.trim())
+        .eq("rifa_id", rifaId);
+
+      if (err) throw new Error(err.message);
+
+      if (!boletos || boletos.length === 0) {
+        setErrorBusqueda(
+          `No se encontró ningún participante con el número ${numeroGanador} en esta rifa.`
+        );
+        return;
+      }
+
+      const participante = boletos[0].participantes;
+
+      const { data: todosLosBoletos } = await supabaseBrowser
+        .from("boletos")
+        .select("numero, estado")
+        .eq("participante_id", participante.id)
+        .order("numero", { ascending: true });
+
+      setGanadorEncontrado(participante);
+      setBoletosGanador(todosLosBoletos || []);
+    } catch (err) {
+      setErrorBusqueda(err.message || "Error al buscar. Intenta de nuevo.");
+    } finally {
+      setBuscandoGanador(false);
+    }
+  };
+
+  const notificarGanador = async () => {
+    if (!ganadorEncontrado) return;
     setNotificando(true);
-    fetch("/api/admin/notificar-ganador", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sorteo_id: ganador.sorteo_id }),
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Error enviando email");
-        return data;
-      })
-      .then(() => {
-        setGanador((g) => ({ ...g, email_enviado: true }));
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setNotificando(false));
-  }
+    setMensajeNotificacion("");
+    try {
+      const res = await fetch("/api/admin/notificar-ganador", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          participante_id: ganadorEncontrado.id,
+          rifa_id: rifaId,
+        }),
+      });
+      const data = await res.json();
+      if (data.success || res.ok) {
+        setMensajeNotificacion("✅ Ganador notificado correctamente por email");
+      } else {
+        setMensajeNotificacion("❌ Error: " + (data.error || "Intenta de nuevo"));
+      }
+    } catch (err) {
+      setMensajeNotificacion("❌ Error de conexión");
+    } finally {
+      setNotificando(false);
+      setModalConfirmacion(false);
+    }
+  };
+
+  const buscarGanadorPremio = async (e, premioIndex) => {
+    e.preventDefault();
+    const numero = busquedasPremios[premioIndex]?.trim();
+    if (!numero) return;
+
+    setBusquedasPremios((prev) => ({
+      ...prev,
+      [`buscando_${premioIndex}`]: true,
+    }));
+    setGanadoresPremios((prev) => ({ ...prev, [premioIndex]: null }));
+    setMensajesPremios((prev) => ({ ...prev, [premioIndex]: "" }));
+
+    try {
+      const { data: boletos } = await supabaseBrowser
+        .from("boletos")
+        .select(
+          `
+          numero, estado, participante_id,
+          participantes (
+            id, nombre, cedula, email,
+            telefono, ciudad, rifa_id
+          )
+        `
+        )
+        .eq("numero", numero)
+        .eq("rifa_id", rifaId);
+
+      if (!boletos || boletos.length === 0) {
+        setMensajesPremios((prev) => ({
+          ...prev,
+          [premioIndex]: `❌ No se encontró el número ${numero}`,
+        }));
+        return;
+      }
+
+      setGanadoresPremios((prev) => ({
+        ...prev,
+        [premioIndex]: boletos[0].participantes,
+      }));
+    } catch (err) {
+      setMensajesPremios((prev) => ({
+        ...prev,
+        [premioIndex]: "❌ Error al buscar",
+      }));
+    } finally {
+      setBusquedasPremios((prev) => ({
+        ...prev,
+        [`buscando_${premioIndex}`]: false,
+      }));
+    }
+  };
+
+  const notificarGanadorPremio = async (premioIndex) => {
+    const ganador = ganadoresPremios[premioIndex];
+    if (!ganador) return;
+
+    setNotificandoPremio(premioIndex);
+    try {
+      const res = await fetch("/api/admin/notificar-ganador", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          participante_id: ganador.id,
+          rifa_id: rifaId,
+        }),
+      });
+      const data = await res.json();
+      if (data.success || res.ok) {
+        setMensajesPremios((prev) => ({
+          ...prev,
+          [premioIndex]: "✅ Ganador notificado por email",
+        }));
+      } else {
+        setMensajesPremios((prev) => ({
+          ...prev,
+          [premioIndex]: "❌ Error: " + (data.error || "Intenta de nuevo"),
+        }));
+      }
+    } catch {
+      setMensajesPremios((prev) => ({
+        ...prev,
+        [premioIndex]: "❌ Error de conexión",
+      }));
+    } finally {
+      setNotificandoPremio(null);
+    }
+  };
 
   const rifa = rifas.find((r) => r.id === rifaId);
   const listo = stats?.listo ?? false;
@@ -203,7 +404,10 @@ export default function SorteoPage() {
 
       {rifa && stats && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div
+            className="grid grid-cols-2 md:grid-cols-4"
+            style={{ gap: "10px" }}
+          >
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
               <p className="text-zinc-400 text-sm">Boletos vendidos</p>
               <p className="text-xl font-semibold text-white mt-1">
@@ -242,47 +446,635 @@ export default function SorteoPage() {
             </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8">
-            <h2 className="text-lg font-semibold text-white mb-4">
-              Ejecutar sorteo
+          <div style={{
+            backgroundColor: '#1a1a1a',
+            border: '1px solid rgba(242,178,51,0.2)',
+            borderRadius: '16px',
+            padding: '24px',
+            marginTop: '24px'
+          }}>
+            <h2 style={{
+              color: '#F8FAFC',
+              fontSize: '18px',
+              fontWeight: '700',
+              margin: '0 0 6px'
+            }}>
+              🎯 Buscar número ganador
             </h2>
-            {rifa.estado === "finalizada" ? (
-              <div className="flex flex-col gap-4">
-                <p className="text-green-400">
-                  Esta rifa ya fue sorteada. Revisa el historial más abajo.
-                </p>
+            <p style={{
+              color: 'rgba(248,250,252,0.5)',
+              fontSize: '13px',
+              margin: '0 0 20px'
+            }}>
+              Ingresa el número que salió en la lotería
+              para encontrar al participante ganador
+            </p>
+
+            {/* Formulario de búsqueda */}
+            <form onSubmit={buscarNumeroGanador} style={{
+              display: 'flex',
+              gap: '10px',
+              marginBottom: '20px'
+            }}>
+              <input
+                type="text"
+                placeholder="Ej: 0042, 1234, 9876..."
+                value={numeroGanador}
+                onChange={e => setNumeroGanador(e.target.value)}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#0a0a0a',
+                  border: '1.5px solid rgba(242,178,51,0.3)',
+                  borderRadius: '12px',
+                  color: '#F8FAFC',
+                  fontSize: '16px',
+                  padding: '12px 16px',
+                  outline: 'none',
+                  fontFamily: 'Poppins, sans-serif'
+                }}
+              />
+              <button
+                type="submit"
+                disabled={buscandoGanador}
+                style={{
+                  backgroundColor: '#F2B233',
+                  color: '#071521',
+                  fontWeight: '700',
+                  fontSize: '15px',
+                  padding: '12px 20px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  cursor: buscandoGanador ? 'not-allowed' : 'pointer',
+                  opacity: buscandoGanador ? 0.6 : 1,
+                  fontFamily: 'Poppins, sans-serif',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {buscandoGanador ? 'Buscando...' : '🔍 Buscar'}
+              </button>
+            </form>
+
+            {/* Error de búsqueda */}
+            {errorBusqueda && (
+              <div style={{
+                backgroundColor: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.3)',
+                borderRadius: '12px',
+                padding: '12px 16px',
+                color: '#fca5a5',
+                fontSize: '14px',
+                marginBottom: '16px'
+              }}>
+                {errorBusqueda}
+              </div>
+            )}
+
+            {/* Resultado — Ganador encontrado */}
+            {ganadorEncontrado && (
+              <div style={{
+                backgroundColor: 'rgba(34,197,94,0.05)',
+                border: '1.5px solid rgba(34,197,94,0.3)',
+                borderRadius: '16px',
+                padding: '20px'
+              }}>
+
+                {/* Header ganador */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  marginBottom: '16px'
+                }}>
+                  <span style={{ fontSize: '36px' }}>🏆</span>
+                  <div>
+                    <p style={{
+                      color: '#22C55E',
+                      fontWeight: '800',
+                      fontSize: '20px',
+                      margin: '0 0 2px'
+                    }}>
+                      {ganadorEncontrado.nombre}
+                    </p>
+                    <p style={{
+                      color: 'rgba(248,250,252,0.6)',
+                      fontSize: '13px',
+                      margin: 0
+                    }}>
+                      Número ganador:
+                      <strong style={{ color: '#F2B233', marginLeft: '6px' }}>
+                        {numeroGanador}
+                      </strong>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Datos del ganador */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '8px',
+                  marginBottom: '16px'
+                }}>
+                  {[
+                    { label: 'Cédula', value: ganadorEncontrado.cedula },
+                    { label: 'Email', value: ganadorEncontrado.email },
+                    { label: 'Teléfono', value: ganadorEncontrado.telefono },
+                    { label: 'Ciudad', value: ganadorEncontrado.ciudad },
+                    { label: 'Tickets comprados', value: ganadorEncontrado.cantidad_boletos },
+                    { label: 'Total pagado', value: '$ ' + Number(ganadorEncontrado.total_pagado).toLocaleString('es-CO') }
+                  ].map((item, i) => (
+                    <div key={i} style={{
+                      backgroundColor: 'rgba(255,255,255,0.04)',
+                      borderRadius: '8px',
+                      padding: '8px 12px'
+                    }}>
+                      <p style={{
+                        color: 'rgba(248,250,252,0.4)',
+                        fontSize: '11px',
+                        margin: '0 0 2px',
+                        fontWeight: '600'
+                      }}>
+                        {item.label}
+                      </p>
+                      <p style={{
+                        color: '#F8FAFC',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        margin: 0
+                      }}>
+                        {item.value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Todos los números del ganador */}
+                {boletosGanador.length > 0 && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <p style={{
+                      color: 'rgba(248,250,252,0.5)',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      margin: '0 0 8px'
+                    }}>
+                      Todos sus números ({boletosGanador.length}):
+                    </p>
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '6px'
+                    }}>
+                      {boletosGanador.map((b, i) => (
+                        <span key={i} style={{
+                          backgroundColor: b.numero === numeroGanador
+                            ? '#F2B233'
+                            : '#0B1F33',
+                          border: b.numero === numeroGanador
+                            ? '2px solid #F2B233'
+                            : '1.5px solid rgba(242,178,51,0.3)',
+                          borderRadius: '6px',
+                          padding: '3px 8px',
+                          color: b.numero === numeroGanador
+                            ? '#071521'
+                            : '#F2B233',
+                          fontSize: '13px',
+                          fontWeight: '700'
+                        }}>
+                          {b.numero}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mensaje resultado notificación */}
+                {mensajeNotificacion && (
+                  <div style={{
+                    backgroundColor: mensajeNotificacion.includes('✅')
+                      ? 'rgba(34,197,94,0.1)'
+                      : 'rgba(239,68,68,0.1)',
+                    border: `1px solid ${mensajeNotificacion.includes('✅') ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                    borderRadius: '10px',
+                    padding: '10px 14px',
+                    color: mensajeNotificacion.includes('✅') ? '#22C55E' : '#f87171',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    textAlign: 'center',
+                    marginBottom: '12px'
+                  }}>
+                    {mensajeNotificacion}
+                  </div>
+                )}
+
+                {/* Botón notificar */}
                 <button
-                  disabled
-                  className="px-6 py-3 bg-zinc-700 text-zinc-500 rounded-lg cursor-not-allowed"
+                  onClick={() => setModalConfirmacion(true)}
+                  disabled={notificando || mensajeNotificacion.includes('✅')}
+                  style={{
+                    width: '100%',
+                    background: mensajeNotificacion.includes('✅')
+                      ? 'rgba(34,197,94,0.3)'
+                      : 'linear-gradient(135deg, #22C55E, #16a34a)',
+                    color: 'white',
+                    fontWeight: '800',
+                    fontSize: '16px',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    cursor: mensajeNotificacion.includes('✅') || notificando
+                      ? 'not-allowed'
+                      : 'pointer',
+                    fontFamily: 'Poppins, sans-serif'
+                  }}
                 >
-                  🎰 RIFA FINALIZADA
+                  {mensajeNotificacion.includes('✅')
+                    ? '✅ Ganador notificado'
+                    : '🏆 Notificar ganador por email'}
                 </button>
               </div>
-            ) : !listo ? (
-              <div className="flex flex-col gap-4">
-                <p className="text-amber-400">
-                  Aún no se alcanza el 80% requerido para realizar el sorteo.
-                </p>
-                <button
-                  disabled
-                  className="px-6 py-3 bg-zinc-700 text-zinc-500 rounded-lg cursor-not-allowed"
+            )}
+
+            {premiosAnticipados.length > 0 && (
+              <div style={{ marginTop: "16px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    marginBottom: "12px",
+                  }}
                 >
-                  🎰 REALIZAR SORTEO
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                <button
-                  onClick={handleRealizarSorteo}
-                  disabled={sorteando}
-                  className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {sorteando ? "Sorteando..." : "🎰 REALIZAR SORTEO"}
-                </button>
+                  <span style={{ fontSize: "20px" }}>🎁</span>
+                  <div>
+                    <p
+                      style={{
+                        color: "#F8FAFC",
+                        fontWeight: "700",
+                        fontSize: "16px",
+                        margin: 0,
+                      }}
+                    >
+                      Premios anticipados
+                    </p>
+                    <p
+                      style={{
+                        color: "rgba(248,250,252,0.4)",
+                        fontSize: "12px",
+                        margin: 0,
+                      }}
+                    >
+                      Busca el número ganador de cada premio
+                    </p>
+                  </div>
+                </div>
+
+                {premiosAnticipados.map((premio, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      backgroundColor: "#1a1a1a",
+                      border: "1px solid rgba(242,178,51,0.2)",
+                      borderRadius: "14px",
+                      padding: "16px",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    {/* Header del premio */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      {premio.imagen_url ? (
+                        <img
+                          src={premio.imagen_url}
+                          alt={premio.monto}
+                          style={{
+                            width: "48px",
+                            height: "48px",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                            border: "1.5px solid rgba(242,178,51,0.3)",
+                            flexShrink: 0,
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: "48px",
+                            height: "48px",
+                            backgroundColor: "rgba(242,178,51,0.08)",
+                            borderRadius: "8px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "24px",
+                            flexShrink: 0,
+                          }}
+                        >
+                          🏆
+                        </div>
+                      )}
+                      <div>
+                        <p
+                          style={{
+                            color: "#F2B233",
+                            fontWeight: "700",
+                            fontSize: "15px",
+                            margin: "0 0 2px",
+                          }}
+                        >
+                          {premio.monto}
+                        </p>
+                        {premio.desc && (
+                          <p
+                            style={{
+                              color: "rgba(248,250,252,0.5)",
+                              fontSize: "12px",
+                              margin: 0,
+                            }}
+                          >
+                            {premio.desc}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Buscador del premio */}
+                    <form
+                      onSubmit={(e) => buscarGanadorPremio(e, i)}
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      <input
+                        type="text"
+                        placeholder="Número ganador..."
+                        value={busquedasPremios[i] || ""}
+                        onChange={(e) =>
+                          setBusquedasPremios((prev) => ({
+                            ...prev,
+                            [i]: e.target.value,
+                          }))
+                        }
+                        style={{
+                          flex: 1,
+                          backgroundColor: "#0a0a0a",
+                          border: "1.5px solid rgba(242,178,51,0.3)",
+                          borderRadius: "10px",
+                          color: "#F8FAFC",
+                          fontSize: "14px",
+                          padding: "10px 14px",
+                          outline: "none",
+                          fontFamily: "Poppins, sans-serif",
+                        }}
+                      />
+                      <button
+                        type="submit"
+                        disabled={busquedasPremios[`buscando_${i}`]}
+                        style={{
+                          backgroundColor: "#F2B233",
+                          color: "#071521",
+                          fontWeight: "700",
+                          fontSize: "13px",
+                          padding: "10px 14px",
+                          borderRadius: "10px",
+                          border: "none",
+                          cursor: "pointer",
+                          fontFamily: "Poppins, sans-serif",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {busquedasPremios[`buscando_${i}`] ? "..." : "🔍 Buscar"}
+                      </button>
+                    </form>
+
+                    {/* Mensaje error/éxito */}
+                    {mensajesPremios[i] && (
+                      <p
+                        style={{
+                          color: mensajesPremios[i].includes("✅")
+                            ? "#22C55E"
+                            : "#f87171",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          margin: "0 0 10px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {mensajesPremios[i]}
+                      </p>
+                    )}
+
+                    {/* Ganador encontrado */}
+                    {ganadoresPremios[i] && (
+                      <div
+                        style={{
+                          backgroundColor: "rgba(34,197,94,0.05)",
+                          border: "1px solid rgba(34,197,94,0.25)",
+                          borderRadius: "10px",
+                          padding: "12px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                            marginBottom: "8px",
+                          }}
+                        >
+                          <div>
+                            <p
+                              style={{
+                                color: "#22C55E",
+                                fontWeight: "700",
+                                fontSize: "15px",
+                                margin: "0 0 2px",
+                              }}
+                            >
+                              🏆 {ganadoresPremios[i].nombre}
+                            </p>
+                            <p
+                              style={{
+                                color: "rgba(248,250,252,0.5)",
+                                fontSize: "12px",
+                                margin: "0 0 2px",
+                              }}
+                            >
+                              {ganadoresPremios[i].email}
+                            </p>
+                            <p
+                              style={{
+                                color: "rgba(248,250,252,0.4)",
+                                fontSize: "11px",
+                                margin: 0,
+                              }}
+                            >
+                              CC: {ganadoresPremios[i].cedula} · 📱{" "}
+                              {ganadoresPremios[i].telefono}
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => notificarGanadorPremio(i)}
+                          disabled={
+                            notificandoPremio === i ||
+                            mensajesPremios[i]?.includes("✅")
+                          }
+                          style={{
+                            width: "100%",
+                            background: mensajesPremios[i]?.includes("✅")
+                              ? "rgba(34,197,94,0.3)"
+                              : "linear-gradient(135deg, #22C55E, #16a34a)",
+                            color: "white",
+                            fontWeight: "700",
+                            fontSize: "14px",
+                            padding: "10px",
+                            borderRadius: "10px",
+                            border: "none",
+                            cursor:
+                              mensajesPremios[i]?.includes("✅") ||
+                              notificandoPremio === i
+                                ? "not-allowed"
+                                : "pointer",
+                            fontFamily: "Poppins, sans-serif",
+                          }}
+                        >
+                          {notificandoPremio === i
+                            ? "Enviando..."
+                            : mensajesPremios[i]?.includes("✅")
+                              ? "✅ Notificado"
+                              : "📧 Notificar ganador"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
         </>
+      )}
+
+      {/* Modal de confirmación */}
+      {modalConfirmacion && ganadorEncontrado && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.85)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}>
+          <div style={{
+            backgroundColor: '#1a1a1a',
+            border: '1.5px solid rgba(34,197,94,0.4)',
+            borderRadius: '20px',
+            padding: '28px 24px',
+            width: '100%',
+            maxWidth: '420px'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+              <span style={{ fontSize: '48px' }}>🏆</span>
+            </div>
+            <h2 style={{
+              color: '#F8FAFC',
+              fontSize: '20px',
+              fontWeight: '800',
+              textAlign: 'center',
+              margin: '0 0 16px'
+            }}>
+              ¿Confirmar ganador?
+            </h2>
+            <div style={{
+              backgroundColor: 'rgba(34,197,94,0.08)',
+              border: '1px solid rgba(34,197,94,0.2)',
+              borderRadius: '12px',
+              padding: '14px',
+              marginBottom: '16px',
+              textAlign: 'center'
+            }}>
+              <p style={{
+                color: '#22C55E',
+                fontWeight: '700',
+                fontSize: '18px',
+                margin: '0 0 4px'
+              }}>
+                {ganadorEncontrado.nombre}
+              </p>
+              <p style={{
+                color: 'rgba(248,250,252,0.6)',
+                fontSize: '13px',
+                margin: '0 0 2px'
+              }}>
+                {ganadorEncontrado.email}
+              </p>
+              <p style={{
+                color: '#F2B233',
+                fontSize: '14px',
+                fontWeight: '700',
+                margin: 0
+              }}>
+                Número ganador: {numeroGanador}
+              </p>
+            </div>
+            <p style={{
+              color: 'rgba(248,250,252,0.5)',
+              fontSize: '13px',
+              textAlign: 'center',
+              margin: '0 0 20px'
+            }}>
+              Se enviará un email de notificación al ganador.
+              Esta acción no se puede deshacer.
+            </p>
+            <button
+              onClick={notificarGanador}
+              disabled={notificando}
+              style={{
+                width: '100%',
+                background: notificando
+                  ? 'rgba(34,197,94,0.4)'
+                  : 'linear-gradient(135deg, #22C55E, #16a34a)',
+                color: 'white',
+                fontWeight: '800',
+                fontSize: '16px',
+                padding: '14px',
+                borderRadius: '12px',
+                border: 'none',
+                cursor: notificando ? 'not-allowed' : 'pointer',
+                marginBottom: '10px',
+                fontFamily: 'Poppins, sans-serif'
+              }}
+            >
+              {notificando ? 'Enviando...' : '✅ Sí, notificar ganador'}
+            </button>
+            <button
+              onClick={() => setModalConfirmacion(false)}
+              style={{
+                width: '100%',
+                backgroundColor: 'transparent',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: '12px',
+                color: 'rgba(248,250,252,0.5)',
+                fontSize: '14px',
+                padding: '12px',
+                cursor: 'pointer',
+                fontFamily: 'Poppins, sans-serif'
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
       )}
 
       {sorteando && (

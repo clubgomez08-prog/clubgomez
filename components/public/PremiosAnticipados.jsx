@@ -4,14 +4,14 @@ export default function PremiosAnticipados({ premios }) {
   if (!premios || !Array.isArray(premios) || premios.length === 0) return null;
 
   function parsePremio(premio) {
-    if (typeof premio === "string") return { monto: premio, desc: "" };
-    if (typeof premio === "object" && premio !== null) {
-      return {
-        monto: premio.monto ?? premio.monto_cop ?? premio.nombre ?? JSON.stringify(premio),
-        desc: premio.desc ?? premio.descripcion ?? "",
-      };
+    if (typeof premio === "string") {
+      return { monto: premio, desc: "", imagen_url: "" };
     }
-    return { monto: String(premio), desc: "" };
+    return {
+      monto: premio.monto ?? premio.monto_cop ?? premio.nombre ?? "",
+      desc: premio.desc ?? premio.descripcion ?? "",
+      imagen_url: premio.imagen_url ?? "",
+    };
   }
 
   return (
@@ -22,7 +22,8 @@ export default function PremiosAnticipados({ premios }) {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {premios.map((premio, i) => {
-            const { monto, desc } = parsePremio(premio);
+            const parsed = parsePremio(premio);
+            const { monto, desc, imagen_url } = parsed;
             return (
               <div
                 key={i}
@@ -36,6 +37,21 @@ export default function PremiosAnticipados({ premios }) {
                   fontSize: "15px",
                 }}
               >
+                {imagen_url && (
+                  <img
+                    src={imagen_url}
+                    alt={monto}
+                    style={{
+                      width: "56px",
+                      height: "56px",
+                      objectFit: "cover",
+                      borderRadius: "10px",
+                      border: "1.5px solid rgba(242,178,51,0.4)",
+                      display: "block",
+                      margin: "0 auto 8px",
+                    }}
+                  />
+                )}
                 <p>{monto}</p>
                 {desc && <p style={{ fontSize: "13px", marginTop: "4px" }}>{desc}</p>}
               </div>

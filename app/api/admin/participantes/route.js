@@ -26,9 +26,18 @@ export async function GET(request) {
 
   if (buscar) {
     const term = `%${buscar}%`;
-    query = query.or(
-      `nombre.ilike.${term},email.ilike.${term},cedula.ilike.${term}`
-    );
+    let orClause = `nombre.ilike.${term},email.ilike.${term},cedula.ilike.${term}`;
+
+    // Agregar búsqueda por número de boleto
+    const { data: boletosMatch } = await supabaseAdmin
+      .from("boletos")
+      .select("participante_id")
+      .ilike("numero", term);
+    const participanteIds = [...new Set((boletosMatch || []).map((b) => b.participante_id).filter(Boolean))];
+    if (participanteIds.length > 0) {
+      orClause += `,id.in.(${participanteIds.join(",")})`;
+    }
+    query = query.or(orClause);
   }
 
   if (exportar) {
