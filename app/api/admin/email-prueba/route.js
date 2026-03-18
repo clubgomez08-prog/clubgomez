@@ -38,7 +38,7 @@ export async function POST(request) {
     );
 
     const { data, error } = await resend.emails.send({
-      from: "RIFEX <onboarding@resend.dev>",
+      from: "RIFEX <info@rifex.app>",
       to: [emailDestino],
       subject: `🏆 [PRUEBA] RIFEX — Notificación de ganador: ${nombreRifa || "Sorteo de prueba"}`,
       html: htmlEmail,

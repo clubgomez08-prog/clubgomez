@@ -61,11 +61,11 @@ export async function POST(request) {
         },
         external_reference: participante_id,
         back_urls: {
-          success: `${process.env.NEXT_PUBLIC_APP_URL || 'https://rifas-sistema.vercel.app'}/confirmacion?participante=${participante_id}`,
-          failure: `${process.env.NEXT_PUBLIC_APP_URL || 'https://rifas-sistema.vercel.app'}/formulario`,
-          pending: `${process.env.NEXT_PUBLIC_APP_URL || 'https://rifas-sistema.vercel.app'}/confirmacion?participante=${participante_id}`
+          success: `${process.env.NEXT_PUBLIC_APP_URL || 'https://rifex.app'}/confirmacion?participante=${participante_id}`,
+          failure: `${process.env.NEXT_PUBLIC_APP_URL || 'https://rifex.app'}/formulario`,
+          pending: `${process.env.NEXT_PUBLIC_APP_URL || 'https://rifex.app'}/confirmacion?participante=${participante_id}`
         },
-        notification_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://rifas-sistema.vercel.app'}/api/webhooks/mercadopago`,
+        notification_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://rifex.app'}/api/webhooks/mercadopago`,
         auto_return: 'approved'
       }
     })
