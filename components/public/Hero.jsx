@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { esUrlVideo } from "@/lib/esUrlVideo";
 
-/** MP4 en rifas-sistema/public/ (antes: "RIFEX VIDEO 1 .mp4" con espacio antes de .mp4 → 404 si la ruta no coincide). */
-const VIDEO_PUBLIC_RIFEX = "/rifex-premio.mp4";
+/** Video hero (Cloudinary .mov) cuando HERO_VIDEO_FORZAR_SOLO_PUBLIC o fallback por defecto. */
+const VIDEO_PUBLIC_RIFEX =
+  "https://res.cloudinary.com/dmmnaypmc/video/upload/v1774416287/RIFEX_VIDEO_1_f69so4.mov";
 
 /**
  * TEMPORAL (extraoficial): en true ignora video_url del panel y siempre muestra el MP4 de /public.
