@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import Hero from "@/components/public/Hero";
 import PaquetesBoletos, { PAQUETES } from "@/components/public/PaquetesBoletos";
 import PremiosAnticipados from "@/components/public/PremiosAnticipados";
+import NumeroBendecido from "@/components/public/NumeroBendecido";
+import ReenviarCodigos from "@/components/public/ReenviarCodigos";
 
 const comprasEnVivo = [
   { nombre: "Carlos M.", cantidad: 10, tiempo: "hace 2 min" },
@@ -368,6 +370,8 @@ export default function LandingPage() {
         convertirPrecio={convertirPrecio}
         cargandoTasas={cargandoTasas}
       />
+      <NumeroBendecido />
+      <ReenviarCodigos />
       </div>
     </main>
   );

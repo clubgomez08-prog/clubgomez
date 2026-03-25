@@ -20,12 +20,7 @@ function FormularioContent() {
     ciudad: ''
   })
   const [mostrarTerminos, setMostrarTerminos] = useState(false)
-  const [checks, setChecks] = useState({
-    mayorEdad: false,
-    terminos: false,
-    sorteoLegal: false,
-    noReembolso: false
-  })
+  const [confirmoMayorEdad, setConfirmoMayorEdad] = useState(false)
   const [initPoint, setInitPoint] = useState('')
 
   const handleChange = (e) => {
@@ -99,14 +94,8 @@ function FormularioContent() {
     }
   }
 
-  const handleCheck = (key) => {
-    setChecks(prev => ({ ...prev, [key]: !prev[key] }))
-  }
-
-  const todosAceptados = Object.values(checks).every(v => v === true)
-
   const handleAceptar = () => {
-    if (todosAceptados) {
+    if (confirmoMayorEdad) {
       window.location.href = initPoint
     }
   }
@@ -201,8 +190,8 @@ function FormularioContent() {
               </p>
               <p style={{ marginBottom: '10px' }}>
                 Cada ticket otorga una oportunidad de participación en el sorteo.
-                Los tickets son personales e intransferibles. El número asignado
-                será enviado al correo electrónico registrado una vez confirmado el pago.
+                Los tickets son personales e intransferibles. Los números asignados
+                serán enviados al correo electrónico registrado una vez confirmado el pago.
               </p>
 
               <p style={{ fontWeight: '700', color: '#F2B233', marginBottom: '8px' }}>
@@ -228,10 +217,11 @@ function FormularioContent() {
                 5. Realización del sorteo
               </p>
               <p style={{ marginBottom: '10px' }}>
-                El sorteo se realizará en transmisión en vivo a través de los canales
-                oficiales de RIFEX en la fecha anunciada. El resultado es definitivo,
-                público y verificable. RIFEX se reserva el derecho de modificar la
-                fecha del sorteo por causas de fuerza mayor.
+                El número ganador se determina usando el resultado de una lotería oficial,
+                la cual será anunciada previamente a los participantes. Se toman los 4 dígitos
+                principales del número ganador y los 2 últimos dígitos del serial, formando
+                así el número ganador RIFEX en formato 0000-00. El resultado es definitivo,
+                público y verificable.
               </p>
 
               <p style={{ fontWeight: '700', color: '#F2B233', marginBottom: '8px' }}>
@@ -254,80 +244,81 @@ function FormularioContent() {
               </p>
             </div>
 
-            {/* Checkboxes */}
+            {/* Checkbox mayoría de edad */}
             <div style={{ marginBottom: '20px' }}>
-              {[
-                { key: 'mayorEdad', texto: 'Confirmo que soy mayor de 18 años' },
-                { key: 'terminos', texto: 'He leído y acepto los Términos y Condiciones de RIFEX' },
-                { key: 'sorteoLegal', texto: 'Entiendo que el sorteo es en vivo y el resultado es definitivo' },
-                { key: 'noReembolso', texto: 'Acepto que no aplican reembolsos una vez procesado el pago' }
-              ].map(({ key, texto }) => (
-                <div
-                  key={key}
-                  onClick={() => handleCheck(key)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '12px',
-                    padding: '12px',
-                    marginBottom: '8px',
-                    backgroundColor: checks[key]
-                      ? 'rgba(34,197,94,0.1)'
-                      : 'rgba(255,255,255,0.04)',
-                    border: checks[key]
-                      ? '1.5px solid rgba(34,197,94,0.5)'
-                      : '1.5px solid rgba(255,255,255,0.1)',
-                    borderRadius: '10px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <div style={{
-                    width: '22px',
-                    height: '22px',
-                    minWidth: '22px',
-                    borderRadius: '6px',
-                    backgroundColor: checks[key] ? '#22C55E' : 'transparent',
-                    border: checks[key]
-                      ? '2px solid #22C55E'
-                      : '2px solid rgba(248,250,252,0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginTop: '1px'
-                  }}>
-                    {checks[key] && (
-                      <span style={{ color: 'white', fontSize: '14px', fontWeight: '800' }}>✓</span>
-                    )}
-                  </div>
-                  <span style={{
-                    color: checks[key] ? '#F8FAFC' : 'rgba(248,250,252,0.6)',
-                    fontSize: '13px',
-                    lineHeight: '1.4'
-                  }}>
-                    {texto}
-                  </span>
+              <div
+                role="checkbox"
+                tabIndex={0}
+                aria-checked={confirmoMayorEdad}
+                onClick={() => setConfirmoMayorEdad((v) => !v)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setConfirmoMayorEdad((v) => !v)
+                  }
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px',
+                  padding: '12px',
+                  marginBottom: '8px',
+                  backgroundColor: confirmoMayorEdad
+                    ? 'rgba(34,197,94,0.1)'
+                    : 'rgba(255,255,255,0.04)',
+                  border: confirmoMayorEdad
+                    ? '1.5px solid rgba(34,197,94,0.5)'
+                    : '1.5px solid rgba(255,255,255,0.1)',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <div style={{
+                  width: '22px',
+                  height: '22px',
+                  minWidth: '22px',
+                  borderRadius: '6px',
+                  backgroundColor: confirmoMayorEdad ? '#22C55E' : 'transparent',
+                  border: confirmoMayorEdad
+                    ? '2px solid #22C55E'
+                    : '2px solid rgba(248,250,252,0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginTop: '1px'
+                }}>
+                  {confirmoMayorEdad && (
+                    <span style={{ color: 'white', fontSize: '14px', fontWeight: '800' }}>✓</span>
+                  )}
                 </div>
-              ))}
+                <span style={{
+                  color: confirmoMayorEdad ? '#F8FAFC' : 'rgba(248,250,252,0.6)',
+                  fontSize: '13px',
+                  lineHeight: '1.4'
+                }}>
+                  Confirmo que soy mayor de 18 años
+                </span>
+              </div>
             </div>
 
             {/* Botones */}
             <button
               onClick={handleAceptar}
-              disabled={!todosAceptados}
+              disabled={!confirmoMayorEdad}
               style={{
                 width: '100%',
-                background: todosAceptados
+                background: confirmoMayorEdad
                   ? 'linear-gradient(135deg, #22C55E 0%, #16a34a 100%)'
                   : 'rgba(255,255,255,0.1)',
-                color: todosAceptados ? 'white' : 'rgba(255,255,255,0.3)',
+                color: confirmoMayorEdad ? 'white' : 'rgba(255,255,255,0.3)',
                 fontWeight: '800',
                 fontSize: '17px',
                 padding: '18px',
                 borderRadius: '14px',
                 border: 'none',
-                cursor: todosAceptados ? 'pointer' : 'not-allowed',
-                boxShadow: todosAceptados
+                cursor: confirmoMayorEdad ? 'pointer' : 'not-allowed',
+                boxShadow: confirmoMayorEdad
                   ? '0 4px 20px rgba(34,197,94,0.4)'
                   : 'none',
                 marginBottom: '10px',
@@ -335,7 +326,7 @@ function FormularioContent() {
                 transition: 'all 0.3s ease'
               }}
             >
-              {todosAceptados ? 'Aceptar e ir a pagar →' : 'Acepta todas las condiciones'}
+              {confirmoMayorEdad ? 'Aceptar e ir a pagar →' : 'Acepta todas las condiciones'}
             </button>
 
             <button
