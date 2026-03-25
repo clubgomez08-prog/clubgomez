@@ -1,7 +1,27 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import styles from "./inicio.module.css";
 
 export default function InicioPage() {
+  const [imgBannerIzq, setImgBannerIzq] = useState(null);
+  const [imgBannerDer, setImgBannerDer] = useState(null);
+
+  useEffect(() => {
+    supabaseBrowser
+      .from("configuracion")
+      .select("imagen_banner_izquierda, imagen_banner_derecha")
+      .eq("id", "global")
+      .single()
+      .then(({ data, error }) => {
+        if (error || !data) return;
+        setImgBannerIzq(data.imagen_banner_izquierda || null);
+        setImgBannerDer(data.imagen_banner_derecha || null);
+      });
+  }, []);
+
   return (
     <div
       className={styles.desktopRoot}
@@ -112,9 +132,9 @@ export default function InicioPage() {
             textShadow: "0 0 8px rgba(255,255,255,0.6), 0 0 16px rgba(255,255,255,0.35)",
           }}
         >
-          <img src="/moto.png" alt="Moto" style={{ width: "120px", height: "120px", objectFit: "contain", display: "block" }} />
+          <img src={imgBannerIzq || "/moto.png"} alt="Moto" style={{ width: "120px", height: "120px", objectFit: "contain", display: "block" }} />
           Sorteo abierto
-          <img src="/carro.png" alt="Carro" style={{ width: "120px", height: "120px", objectFit: "contain", display: "block" }} />
+          <img src={imgBannerDer || "/carro.png"} alt="Carro" style={{ width: "120px", height: "120px", objectFit: "contain", display: "block" }} />
         </Link>
 
         {/* Botón Comprar tickets */}

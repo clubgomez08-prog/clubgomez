@@ -7,6 +7,7 @@ import { signOut } from "@/lib/auth";
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: "📊" },
   { href: "/admin/rifas", label: "Rifas", icon: "🎯" },
+  { href: "/admin/landing", label: "Landing", icon: "🖼️" },
   { href: "/admin/participantes", label: "Participantes", icon: "👥" },
   { href: "/admin/sorteo", label: "Sorteo", icon: "🏆" },
 ];
