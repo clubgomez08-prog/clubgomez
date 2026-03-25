@@ -55,7 +55,8 @@ export async function POST(request) {
         const data = await enviarTicketCompra(
           participanteCompradorPrueba,
           rifaCompradorPrueba,
-          numerosCompradorPrueba
+          numerosCompradorPrueba,
+          { useParticipantEmail: true }
         );
         return NextResponse.json({
           success: true,
