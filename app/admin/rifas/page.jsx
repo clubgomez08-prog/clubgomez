@@ -23,7 +23,7 @@ export default function RifasPage() {
 
   function loadRifas() {
     setLoading(true);
-    fetch("/api/rifas")
+    fetch("/api/rifas", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         setRifas(Array.isArray(data) ? data : []);

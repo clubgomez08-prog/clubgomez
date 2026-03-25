@@ -16,9 +16,11 @@ function ConfirmacionContent() {
 
   useEffect(() => {
     if (!participanteId) {
-      setError("No se especificó participante");
-      setLoading(false);
-      return;
+      const timer = setTimeout(() => {
+        setError("No se especificó participante");
+        setLoading(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
     fetch(`/api/participantes/${participanteId}`)

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import Hero from "@/components/public/Hero";
-import PaquetesBoletos from "@/components/public/PaquetesBoletos";
+import PaquetesBoletos, { PAQUETES } from "@/components/public/PaquetesBoletos";
 import PremiosAnticipados from "@/components/public/PremiosAnticipados";
 
 const comprasEnVivo = [
@@ -15,6 +16,7 @@ const comprasEnVivo = [
 ];
 
 export default function LandingPage() {
+  const searchParams = useSearchParams();
   const [rifas, setRifas] = useState([]);
   const [rifaActual, setRifaActual] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -34,24 +36,37 @@ export default function LandingPage() {
   } : null;
 
   useEffect(() => {
-    const rifaId = typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("rifa")
-      : null;
-
-    fetch("/api/rifas")
+    fetch("/api/rifas", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
+        const rifaId = new URLSearchParams(window.location.search).get("rifa");
         const todas = Array.isArray(data) ? data : [];
+        const norm = (id) => String(id ?? "").trim().toLowerCase();
+        const rid = rifaId ? norm(rifaId) : "";
+
         const activas = todas
           .filter((r) => r.estado === "activa" || !r.estado)
           .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-        const lista = activas.length > 0 ? activas : todas;
+        let lista = activas.length > 0 ? activas : todas;
 
-        setRifas(lista);
-        if (rifaId && lista.length > 0) {
-          const idx = lista.findIndex((r) => r.id === rifaId);
-          setRifaActual(idx >= 0 ? idx : 0);
+        if (rid) {
+          let idx = lista.findIndex((r) => norm(r.id) === rid);
+          if (idx < 0) {
+            const pedida = todas.find((r) => norm(r.id) === rid);
+            if (pedida) {
+              lista = [
+                pedida,
+                ...lista.filter((r) => norm(r.id) !== rid),
+              ];
+              idx = 0;
+            } else {
+              idx = 0;
+            }
+          }
+          setRifas(lista);
+          setRifaActual(idx);
         } else {
+          setRifas(lista);
           setRifaActual(0);
         }
       })
@@ -59,13 +74,22 @@ export default function LandingPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (rifas.length === 0) return;
+    const rid = searchParams.get("rifa");
+    if (!rid) return;
+    const norm = (id) => String(id ?? "").trim().toLowerCase();
+    const idx = rifas.findIndex((r) => norm(r.id) === norm(rid));
+    if (idx >= 0) setRifaActual(idx);
+  }, [rifas, searchParams]);
+
   const irAnterior = () =>
     setRifaActual((prev) => (prev === 0 ? rifas.length - 1 : prev - 1));
   const irSiguiente = () =>
     setRifaActual((prev) => (prev === rifas.length - 1 ? 0 : prev + 1));
 
   useEffect(() => {
-    setSelectedPackage(5);
+    setSelectedPackage(PAQUETES[0]);
   }, [rifaActual]);
 
   useEffect(() => {

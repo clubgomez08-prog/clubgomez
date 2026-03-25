@@ -1,3 +1,4 @@
+import Link from "next/link";
 import styles from "./inicio.module.css";
 
 export default function InicioPage() {
@@ -88,7 +89,7 @@ export default function InicioPage() {
         </div>
 
         {/* Botón Sorteo abierto */}
-        <a
+        <Link
           href="/"
           className={styles.sorteoAbiertoBtn}
           style={{
@@ -101,7 +102,7 @@ export default function InicioPage() {
             color: "#ffffff",
             fontWeight: "700",
             fontSize: "20px",
-            padding: "8px 16px",
+            padding: "2px 16px",
             borderRadius: "14px",
             textAlign: "center",
             marginBottom: "12px",
@@ -111,13 +112,13 @@ export default function InicioPage() {
             textShadow: "0 0 8px rgba(255,255,255,0.6), 0 0 16px rgba(255,255,255,0.35)",
           }}
         >
-          <img src="/iPhone%2017.PNG" alt="" style={{ width: "88px", height: "88px", objectFit: "contain" }} />
+          <img src="/moto.png" alt="Moto" style={{ width: "120px", height: "120px", objectFit: "contain", display: "block" }} />
           Sorteo abierto
-          <img src="/iPhone%2017.PNG" alt="" style={{ width: "88px", height: "88px", objectFit: "contain" }} />
-        </a>
+          <img src="/carro.png" alt="Carro" style={{ width: "120px", height: "120px", objectFit: "contain", display: "block" }} />
+        </Link>
 
         {/* Botón Comprar tickets */}
-        <a
+        <Link
           href="/"
           style={{
             display: "block",
@@ -136,7 +137,7 @@ export default function InicioPage() {
           }}
         >
           Comprar tickets
-        </a>
+        </Link>
 
         {/* Botón Verificar tus tickets */}
         <a

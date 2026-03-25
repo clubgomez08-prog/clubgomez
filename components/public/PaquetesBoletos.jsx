@@ -3,20 +3,19 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const PAQUETES = [10, 25, 50, 75, 100, 500];
+export const PAQUETES = [50, 100, 150, 200, 250, 500, 600, 850, 1000];
 const MIN_TICKETS = 1;
 const MAX_MANUAL = 10000;
 
 export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refProp, divisa, setDivisa, convertirPrecio, cargandoTasas }) {
   const router = useRouter();
-  if (!rifa) return null;
 
-  const total = rifa.total_numeros ?? 0;
-  const vendidos = rifa.boletos_vendidos ?? 0;
+  const total = rifa?.total_numeros ?? 0;
+  const vendidos = rifa?.boletos_vendidos ?? 0;
   const maxTickets = total > 0 ? Math.max(MIN_TICKETS, total - vendidos) : 10000;
   const maxManual = Math.min(maxTickets, MAX_MANUAL);
 
-  const precioUnit = rifa.precio_boleto ?? 0;
+  const precioUnit = rifa?.precio_boleto ?? 0;
   const cantidadActual = Math.max(MIN_TICKETS, Math.min(maxManual, selectedPackage ?? PAQUETES[0]));
   const montoTotal = cantidadActual * precioUnit;
 
@@ -57,6 +56,8 @@ export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refPr
     }
   }
 
+  if (!rifa) return null;
+
   return (
     <section ref={refProp} className="py-4 px-4 scroll-mt-20 overflow-visible rounded-2xl">
       <div className="max-w-2xl mx-auto">
@@ -75,7 +76,7 @@ export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refPr
                   position: "relative",
                 }}
               >
-                {cantidad === 100 && 100 <= maxManual && (
+                {cantidad === 200 && 200 <= maxManual && (
                   <div
                     style={{
                       position: "absolute",

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const { data: rifasData, error } = await supabaseAdmin
     .from("rifas")
@@ -40,6 +42,7 @@ export async function POST(request) {
     nombre: body.nombre,
     descripcion: body.descripcion ?? null,
     imagen_url: body.imagen_url ?? null,
+    video_url: body.video_url || "",
     imagenes_url: body.imagenes_url || [],
     precio_boleto: body.precio_boleto,
     total_numeros: body.total_numeros ?? 10000,

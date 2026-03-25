@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Link from 'next/link'
 import { supabaseBrowser } from '@/lib/supabase-browser'
 
 export default function MisTickets() {
@@ -400,13 +401,13 @@ export default function MisTickets() {
 
         {/* Volver y logo */}
         <div style={{ textAlign: 'center', marginTop: '16px', paddingBottom: '32px' }}>
-          <a href="/" style={{
+          <Link href="/" style={{
             color: 'rgba(248,250,252,0.4)',
             fontSize: '13px',
             textDecoration: 'none'
           }}>
             ← Volver al inicio
-          </a>
+          </Link>
           <img
             src="/logo_principal.png"
             alt="RIFEX"

@@ -1,16 +1,189 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { esUrlVideo } from "@/lib/esUrlVideo";
+
+/** MP4 en rifas-sistema/public/ (antes: "RIFEX VIDEO 1 .mp4" con espacio antes de .mp4 → 404 si la ruta no coincide). */
+const VIDEO_PUBLIC_RIFEX = "/rifex-premio.mp4";
+
+/**
+ * TEMPORAL (extraoficial): en true ignora video_url del panel y siempre muestra el MP4 de /public.
+ * Ponlo en false cuando el admin ya cargue bien la URL.
+ */
+const HERO_VIDEO_FORZAR_SOLO_PUBLIC = true;
+
+/** Por defecto el mismo MP4; opcional NEXT_PUBLIC_HERO_VIDEO_DEFAULT para otro archivo. */
+const VIDEO_LOCAL_DEFAULT =
+  typeof process !== "undefined" && process.env.NEXT_PUBLIC_HERO_VIDEO_DEFAULT
+    ? process.env.NEXT_PUBLIC_HERO_VIDEO_DEFAULT
+    : VIDEO_PUBLIC_RIFEX;
+
+function codificarSegmentosPathname(pathname) {
+  const segs = pathname.split("/").filter(Boolean);
+  if (segs.length === 0) return "";
+  return `/${segs
+    .map((seg) => {
+      try {
+        return encodeURIComponent(decodeURIComponent(seg));
+      } catch {
+        return encodeURIComponent(seg);
+      }
+    })
+    .join("/")}`;
+}
 
 export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertirPrecio }) {
   const [imagenActual, setImagenActual] = useState(0);
+  const localVideoRef = useRef(null);
+
+  function getYoutubeId(url) {
+    if (!url) return null;
+    const s = String(url).trim();
+    const shorts = s.match(/\/shorts\/([a-zA-Z0-9_-]{11})(?:\?|#|\/|$)/);
+    if (shorts) return shorts[1];
+    const embedded = s.match(/\/embed\/([a-zA-Z0-9_-]{11})(?:\?|#|$)/);
+    if (embedded) return embedded[1];
+    try {
+      const u = new URL(s.startsWith("http") ? s : `https://${s}`);
+      const v = u.searchParams.get("v");
+      if (v && /^[a-zA-Z0-9_-]{11}$/.test(v)) return v;
+      if (u.hostname === "youtu.be" || u.hostname.endsWith(".youtu.be")) {
+        const id = u.pathname.replace(/^\//, "").split(/[/?#]/)[0];
+        if (/^[a-zA-Z0-9_-]{11}$/.test(id)) return id;
+      }
+    } catch {
+      /* ignore */
+    }
+    const regExp =
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = s.match(regExp);
+    const id = match && match[2] ? match[2].split(/[?&]/)[0] : "";
+    return id.length === 11 ? id : null;
+  }
+
+  const esYoutube = (url) =>
+    url && (url.includes("youtube.com") || url.includes("youtu.be"));
+
+  /**
+   * Rutas a /public: acepta URL absoluta, "/video.mp4", "video.mp4",
+   * rutas Windows con .../public/... o "public/...".
+   * Codifica espacios y caracteres especiales en el path.
+   */
+  function normalizarSrcVideoLocal(url) {
+    if (!url || typeof url !== "string") return "";
+    let s = url
+      .trim()
+      .replace(/^["']|["']$/g, "")
+      .replace(/\\/g, "/");
+    if (!s) return "";
+    if (s.startsWith("file://")) s = s.replace(/^file:\/\//i, "");
+    if (
+      !/^https?:\/\//i.test(s) &&
+      /^[\w.-]+(:\d+)?\/.+/i.test(s)
+    ) {
+      s = `http://${s}`;
+    }
+    if (/^https?:\/\//i.test(s)) {
+      try {
+        const u = new URL(s);
+        const needsEncode =
+          /[ \u00A0]/.test(u.pathname) ||
+          /[^\u0020-\u007E]/.test(u.pathname);
+        if (needsEncode) {
+          u.pathname = codificarSegmentosPathname(u.pathname);
+        }
+        return u.toString();
+      } catch {
+        return s;
+      }
+    }
+
+    const lower = s.toLowerCase();
+    const pub = "/public/";
+    const i = lower.lastIndexOf(pub);
+    if (i !== -1) s = s.slice(i + pub.length);
+
+    if (s.toLowerCase().startsWith("public/")) s = s.slice(7);
+
+    let path = s.startsWith("/") ? s : `/${s}`;
+    path = path.replace(/\/+/g, "/");
+    return codificarSegmentosPathname(path);
+  }
+
+  const todasImagenes = rifa
+    ? [
+        ...(rifa.imagen_url ? [rifa.imagen_url] : []),
+        ...(Array.isArray(rifa.imagenes_url) ? rifa.imagenes_url : []),
+      ].filter(Boolean)
+    : [];
+
+  const videoUrlRaw = (() => {
+    const v = rifa?.video_url;
+    if (v == null || v === "") return null;
+    const t = String(v).trim();
+    return t || null;
+  })();
+  const videoUrlFromAdmin =
+    videoUrlRaw && rifa
+      ? esYoutube(videoUrlRaw)
+        ? videoUrlRaw
+        : normalizarSrcVideoLocal(videoUrlRaw)
+      : null;
+
+  const videoUrl = rifa
+    ? HERO_VIDEO_FORZAR_SOLO_PUBLIC
+      ? VIDEO_PUBLIC_RIFEX
+      : videoUrlFromAdmin ||
+        (!videoUrlRaw ? VIDEO_LOCAL_DEFAULT : null)
+    : null;
+
+  const todosLosSlides = rifa
+    ? [
+        ...(videoUrl ? [{ tipo: "video", url: videoUrl }] : []),
+        ...todasImagenes.map((url) => ({ tipo: "imagen", url })),
+      ]
+    : [];
+
+  useEffect(() => {
+    if (!rifa?.id) return;
+    const timer = setTimeout(() => {
+      setImagenActual(0);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [rifa?.id]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setImagenActual((i) =>
+        todosLosSlides.length === 0
+          ? 0
+          : Math.min(i, todosLosSlides.length - 1)
+      );
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [todosLosSlides.length]);
+
+  const slideActual =
+    rifa && todosLosSlides.length > 0
+      ? todosLosSlides[imagenActual]
+      : undefined;
+
+  const urlVideoArchivo =
+    slideActual?.tipo === "video" &&
+    slideActual.url &&
+    !esYoutube(slideActual.url)
+      ? slideActual.url
+      : "";
+
+  useEffect(() => {
+    const el = localVideoRef.current;
+    if (!el || !urlVideoArchivo) return;
+    el.muted = true;
+    const p = el.play();
+    if (p && typeof p.catch === "function") p.catch(() => {});
+  }, [imagenActual, urlVideoArchivo]);
 
   if (!rifa) return null;
-
-  const todasImagenes = [
-    ...(rifa?.imagen_url ? [rifa.imagen_url] : []),
-    ...(Array.isArray(rifa?.imagenes_url) ? rifa.imagenes_url : []),
-  ].filter(Boolean);
 
   const precio = rifa.precio_boleto ?? 0;
   const total = rifa.total_numeros ?? 10000;
@@ -33,10 +206,6 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
     return new Intl.NumberFormat("es-CO").format(n);
   }
 
-  // Variable reservada para uso futuro — no eliminar
-  const porcentajeNum = total > 0 ? Number(((vendidos / total) * 100).toFixed(1)) : 0;
-  const displayVendidos = 8999;
-  const displayTotal = 10000;
   const displayPct = 89.99;
 
   return (
@@ -44,28 +213,116 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
       <div className="relative flex flex-col items-center justify-start px-4 pt-4 pb-3">
         <div className="relative max-w-4xl w-full mx-auto text-center">
           <div style={{ position: "relative", width: "100%" }} className="max-w-sm md:max-w-lg mx-auto mb-3">
-            {todasImagenes.length > 0 && (
-              <img
-                src={todasImagenes[imagenActual]}
-                alt={rifa?.nombre}
-                style={{
-                  width: "100%",
-                  height: "auto",
-                  objectFit: "cover",
-                  borderRadius: "16px",
-                  border: "2px solid rgba(242,178,51,0.5)",
-                  boxShadow: "0 0 24px rgba(242,178,51,0.2)",
-                  display: "block",
-                }}
-              />
-            )}
+            {todosLosSlides.length > 0 &&
+              (slideActual?.tipo === "video" ? (
+                esYoutube(slideActual.url) && getYoutubeId(slideActual.url) ? (
+                  <div
+                    key={slideActual.url}
+                    style={{
+                      width: "100%",
+                      borderRadius: "16px",
+                      overflow: "hidden",
+                      border: "2px solid rgba(242,178,51,0.5)",
+                      boxShadow: "0 0 24px rgba(242,178,51,0.2)",
+                      position: "relative",
+                      paddingBottom: "56.25%",
+                      height: 0,
+                    }}
+                  >
+                    <iframe
+                      src={`https://www.youtube.com/embed/${getYoutubeId(slideActual.url)}?autoplay=1&mute=1&loop=1&playlist=${getYoutubeId(slideActual.url)}&controls=0&disablekb=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0`}
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: "100%",
+                        border: "none",
+                        pointerEvents: "none",
+                      }}
+                      allow="autoplay; encrypted-media"
+                      allowFullScreen={false}
+                      title="Video del premio"
+                    />
+                  </div>
+                ) : (
+                  <div
+                    key={slideActual.url}
+                    style={{
+                      width: "100%",
+                      lineHeight: 0,
+                      borderRadius: "16px",
+                      overflow: "hidden",
+                      border: "2px solid rgba(242,178,51,0.5)",
+                      boxShadow: "0 0 24px rgba(242,178,51,0.2)",
+                      backgroundColor: "#0a0a0a",
+                    }}
+                  >
+                    <video
+                      key={`${rifa.id}-${imagenActual}-${slideActual.url}`}
+                      ref={localVideoRef}
+                      src={slideActual.url}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      preload="auto"
+                      controls
+                      style={{
+                        width: "100%",
+                        height: "auto",
+                        maxHeight: "min(85vh, 800px)",
+                        display: "block",
+                      }}
+                    >
+                      <source src={slideActual.url} type="video/mp4" />
+                    </video>
+                  </div>
+                )
+              ) : esUrlVideo(slideActual?.url) ? (
+                <video
+                  key={slideActual.url}
+                  src={
+                    esYoutube(slideActual.url)
+                      ? slideActual.url
+                      : normalizarSrcVideoLocal(slideActual.url)
+                  }
+                  controls
+                  playsInline
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    maxHeight: "min(70vh, 520px)",
+                    objectFit: "cover",
+                    borderRadius: "16px",
+                    border: "2px solid rgba(242,178,51,0.5)",
+                    boxShadow: "0 0 24px rgba(242,178,51,0.2)",
+                    display: "block",
+                    backgroundColor: "#0a0a0a",
+                  }}
+                />
+              ) : (
+                <img
+                  src={slideActual?.url}
+                  alt={rifa?.nombre}
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    objectFit: "cover",
+                    borderRadius: "16px",
+                    border: "2px solid rgba(242,178,51,0.5)",
+                    boxShadow: "0 0 24px rgba(242,178,51,0.2)",
+                    display: "block",
+                  }}
+                />
+              ))}
 
-            {todasImagenes.length > 1 && (
+            {todosLosSlides.length > 1 && (
               <>
                 <button
                   onClick={() =>
                     setImagenActual((prev) =>
-                      prev === 0 ? todasImagenes.length - 1 : prev - 1
+                      prev === 0 ? todosLosSlides.length - 1 : prev - 1
                     )
                   }
                   style={{
@@ -93,7 +350,7 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
                 <button
                   onClick={() =>
                     setImagenActual((prev) =>
-                      prev === todasImagenes.length - 1 ? 0 : prev + 1
+                      prev === todosLosSlides.length - 1 ? 0 : prev + 1
                     )
                   }
                   style={{
@@ -126,7 +383,7 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
                     marginTop: "8px",
                   }}
                 >
-                  {todasImagenes.map((_, i) => (
+                  {todosLosSlides.map((_, i) => (
                     <button
                       key={i}
                       onClick={() => setImagenActual(i)}
@@ -162,32 +419,18 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "6px",
+                justifyContent: "center",
+                textAlign: "center",
                 background: "linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 35%, transparent 65%), #ef4444",
                 borderRadius: "999px",
-                padding: "4px 12px",
+                padding: "6px 14px",
                 marginBottom: "8px",
                 boxShadow: "0 -2px 6px rgba(255,180,100,0.3), 0 3px 12px rgba(239,68,68,0.5)",
+                maxWidth: "100%",
               }}
             >
-              <span style={{ fontSize: "16px" }}>🔥</span>
-              <span style={{ color: "white", fontSize: "12px", fontWeight: "800", letterSpacing: "0.5px" }}>
-                ¡Casi agotado!
-              </span>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "6px",
-              }}
-            >
-              <span style={{ color: "#F8FAFC", fontSize: "13px", fontWeight: "700", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>
-                Tickets vendidos
-              </span>
-              <span style={{ color: "#F8FAFC", fontSize: "13px", fontWeight: "700", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>
-                {formatNum(displayVendidos)} de {formatNum(displayTotal)}
+              <span style={{ color: "white", fontSize: "11px", fontWeight: "800", letterSpacing: "0.4px", lineHeight: 1.25 }}>
+                Aparta hoy tu número bendecido
               </span>
             </div>
             <div
@@ -214,17 +457,6 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
                 }}
               />
             </div>
-            <p
-              style={{
-                color: "#dc2626",
-                fontSize: "12px",
-                fontWeight: "700",
-                textAlign: "right",
-                marginTop: "4px",
-              }}
-            >
-              Solo queda el {100 - Math.round(displayPct)}% disponible
-            </p>
           </div>
         </div>
       </div>

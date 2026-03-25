@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { esUrlVideo } from "@/lib/esUrlVideo";
+
+const ACCEPT_IMAGEN_Y_VIDEO =
+  "image/*,video/*,video/quicktime,.mov,.MOV,.mp4,.webm,.m4v";
 
 export default function FormRifa({ rifaId }) {
   const router = useRouter();
@@ -16,6 +20,7 @@ export default function FormRifa({ rifaId }) {
     total_numeros: 10000,
     porcentaje_sorteo: 80,
     imagen_url: "",
+    video_url: "",
     imagenes_url: [],
     premios_anticipados: [],
   });
@@ -26,7 +31,7 @@ export default function FormRifa({ rifaId }) {
 
   useEffect(() => {
     if (rifaId) {
-      fetch(`/api/rifas/${rifaId}`)
+      fetch(`/api/rifas/${rifaId}`, { cache: "no-store" })
         .then((res) => res.json())
         .then((data) => {
           setForm({
@@ -36,6 +41,7 @@ export default function FormRifa({ rifaId }) {
             total_numeros: data.total_numeros ?? 10000,
             porcentaje_sorteo: data.porcentaje_sorteo ?? 80,
             imagen_url: data.imagen_url || "",
+            video_url: data.video_url || "",
             imagenes_url: data.imagenes_url || [],
             premios_anticipados: (data.premios_anticipados || []).map((p) =>
               typeof p === "string"
@@ -163,6 +169,7 @@ export default function FormRifa({ rifaId }) {
       total_numeros: Number(form.total_numeros) || 10000,
       porcentaje_sorteo: Number(form.porcentaje_sorteo) || 80,
       imagen_url: form.imagen_url || null,
+      video_url: form.video_url || "",
       imagenes_url: form.imagenes_url || [],
       premios_anticipados: form.premios_anticipados || [],
     };
@@ -178,6 +185,7 @@ export default function FormRifa({ rifaId }) {
       const method = rifaId ? "PATCH" : "POST";
       const res = await fetch(url, {
         method,
+        cache: "no-store",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -303,23 +311,87 @@ export default function FormRifa({ rifaId }) {
 
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Imagen del premio
+              Imagen o video principal
             </label>
             <input
               type="file"
-              accept="image/*"
+              accept={ACCEPT_IMAGEN_Y_VIDEO}
               onChange={handleImageChange}
               className="block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-zinc-900 file:bg-amber-500 file:cursor-pointer hover:file:bg-amber-400"
             />
             {form.imagen_url && (
               <div className="mt-2">
-                <img
-                  src={form.imagen_url}
-                  alt="Preview"
-                  className="h-24 object-cover rounded-lg border border-zinc-700"
-                />
+                {esUrlVideo(form.imagen_url) ? (
+                  <video
+                    src={form.imagen_url}
+                    controls
+                    playsInline
+                    className="h-24 w-auto max-w-full object-cover rounded-lg border border-zinc-700 bg-black"
+                  />
+                ) : (
+                  <img
+                    src={form.imagen_url}
+                    alt="Preview"
+                    className="h-24 object-cover rounded-lg border border-zinc-700"
+                  />
+                )}
               </div>
             )}
+          </div>
+
+          <div style={{ marginTop: "20px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginBottom: "10px",
+              }}
+            >
+              <span style={{ fontSize: "18px" }}>🎬</span>
+              <div>
+                <p
+                  style={{
+                    color: "#F8FAFC",
+                    fontWeight: "700",
+                    fontSize: "14px",
+                    margin: 0,
+                  }}
+                >
+                  Video del premio
+                </p>
+                <p
+                  style={{
+                    color: "rgba(248,250,252,0.4)",
+                    fontSize: "11px",
+                    margin: 0,
+                  }}
+                >
+                  Pega el link de YouTube (No listado). Se reproducirá
+                  automáticamente en la landing.
+                </p>
+              </div>
+            </div>
+            <input
+              type="text"
+              placeholder="https://www.youtube.com/watch?v=..."
+              value={form.video_url}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, video_url: e.target.value }))
+              }
+              style={{
+                width: "100%",
+                backgroundColor: "#1a1a1a",
+                border: "1.5px solid rgba(242,178,51,0.25)",
+                borderRadius: "10px",
+                color: "#F8FAFC",
+                fontSize: "14px",
+                padding: "10px 14px",
+                outline: "none",
+                boxSizing: "border-box",
+                fontFamily: "Poppins, sans-serif",
+              }}
+            />
           </div>
 
           <div style={{ marginTop: "20px" }}>
@@ -341,7 +413,7 @@ export default function FormRifa({ rifaId }) {
                     margin: 0,
                   }}
                 >
-                  Imágenes adicionales del premio
+                  Imágenes o videos adicionales
                 </p>
                 <p
                   style={{
@@ -350,7 +422,7 @@ export default function FormRifa({ rifaId }) {
                     margin: 0,
                   }}
                 >
-                  Se mostrarán en un carrusel junto a la imagen principal
+                  Carrusel junto al medio principal (incluye MOV, MP4, WEBM…)
                 </p>
               </div>
             </div>
@@ -366,17 +438,35 @@ export default function FormRifa({ rifaId }) {
               >
                 {form.imagenes_url.map((url, i) => (
                   <div key={i} style={{ position: "relative" }}>
-                    <img
-                      src={url}
-                      alt={`Imagen ${i + 1}`}
-                      style={{
-                        width: "72px",
-                        height: "72px",
-                        objectFit: "cover",
-                        borderRadius: "8px",
-                        border: "2px solid rgba(242,178,51,0.4)",
-                      }}
-                    />
+                    {esUrlVideo(url) ? (
+                      <video
+                        src={url}
+                        muted
+                        playsInline
+                        loop
+                        autoPlay
+                        style={{
+                          width: "72px",
+                          height: "72px",
+                          objectFit: "cover",
+                          borderRadius: "8px",
+                          border: "2px solid rgba(242,178,51,0.4)",
+                          backgroundColor: "#0a0a0a",
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src={url}
+                        alt={`Imagen ${i + 1}`}
+                        style={{
+                          width: "72px",
+                          height: "72px",
+                          objectFit: "cover",
+                          borderRadius: "8px",
+                          border: "2px solid rgba(242,178,51,0.4)",
+                        }}
+                      />
+                    )}
                     <button
                       type="button"
                       onClick={() => eliminarImagenAdicional(i)}
@@ -429,8 +519,8 @@ export default function FormRifa({ rifaId }) {
                   }}
                 >
                   {subiendoImagenAdicional
-                    ? "Subiendo imagen..."
-                    : "+ Agregar imagen del premio"}
+                    ? "Subiendo..."
+                    : "+ Agregar imagen o video"}
                 </p>
                 <p
                   style={{
@@ -439,12 +529,12 @@ export default function FormRifa({ rifaId }) {
                     margin: 0,
                   }}
                 >
-                  JPG, PNG o WEBP — máx 5MB
+                  Imagen (JPG, PNG, WEBP) o video (MOV, MP4…)
                 </p>
               </div>
               <input
                 type="file"
-                accept="image/*"
+                accept={ACCEPT_IMAGEN_Y_VIDEO}
                 disabled={subiendoImagenAdicional}
                 onChange={(e) => subirImagenAdicional(e.target.files?.[0])}
                 style={{ display: "none" }}
@@ -500,18 +590,37 @@ export default function FormRifa({ rifaId }) {
                 }}
               >
                 {premio.imagen_url ? (
-                  <img
-                    src={premio.imagen_url}
-                    alt={premio.monto}
-                    style={{
-                      width: "52px",
-                      height: "52px",
-                      objectFit: "cover",
-                      borderRadius: "8px",
-                      border: "1px solid rgba(242,178,51,0.3)",
-                      flexShrink: 0,
-                    }}
-                  />
+                  esUrlVideo(premio.imagen_url) ? (
+                    <video
+                      src={premio.imagen_url}
+                      muted
+                      playsInline
+                      loop
+                      autoPlay
+                      style={{
+                        width: "52px",
+                        height: "52px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(242,178,51,0.3)",
+                        flexShrink: 0,
+                        backgroundColor: "#0a0a0a",
+                      }}
+                    />
+                  ) : (
+                    <img
+                      src={premio.imagen_url}
+                      alt={premio.monto}
+                      style={{
+                        width: "52px",
+                        height: "52px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(242,178,51,0.3)",
+                        flexShrink: 0,
+                      }}
+                    />
+                  )
                 ) : (
                   <div
                     style={{
@@ -577,12 +686,12 @@ export default function FormRifa({ rifaId }) {
                       {subiendoImagenPremio === i
                         ? "Subiendo..."
                         : premio.imagen_url
-                          ? "Cambiar imagen"
-                          : "Agregar imagen"}
+                          ? "Cambiar archivo"
+                          : "Agregar imagen o video"}
                     </span>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept={ACCEPT_IMAGEN_Y_VIDEO}
                       disabled={subiendoImagenPremio === i}
                       onChange={(e) =>
                         subirImagenPremio(e.target.files?.[0], i)

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request, { params }) {
   const { id } = await params;
 
@@ -25,28 +27,35 @@ export async function PATCH(request, { params }) {
   const { id } = await params;
   const body = await request.json();
 
-  const rifa = {
-    nombre: body.nombre,
-    descripcion: body.descripcion ?? null,
-    imagen_url: body.imagen_url ?? null,
-    precio_boleto: body.precio_boleto,
-    total_numeros: body.total_numeros ?? 10000,
-    porcentaje_sorteo: body.porcentaje_sorteo ?? 80,
-    premios_anticipados: Array.isArray(body.premios_anticipados)
-      ? body.premios_anticipados
-      : undefined,
-  };
-  if (body.estado != null) rifa.estado = body.estado;
+  /** Solo campos enviados en el body (evita borrar datos con PATCH parcial). */
+  const rifa = {};
+  if (body.nombre !== undefined) rifa.nombre = body.nombre;
+  if (body.descripcion !== undefined) rifa.descripcion = body.descripcion;
+  if (body.imagen_url !== undefined) rifa.imagen_url = body.imagen_url;
+  if (body.precio_boleto !== undefined) rifa.precio_boleto = body.precio_boleto;
+  if (body.total_numeros !== undefined) {
+    rifa.total_numeros = body.total_numeros ?? 10000;
+  }
+  if (body.porcentaje_sorteo !== undefined) {
+    rifa.porcentaje_sorteo = body.porcentaje_sorteo ?? 80;
+  }
+  if (body.premios_anticipados !== undefined) {
+    rifa.premios_anticipados = body.premios_anticipados;
+  }
   if (body.imagenes_url !== undefined) rifa.imagenes_url = body.imagenes_url;
-  if (body.premios_anticipados !== undefined) rifa.premios_anticipados = body.premios_anticipados;
+  if (body.video_url !== undefined) rifa.video_url = body.video_url;
+  if (body.estado !== undefined && body.estado !== null) rifa.estado = body.estado;
 
-  const cleaned = Object.fromEntries(
-    Object.entries(rifa).filter(([, v]) => v !== undefined)
-  );
+  if (Object.keys(rifa).length === 0) {
+    return NextResponse.json(
+      { error: "No hay campos para actualizar" },
+      { status: 400 }
+    );
+  }
 
   const { data, error } = await supabaseAdmin
     .from("rifas")
-    .update(cleaned)
+    .update(rifa)
     .eq("id", id)
     .select()
     .single();
