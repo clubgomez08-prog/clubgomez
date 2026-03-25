@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { verificarSesionAdmin } from "@/lib/auth-admin";
 
 export async function POST(request) {
+  const user = await verificarSesionAdmin(request);
+  if (!user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   const formData = await request.formData();
   const file = formData.get("file");
 

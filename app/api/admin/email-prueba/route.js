@@ -1,21 +1,28 @@
+import { NextResponse } from "next/server";
 import { generarHtmlEmailGanador } from "@/lib/email";
 import { Resend } from "resend";
+import { verificarSesionAdmin } from "@/lib/auth-admin";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request) {
+  const user = await verificarSesionAdmin(request);
+  if (!user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   try {
     const { emailDestino, nombreRifa, precioRifa } = await request.json();
 
     if (!emailDestino || !emailDestino.includes("@")) {
-      return Response.json(
+      return NextResponse.json(
         { error: "Email destino inválido" },
         { status: 400 }
       );
     }
 
     if (!process.env.RESEND_API_KEY) {
-      return Response.json(
+      return NextResponse.json(
         { error: "RESEND_API_KEY no configurado" },
         { status: 500 }
       );
@@ -45,10 +52,10 @@ export async function POST(request) {
     });
 
     if (error) {
-      return Response.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return Response.json({
+    return NextResponse.json({
       success: true,
       message: `Email de prueba enviado a ${emailDestino}`,
       id: data?.id,
@@ -58,7 +65,7 @@ export async function POST(request) {
       "[email-prueba] Error:",
       err?.message || "Error desconocido"
     );
-    return Response.json(
+    return NextResponse.json(
       { error: "Error al enviar email de prueba" },
       { status: 500 }
     );

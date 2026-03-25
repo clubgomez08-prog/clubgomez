@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { verificarSesionAdmin } from "@/lib/auth-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,11 @@ export async function GET(request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
+  const user = await verificarSesionAdmin(request);
+  if (!user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   const { id } = await params;
   const body = await request.json();
 
@@ -68,6 +74,11 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
+  const user = await verificarSesionAdmin(request);
+  if (!user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   const { id } = await params;
 
   const { error } = await supabaseAdmin.from("rifas").delete().eq("id", id);

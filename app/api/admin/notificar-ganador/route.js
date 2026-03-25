@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { enviarEmailGanador } from "@/lib/email";
+import { verificarSesionAdmin } from "@/lib/auth-admin";
 
 export async function POST(request) {
+  const user = await verificarSesionAdmin(request);
+  if (!user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { sorteo_id, participante_id, rifa_id } = body;

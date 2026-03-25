@@ -3,6 +3,7 @@
 import { useEffect, useState, Fragment } from "react";
 import * as XLSX from "xlsx";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { getAdminAuthHeaders } from "@/lib/auth";
 
 const PAGE_SIZE = 20;
 
@@ -42,19 +43,22 @@ export default function ParticipantesPage() {
       page: String(filtros.page),
     });
 
-    fetch(`/api/admin/participantes?${params}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setParticipantes(data.participantes || []);
-        setTotal(data.total ?? 0);
-        setPaginas(data.paginas ?? 0);
-      })
-      .catch(() => {
-        setParticipantes([]);
-        setTotal(0);
-        setPaginas(0);
-      })
-      .finally(() => setLoading(false));
+    (async () => {
+      const auth = await getAdminAuthHeaders();
+      fetch(`/api/admin/participantes?${params}`, { headers: { ...auth } })
+        .then((res) => res.json())
+        .then((data) => {
+          setParticipantes(data.participantes || []);
+          setTotal(data.total ?? 0);
+          setPaginas(data.paginas ?? 0);
+        })
+        .catch(() => {
+          setParticipantes([]);
+          setTotal(0);
+          setPaginas(0);
+        })
+        .finally(() => setLoading(false));
+    })();
   }, [filtros]);
 
   function formatPrecio(n) {
@@ -119,9 +123,10 @@ export default function ParticipantesPage() {
     setNotificando(participante.id);
     setMensajeNotificacion("");
     try {
+      const auth = await getAdminAuthHeaders();
       const res = await fetch("/api/admin/notificar-ganador", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...auth },
         body: JSON.stringify({
           participante_id: participante.id,
           rifa_id: participante.rifa_id || participante.rifas?.id,
@@ -151,7 +156,10 @@ export default function ParticipantesPage() {
         export: "1",
       });
 
-      const res = await fetch(`/api/admin/participantes?${params}`);
+      const auth = await getAdminAuthHeaders();
+      const res = await fetch(`/api/admin/participantes?${params}`, {
+        headers: { ...auth },
+      });
       const data = await res.json();
       const lista = data.participantes || [];
 

@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { verificarSesionAdmin } from "@/lib/auth-admin";
 
 export async function GET(request) {
+  const user = await verificarSesionAdmin(request);
+  if (!user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const rifaId = searchParams.get("rifa_id");
 
@@ -36,6 +42,11 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const user = await verificarSesionAdmin(request);
+  if (!user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   const body = await request.json();
   const rifaId = body.rifa_id;
 

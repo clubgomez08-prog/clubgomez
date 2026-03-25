@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import confetti from "canvas-confetti";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { getAdminAuthHeaders } from "@/lib/auth";
+import { useToast } from "@/components/admin/Toast";
 
 function formatPrecio(n) {
   return new Intl.NumberFormat("es-CO", {
@@ -22,6 +24,7 @@ function formatFecha(d) {
 }
 
 export default function SorteoPage() {
+  const { addToast } = useToast();
   const [rifas, setRifas] = useState([]);
   const [rifaId, setRifaId] = useState("");
   const [stats, setStats] = useState(null);
@@ -29,6 +32,7 @@ export default function SorteoPage() {
   const [loading, setLoading] = useState(true);
   const [sorteando, setSorteando] = useState(false);
   const [ganador, setGanador] = useState(null);
+  const [emailSorteoEnviado, setEmailSorteoEnviado] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [notificando, setNotificando] = useState(false);
   const [notificados, setNotificados] = useState({});
@@ -122,25 +126,30 @@ export default function SorteoPage() {
       })
       .catch(() => setStats(null));
 
-    fetch(`/api/admin/sorteo?rifa_id=${rifaId}`)
-      .then((res) => res.json())
-      .then((data) => setHistorial(data.sorteos || []))
-      .catch(() => setHistorial([]));
+    (async () => {
+      const auth = await getAdminAuthHeaders();
+      fetch(`/api/admin/sorteo?rifa_id=${rifaId}`, { headers: { ...auth } })
+        .then((res) => res.json())
+        .then((data) => setHistorial(data.sorteos || []))
+        .catch(() => setHistorial([]));
+    })();
   }, [rifaId, rifas]);
 
   function handleRealizarSorteo() {
     setShowModal(true);
   }
 
-  function confirmarSorteo() {
+  async function confirmarSorteo() {
     setShowModal(false);
     setSorteando(true);
     setError("");
     setGanador(null);
+    setEmailSorteoEnviado(false);
 
+    const auth = await getAdminAuthHeaders();
     fetch("/api/admin/sorteo", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...auth },
       body: JSON.stringify({ rifa_id: rifaId }),
     })
       .then(async (res) => {
@@ -173,11 +182,39 @@ export default function SorteoPage() {
       .finally(() => setSorteando(false));
   }
 
-  function notificarDesdeHistorial(sorteoId) {
+  const notificarGanadorSorteo = async () => {
+    if (!ganador?.sorteo_id) {
+      addToast("No hay sorteo para notificar", "error");
+      return;
+    }
+    setNotificando(true);
+    try {
+      const auth = await getAdminAuthHeaders();
+      const res = await fetch("/api/admin/notificar-ganador", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...auth },
+        body: JSON.stringify({ sorteo_id: ganador.sorteo_id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        addToast(data.error || "Error al enviar el email", "error");
+        return;
+      }
+      addToast("Email enviado al ganador correctamente", "success");
+      setEmailSorteoEnviado(true);
+    } catch (err) {
+      addToast(err.message || "Error de conexión", "error");
+    } finally {
+      setNotificando(false);
+    }
+  };
+
+  async function notificarDesdeHistorial(sorteoId) {
     setNotificados((prev) => ({ ...prev, [sorteoId]: { status: "loading" } }));
+    const auth = await getAdminAuthHeaders();
     fetch("/api/admin/notificar-ganador", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...auth },
       body: JSON.stringify({ sorteo_id: sorteoId }),
     })
       .then(async (res) => {
@@ -261,9 +298,10 @@ export default function SorteoPage() {
     setNotificando(true);
     setMensajeNotificacion("");
     try {
+      const auth = await getAdminAuthHeaders();
       const res = await fetch("/api/admin/notificar-ganador", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...auth },
         body: JSON.stringify({
           participante_id: ganadorEncontrado.id,
           rifa_id: rifaId,
@@ -341,9 +379,10 @@ export default function SorteoPage() {
 
     setNotificandoPremio(premioIndex);
     try {
+      const auth = await getAdminAuthHeaders();
       const res = await fetch("/api/admin/notificar-ganador", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...auth },
         body: JSON.stringify({
           participante_id: ganador.id,
           rifa_id: rifaId,
@@ -1140,11 +1179,11 @@ export default function SorteoPage() {
           </div>
           <div className="mt-8 text-center">
             <button
-              onClick={notificarGanador}
-              disabled={notificando || ganador.email_enviado}
+              onClick={notificarGanadorSorteo}
+              disabled={notificando || emailSorteoEnviado}
               className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {ganador.email_enviado
+              {emailSorteoEnviado
                 ? "✓ Email enviado"
                 : notificando
                 ? "Enviando..."
@@ -1212,15 +1251,17 @@ export default function SorteoPage() {
                       </td>
                       <td className="px-6 py-4">
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             setNotificados((prev) => ({
                               ...prev,
                               [s.id]: "loading",
                             }));
+                            const auth = await getAdminAuthHeaders();
                             fetch("/api/admin/notificar-ganador", {
                               method: "POST",
                               headers: {
                                 "Content-Type": "application/json",
+                                ...auth,
                               },
                               body: JSON.stringify({ sorteo_id: s.id }),
                             })

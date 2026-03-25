@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { esUrlVideo } from "@/lib/esUrlVideo";
+import { getAdminAuthHeaders } from "@/lib/auth";
 
 const ACCEPT_IMAGEN_Y_VIDEO =
   "image/*,video/*,video/quicktime,.mov,.MOV,.mp4,.webm,.m4v";
@@ -61,8 +62,10 @@ export default function FormRifa({ rifaId }) {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      const auth = await getAdminAuthHeaders();
       const res = await fetch("/api/upload/rifa", {
         method: "POST",
+        headers: { ...auth },
         body: formData,
       });
       const { url } = await res.json();
@@ -92,8 +95,10 @@ export default function FormRifa({ rifaId }) {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      const auth = await getAdminAuthHeaders();
       const res = await fetch("/api/upload/rifa", {
         method: "POST",
+        headers: { ...auth },
         body: formData,
       });
       const { url } = await res.json();
@@ -143,8 +148,10 @@ export default function FormRifa({ rifaId }) {
     formData.append("file", file);
 
     try {
+      const auth = await getAdminAuthHeaders();
       const res = await fetch("/api/upload/rifa", {
         method: "POST",
+        headers: { ...auth },
         body: formData,
       });
       const data = await res.json();
@@ -183,10 +190,11 @@ export default function FormRifa({ rifaId }) {
     try {
       const url = rifaId ? `/api/rifas/${rifaId}` : "/api/rifas";
       const method = rifaId ? "PATCH" : "POST";
+      const auth = await getAdminAuthHeaders();
       const res = await fetch(url, {
         method,
         cache: "no-store",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...auth },
         body: JSON.stringify(payload),
       });
       const data = await res.json();

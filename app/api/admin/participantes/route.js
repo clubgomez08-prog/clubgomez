@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { verificarSesionAdmin } from "@/lib/auth-admin";
 
 const PAGE_SIZE = 20;
 
 export async function GET(request) {
+  const user = await verificarSesionAdmin(request);
+  if (!user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const buscar = searchParams.get("buscar")?.trim() || "";
   const estado = searchParams.get("estado")?.trim() || "";

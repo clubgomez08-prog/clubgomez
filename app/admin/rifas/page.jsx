@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ModalConfirm from "@/components/admin/ModalConfirm";
 import { useToast } from "@/components/admin/Toast";
+import { getAdminAuthHeaders } from "@/lib/auth";
 
 export default function RifasPage() {
   const router = useRouter();
@@ -40,7 +41,11 @@ export default function RifasPage() {
     if (!rifa) return;
     setDeleting(rifa.id);
     try {
-      const res = await fetch(`/api/rifas/${rifa.id}`, { method: "DELETE" });
+      const auth = await getAdminAuthHeaders();
+      const res = await fetch(`/api/rifas/${rifa.id}`, {
+        method: "DELETE",
+        headers: { ...auth },
+      });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Error al eliminar");
@@ -73,9 +78,10 @@ export default function RifasPage() {
     if (!rifa) return;
     const nuevoEstado = rifa.estado === "activa" ? "finalizada" : "activa";
     try {
+      const auth = await getAdminAuthHeaders();
       const res = await fetch(`/api/rifas/${rifa.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...auth },
         body: JSON.stringify({ estado: nuevoEstado }),
       });
       if (res.ok) {
@@ -98,9 +104,10 @@ export default function RifasPage() {
     setEnviandoPrueba(true);
     setMensajePrueba("");
     try {
+      const auth = await getAdminAuthHeaders();
       const res = await fetch("/api/admin/email-prueba", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...auth },
         body: JSON.stringify({
           emailDestino: emailPrueba,
           nombreRifa: rifaPrueba?.nombre,
