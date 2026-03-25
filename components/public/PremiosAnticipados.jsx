@@ -1,21 +1,10 @@
 "use client";
 
-import { esUrlVideo } from "@/lib/esUrlVideo";
-
-export default function PremiosAnticipados({ premios }) {
-  if (!premios || !Array.isArray(premios) || premios.length === 0) return null;
-
-  function parsePremio(premio) {
-    if (typeof premio === "string") {
-      return { monto: premio, desc: "", imagen_url: "" };
-    }
-    return {
-      monto: premio.monto ?? premio.monto_cop ?? premio.nombre ?? "",
-      desc: premio.desc ?? premio.descripcion ?? "",
-      imagen_url: premio.imagen_url ?? "",
-    };
-  }
-
+/**
+ * Texto de marketing fijo para la landing.
+ * (Antes: cada ítem venía de rifa.premios_anticipados en la API.)
+ */
+export default function PremiosAnticipados() {
   return (
     <section className="py-4 px-4">
       <style>{`
@@ -29,72 +18,33 @@ export default function PremiosAnticipados({ premios }) {
         <h2 className="text-white font-bold text-xl text-center mb-2 drop-shadow-sm">
           🏆 Premios anticipados 🏆
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {premios.map((premio, i) => {
-            const parsed = parsePremio(premio);
-            const { monto, desc, imagen_url } = parsed;
-            return (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  textAlign: "center",
-                  backgroundColor: "transparent",
-                  border: "1.5px solid rgba(242,178,51,0.6)",
-                  animation: "brilloBorde 2s ease-in-out infinite",
-                  borderRadius: "10px",
-                  padding: "10px 14px",
-                  color: "#F8FAFC",
-                  fontWeight: "600",
-                  fontSize: "15px",
-                }}
-              >
-                {imagen_url &&
-                  (esUrlVideo(imagen_url) ? (
-                    <video
-                      src={imagen_url}
-                      muted
-                      playsInline
-                      loop
-                      autoPlay
-                      style={{
-                        width: "56px",
-                        height: "56px",
-                        objectFit: "cover",
-                        borderRadius: "10px",
-                        border: "1.5px solid rgba(242,178,51,0.4)",
-                        display: "block",
-                        margin: "0 auto 8px",
-                        backgroundColor: "#0a0a0a",
-                      }}
-                    />
-                  ) : (
-                    <img
-                      src={imagen_url}
-                      alt={monto}
-                      style={{
-                        width: "56px",
-                        height: "56px",
-                        objectFit: "cover",
-                        borderRadius: "10px",
-                        border: "1.5px solid rgba(242,178,51,0.4)",
-                        display: "block",
-                        margin: "0 auto 8px",
-                      }}
-                    />
-                  ))}
-                <p style={{ textAlign: "center" }}>{monto}</p>
-                {desc && (
-                  <p style={{ fontSize: "13px", marginTop: "4px", textAlign: "center" }}>
-                    {desc}
-                  </p>
-                )}
-              </div>
-            );
-          })}
+        <div
+          className="max-w-md mx-auto"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            backgroundColor: "transparent",
+            border: "1.5px solid rgba(242,178,51,0.6)",
+            animation: "brilloBorde 2s ease-in-out infinite",
+            borderRadius: "10px",
+            padding: "14px 16px",
+            color: "#F8FAFC",
+            fontSize: "15px",
+            lineHeight: 1.45,
+          }}
+        >
+          <p style={{ fontWeight: "700", margin: 0 }}>Aquí no hay un solo ganador…</p>
+          <p style={{ fontWeight: "600", margin: "12px 0 0", marginBottom: 0 }}>
+            Hay 10 oportunidades adicionales de llevarte
+            <br />
+            $3.000.000 cada una 💰
+          </p>
+          <p style={{ fontWeight: "500", fontSize: "14px", margin: "12px 0 0", marginBottom: 0 }}>
+            Mientras otros esperan… tú puedes ganar desde el inicio 💵
+          </p>
         </div>
       </div>
     </section>

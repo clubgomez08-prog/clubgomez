@@ -357,7 +357,7 @@ export default function LandingPage() {
           </div>
         </>
       )}
-      <PremiosAnticipados premios={rifa.premios_anticipados} />
+      <PremiosAnticipados />
       <PaquetesBoletos
         rifa={rifa}
         selectedPackage={selectedPackage}
