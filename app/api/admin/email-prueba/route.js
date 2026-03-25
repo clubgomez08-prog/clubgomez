@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { generarHtmlEmailGanador, enviarTicketCompra } from "@/lib/email";
+import {
+  generarHtmlEmailGanador,
+  enviarTicketCompra,
+  resendFromAddress,
+} from "@/lib/email";
 import { Resend } from "resend";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
 
@@ -83,7 +87,7 @@ export async function POST(request) {
     );
 
     const { data, error } = await resend.emails.send({
-      from: "RIFEX <info@rifex.app>",
+      from: resendFromAddress(),
       to: [emailDestino],
       subject: `🏆 [PRUEBA] RIFEX — Notificación de ganador: ${nombreRifa || "Sorteo de prueba"}`,
       html: htmlEmail,

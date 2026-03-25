@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { enviarTicketCompra } from "@/lib/email";
+import { verificarSesionAdmin } from "@/lib/auth-admin";
 
-export async function GET() {
+export async function GET(request) {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  }
+
+  const user = await verificarSesionAdmin(request);
+  if (!user) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   try {
     const { data: participante, error: partError } = await supabaseAdmin
       .from("participantes")

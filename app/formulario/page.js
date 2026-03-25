@@ -1,7 +1,6 @@
 'use client'
 import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { supabaseBrowser as supabase } from '@/lib/supabase-browser'
 
 function FormularioContent() {
   const searchParams = useSearchParams()
@@ -33,46 +32,39 @@ function FormularioContent() {
     setError('')
 
     try {
-      // Buscar la rifa activa
-      const { data: rifa, error: rifaError } = await supabase
-        .from('rifas')
-        .select('*')
-        .eq('estado', 'activa')
-        .single()
-
-      if (rifaError || !rifa) throw new Error('No hay rifa activa')
-
-      // Guardar participante
-      const { data: participante, error: partError } = await supabase
-        .from('participantes')
-        .insert({
+      const regRes = await fetch('/api/registro-participante', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           nombre: form.nombre,
           cedula: form.cedula,
           email: form.email,
           telefono: form.telefono,
           ciudad: form.ciudad,
-          cantidad_boletos: parseInt(cantidad),
-          total_pagado: parseInt(String(monto).replace(/\D/g, '')),
-          rifa_id: rifa.id,
-          estado_pago: 'pendiente'
-        })
-        .select()
-        .single()
+          cantidad: parseInt(cantidad, 10),
+          monto: parseInt(String(monto).replace(/\D/g, ''), 10),
+        }),
+      })
+      const regData = await regRes.json().catch(() => ({}))
+      if (!regRes.ok) {
+        throw new Error(regData.error || 'Error al guardar datos')
+      }
+      const participante = regData.participante
+      if (!participante?.id) {
+        throw new Error('Error al guardar datos')
+      }
 
-      if (partError) throw new Error('Error al guardar datos')
-
-      // Crear preferencia MercadoPago
       const res = await fetch('/api/crear-preferencia', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           participante_id: participante.id,
-          cantidad: parseInt(cantidad),
-          monto: parseInt(String(monto).replace(/\D/g, '')),
+          cantidad: parseInt(cantidad, 10),
+          monto: parseInt(String(monto).replace(/\D/g, ''), 10),
           nombre: form.nombre,
-          email: form.email,
-          rifa_id: rifa.id
-        })
+          email: participante.email,
+          rifa_id: participante.rifa_id,
+        }),
       })
 
       if (!res.ok) {

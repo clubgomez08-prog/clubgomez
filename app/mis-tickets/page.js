@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { supabaseBrowser } from '@/lib/supabase-browser'
 
 export default function MisTickets() {
   const [cedula, setCedula] = useState('')
@@ -27,75 +26,25 @@ export default function MisTickets() {
     setBusquedaNumeroEstado({})
 
     try {
-      // Buscar participante por cédula y email
-      const { data: participantes, error: err } = await supabaseBrowser
-        .from('participantes')
-        .select(`
-          id,
-          nombre,
-          cedula,
-          email,
-          cantidad_boletos,
-          total_pagado,
-          estado_pago,
-          created_at,
-          rifa_id,
-          rifas (
-            id,
-            nombre,
-            precio_boleto,
-            estado
-          )
-        `)
-        .eq('cedula', cedula.trim())
-        .eq('email', email.trim().toLowerCase())
-        .order('created_at', { ascending: false })
+      const res = await fetch('/api/mis-tickets/buscar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cedula: cedula.trim(),
+          email: email.trim().toLowerCase(),
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data.error || 'Error al buscar tickets')
+      }
+      const enriched = Array.isArray(data.resultados) ? data.resultados : []
 
-      if (err) throw new Error('Error al buscar tickets')
-
-      if (!participantes || participantes.length === 0) {
+      if (enriched.length === 0) {
         setError('No encontramos tickets con esos datos. Verifica tu cédula y email.')
         setBuscando(false)
         return
       }
-
-      // Por cada participante buscar sus boletos
-      const resultadosConBoletos = await Promise.all(
-        participantes.map(async (p) => {
-          const { data: boletos } = await supabaseBrowser
-            .from('boletos')
-            .select('numero')
-            .eq('participante_id', p.id)
-            .order('numero', { ascending: true })
-
-          return { ...p, boletos: boletos || [] }
-        })
-      )
-
-      const rifaIds = [
-        ...new Set(
-          resultadosConBoletos.map((p) => p.rifa_id).filter(Boolean)
-        ),
-      ]
-      const bendecidosPorRifa = {}
-      await Promise.all(
-        rifaIds.map(async (rifaId) => {
-          const { data: rifaRow } = await supabaseBrowser
-            .from('rifas')
-            .select('numeros_bendecidos')
-            .eq('id', rifaId)
-            .single()
-          const nb = Array.isArray(rifaRow?.numeros_bendecidos)
-            ? rifaRow.numeros_bendecidos.map((x) => String(x ?? '').trim())
-            : []
-          bendecidosPorRifa[rifaId] = nb
-        })
-      )
-
-      const enriched = resultadosConBoletos.map((p) => ({
-        ...p,
-        numeros_bendecidos: bendecidosPorRifa[p.rifa_id] || [],
-      }))
 
       setNumerosBendecidos(enriched.map((x) => x.numeros_bendecidos || []))
       setResultados(enriched)
