@@ -4,6 +4,18 @@ import { verificarSesionAdmin } from "@/lib/auth-admin";
 
 export const dynamic = "force-dynamic";
 
+const DEFAULT_PAQUETES_TICKETS = [50, 100, 150, 200, 250, 500, 1000];
+
+function normalizarPaquetesTickets(input) {
+  if (input === undefined || input === null) return DEFAULT_PAQUETES_TICKETS;
+  if (!Array.isArray(input)) return DEFAULT_PAQUETES_TICKETS;
+  const nums = input
+    .map((x) => parseInt(x, 10))
+    .filter((n) => !isNaN(n) && n >= 1);
+  const unique = [...new Set(nums)].sort((a, b) => a - b).slice(0, 8);
+  return unique.length >= 1 ? unique : DEFAULT_PAQUETES_TICKETS;
+}
+
 export async function GET(request, { params }) {
   const { id } = await params;
 
@@ -51,6 +63,16 @@ export async function PATCH(request, { params }) {
   if (body.imagenes_url !== undefined) rifa.imagenes_url = body.imagenes_url;
   if (body.video_url !== undefined) rifa.video_url = body.video_url;
   if (body.estado !== undefined && body.estado !== null) rifa.estado = body.estado;
+  if (body.paquetes_tickets !== undefined) {
+    rifa.paquetes_tickets = normalizarPaquetesTickets(body.paquetes_tickets);
+  }
+  if (body.imagen_banner_izquierda !== undefined) {
+    rifa.imagen_banner_izquierda =
+      body.imagen_banner_izquierda?.trim?.() || null;
+  }
+  if (body.imagen_banner_derecha !== undefined) {
+    rifa.imagen_banner_derecha = body.imagen_banner_derecha?.trim?.() || null;
+  }
 
   if (Object.keys(rifa).length === 0) {
     return NextResponse.json(

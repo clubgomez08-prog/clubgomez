@@ -9,6 +9,30 @@ import { getAdminAuthHeaders } from "@/lib/auth";
 const ACCEPT_IMAGEN_Y_VIDEO =
   "image/*,video/*,video/quicktime,.mov,.MOV,.mp4,.webm,.m4v";
 
+const ACCEPT_SOLO_IMAGEN =
+  "image/*,.jpg,.jpeg,.png,.gif,.webp,.avif,.svg";
+
+const DEFAULT_PAQUETES_TICKETS = [50, 100, 150, 200, 250, 500, 1000];
+
+function parsePaquetesTicketsInicial(raw) {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return [...DEFAULT_PAQUETES_TICKETS];
+  }
+  const nums = raw
+    .map((x) => parseInt(x, 10))
+    .filter((n) => !isNaN(n) && n >= 1);
+  const unique = [...new Set(nums)].sort((a, b) => a - b).slice(0, 8);
+  return unique.length >= 1 ? unique : [...DEFAULT_PAQUETES_TICKETS];
+}
+
+function paquetesTicketsParaGuardar(arr) {
+  const nums = (arr || [])
+    .map((n) => parseInt(n, 10))
+    .filter((n) => !isNaN(n) && n >= 1);
+  const unique = [...new Set(nums)].sort((a, b) => a - b).slice(0, 8);
+  return unique.length >= 1 ? unique : [...DEFAULT_PAQUETES_TICKETS];
+}
+
 export default function FormRifa({ rifaId }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -24,8 +48,12 @@ export default function FormRifa({ rifaId }) {
     video_url: "",
     imagenes_url: [],
     premios_anticipados: [],
+    paquetes_tickets: [...DEFAULT_PAQUETES_TICKETS],
+    imagen_banner_izquierda: "",
+    imagen_banner_derecha: "",
   });
   const [subiendoImagenAdicional, setSubiendoImagenAdicional] = useState(false);
+  const [subiendoBanner, setSubiendoBanner] = useState(null);
   const [subiendoImagenPremio, setSubiendoImagenPremio] = useState(null);
   const [nuevoPremioMonto, setNuevoPremioMonto] = useState("");
   const [nuevoPremioDesc, setNuevoPremioDesc] = useState("");
@@ -49,6 +77,11 @@ export default function FormRifa({ rifaId }) {
                 ? { monto: p, desc: "", imagen_url: "" }
                 : { monto: p.monto ?? "", desc: p.desc ?? "", imagen_url: p.imagen_url ?? "" }
             ),
+            paquetes_tickets: parsePaquetesTicketsInicial(
+              data.paquetes_tickets
+            ),
+            imagen_banner_izquierda: data.imagen_banner_izquierda || "",
+            imagen_banner_derecha: data.imagen_banner_derecha || "",
           });
         })
         .catch(() => setError("Error al cargar rifa"))
@@ -138,6 +171,40 @@ export default function FormRifa({ rifaId }) {
     }));
   };
 
+  const cambiarPaqueteTicket = (index, valorStr) => {
+    const v = parseInt(valorStr, 10);
+    setForm((prev) => {
+      const next = [...prev.paquetes_tickets];
+      if (valorStr === "" || isNaN(v)) {
+        next[index] = 1;
+      } else {
+        next[index] = Math.max(1, Math.floor(v));
+      }
+      return { ...prev, paquetes_tickets: next };
+    });
+  };
+
+  const agregarPaqueteTicket = () => {
+    setForm((prev) => {
+      if (prev.paquetes_tickets.length >= 8) return prev;
+      const last = prev.paquetes_tickets[prev.paquetes_tickets.length - 1] || 50;
+      return {
+        ...prev,
+        paquetes_tickets: [...prev.paquetes_tickets, Math.max(1, last + 1)],
+      };
+    });
+  };
+
+  const eliminarPaqueteTicket = (index) => {
+    setForm((prev) => {
+      if (prev.paquetes_tickets.length <= 1) return prev;
+      return {
+        ...prev,
+        paquetes_tickets: prev.paquetes_tickets.filter((_, i) => i !== index),
+      };
+    });
+  };
+
   async function handleImageChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -164,6 +231,33 @@ export default function FormRifa({ rifaId }) {
     }
   }
 
+  async function handleBannerImageChange(lado, e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError("");
+    setSubiendoBanner(lado);
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const auth = await getAdminAuthHeaders();
+      const res = await fetch("/api/upload/rifa", {
+        method: "POST",
+        headers: { ...auth },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al subir");
+      const key =
+        lado === "izq" ? "imagen_banner_izquierda" : "imagen_banner_derecha";
+      setForm((f) => ({ ...f, [key]: data.url }));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubiendoBanner(null);
+      e.target.value = "";
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -179,6 +273,9 @@ export default function FormRifa({ rifaId }) {
       video_url: form.video_url || "",
       imagenes_url: form.imagenes_url || [],
       premios_anticipados: form.premios_anticipados || [],
+      paquetes_tickets: paquetesTicketsParaGuardar(form.paquetes_tickets),
+      imagen_banner_izquierda: form.imagen_banner_izquierda?.trim() || null,
+      imagen_banner_derecha: form.imagen_banner_derecha?.trim() || null,
     };
 
     if (!payload.nombre || !payload.precio_boleto) {
@@ -319,6 +416,52 @@ export default function FormRifa({ rifaId }) {
 
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-2">
+              Paquetes de tickets
+            </label>
+            <p className="text-xs text-zinc-500 mb-3">
+              Cantidades mostradas en la landing (1 a 8 paquetes, enteros
+              positivos; al guardar se ordenan de menor a mayor).
+            </p>
+            <div className="space-y-2">
+              {form.paquetes_tickets.map((cant, index) => (
+                <div
+                  key={index}
+                  className="flex flex-wrap items-center gap-2 sm:gap-3"
+                >
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={cant}
+                    onChange={(e) =>
+                      cambiarPaqueteTicket(index, e.target.value)
+                    }
+                    className="w-full min-w-0 sm:w-28 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => eliminarPaqueteTicket(index)}
+                    disabled={form.paquetes_tickets.length <= 1}
+                    className="shrink-0 px-3 py-2 rounded-lg border border-zinc-600 text-zinc-300 hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+                    aria-label="Eliminar paquete"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={agregarPaqueteTicket}
+              disabled={form.paquetes_tickets.length >= 8}
+              className="mt-3 px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-amber-400 text-sm font-medium hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              + Agregar paquete
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-2">
               Imagen o video principal
             </label>
             <input
@@ -345,6 +488,84 @@ export default function FormRifa({ rifaId }) {
                 )}
               </div>
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-2">
+              Imágenes del banner
+            </label>
+            <p className="text-xs text-zinc-500 mb-4">
+              Banner &quot;Sorteo abierto&quot; en la landing (lado izquierdo y
+              derecho). Opcional; si no subes imagen se usan las por defecto.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">
+                  Imagen izquierda
+                </label>
+                <input
+                  type="file"
+                  accept={ACCEPT_SOLO_IMAGEN}
+                  disabled={subiendoBanner === "izq"}
+                  onChange={(e) => handleBannerImageChange("izq", e)}
+                  className="block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-zinc-900 file:bg-amber-500 file:cursor-pointer hover:file:bg-amber-400 disabled:opacity-50"
+                />
+                {subiendoBanner === "izq" && (
+                  <p className="text-xs text-amber-500 mt-1">Subiendo…</p>
+                )}
+                {form.imagen_banner_izquierda && (
+                  <div className="mt-2">
+                    <img
+                      src={form.imagen_banner_izquierda}
+                      alt="Preview banner izquierda"
+                      className="h-24 w-auto max-w-full object-contain rounded-lg border border-zinc-700 bg-zinc-950"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setForm((f) => ({ ...f, imagen_banner_izquierda: "" }))
+                      }
+                      className="mt-2 text-xs text-red-400 hover:text-red-300"
+                    >
+                      Quitar imagen
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-400 mb-2">
+                  Imagen derecha
+                </label>
+                <input
+                  type="file"
+                  accept={ACCEPT_SOLO_IMAGEN}
+                  disabled={subiendoBanner === "der"}
+                  onChange={(e) => handleBannerImageChange("der", e)}
+                  className="block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-zinc-900 file:bg-amber-500 file:cursor-pointer hover:file:bg-amber-400 disabled:opacity-50"
+                />
+                {subiendoBanner === "der" && (
+                  <p className="text-xs text-amber-500 mt-1">Subiendo…</p>
+                )}
+                {form.imagen_banner_derecha && (
+                  <div className="mt-2">
+                    <img
+                      src={form.imagen_banner_derecha}
+                      alt="Preview banner derecha"
+                      className="h-24 w-auto max-w-full object-contain rounded-lg border border-zinc-700 bg-zinc-950"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setForm((f) => ({ ...f, imagen_banner_derecha: "" }))
+                      }
+                      className="mt-2 text-xs text-red-400 hover:text-red-300"
+                    >
+                      Quitar imagen
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div style={{ marginTop: "20px" }}>

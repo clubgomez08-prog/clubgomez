@@ -406,6 +406,53 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
             )}
           </div>
 
+          <div
+            className="w-full max-w-lg mx-auto px-2 mt-3 mb-2"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "clamp(6px, 2vw, 12px)",
+              flexWrap: "wrap",
+            }}
+          >
+            <img
+              src={rifa.imagen_banner_izquierda || "/moto.png"}
+              alt=""
+              style={{
+                width: "min(28vw, 120px)",
+                height: "min(28vw, 120px)",
+                maxWidth: "120px",
+                maxHeight: "120px",
+                objectFit: "contain",
+                display: "block",
+              }}
+            />
+            <span
+              className="text-white font-bold text-center drop-shadow-sm px-1"
+              style={{
+                fontSize: "clamp(14px, 4vw, 20px)",
+                fontWeight: 700,
+                textShadow:
+                  "0 0 8px rgba(255,255,255,0.35), 0 0 16px rgba(255,255,255,0.2)",
+              }}
+            >
+              Sorteo abierto
+            </span>
+            <img
+              src={rifa.imagen_banner_derecha || "/carro.png"}
+              alt=""
+              style={{
+                width: "min(28vw, 120px)",
+                height: "min(28vw, 120px)",
+                maxWidth: "120px",
+                maxHeight: "120px",
+                objectFit: "contain",
+                display: "block",
+              }}
+            />
+          </div>
+
           <h1 className="text-white font-bold text-2xl text-center mt-3 mb-2 drop-shadow-sm">
             {rifa.nombre}
           </h1>

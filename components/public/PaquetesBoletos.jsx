@@ -7,7 +7,7 @@ export const PAQUETES = [50, 100, 150, 200, 250, 500, 600, 850, 1000];
 const MIN_TICKETS = 1;
 const MAX_MANUAL = 10000;
 
-export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refProp, divisa, setDivisa, convertirPrecio, cargandoTasas }) {
+export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refProp, divisa, setDivisa, convertirPrecio, cargandoTasas, paquetesConfig }) {
   const router = useRouter();
 
   const total = rifa?.total_numeros ?? 0;
@@ -15,8 +15,22 @@ export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refPr
   const maxTickets = total > 0 ? Math.max(MIN_TICKETS, total - vendidos) : 10000;
   const maxManual = Math.min(maxTickets, MAX_MANUAL);
 
+  const paquetesLista =
+    Array.isArray(paquetesConfig) && paquetesConfig.length > 0
+      ? (() => {
+          const n = [
+            ...new Set(
+              paquetesConfig
+                .map((x) => parseInt(x, 10))
+                .filter((x) => !isNaN(x) && x >= 1)
+            ),
+          ].sort((a, b) => a - b);
+          return n.length > 0 ? n : PAQUETES;
+        })()
+      : PAQUETES;
+
   const precioUnit = rifa?.precio_boleto ?? 0;
-  const cantidadActual = Math.max(MIN_TICKETS, Math.min(maxManual, selectedPackage ?? PAQUETES[0]));
+  const cantidadActual = Math.max(MIN_TICKETS, Math.min(maxManual, selectedPackage ?? paquetesLista[0]));
   const montoTotal = cantidadActual * precioUnit;
 
   const [inputValue, setInputValue] = useState(String(cantidadActual));
@@ -67,7 +81,7 @@ export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refPr
 
         {/* Grid de cantidades */}
         <div className="grid grid-cols-3 gap-3 mb-4">
-          {PAQUETES.filter((c) => c <= maxManual).map((cantidad) => {
+          {paquetesLista.filter((c) => c <= maxManual).map((cantidad) => {
             const selected = selectedPackage === cantidad;
             return (
               <div

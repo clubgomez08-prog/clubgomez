@@ -362,6 +362,7 @@ export default function LandingPage() {
       <PremiosAnticipados />
       <PaquetesBoletos
         rifa={rifa}
+        paquetesConfig={rifa?.paquetes_tickets}
         selectedPackage={selectedPackage}
         onSelect={handlePackageSelect}
         refProp={paquetesRef}
