@@ -13,9 +13,12 @@ export default function RifasPage() {
   const [rifas, setRifas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(null);
-  const [emailPrueba, setEmailPrueba] = useState("");
-  const [enviandoPrueba, setEnviandoPrueba] = useState(false);
-  const [mensajePrueba, setMensajePrueba] = useState("");
+  const [emailPruebaGanador, setEmailPruebaGanador] = useState("");
+  const [emailPruebaComprador, setEmailPruebaComprador] = useState("");
+  const [enviandoPruebaGanador, setEnviandoPruebaGanador] = useState(false);
+  const [enviandoPruebaComprador, setEnviandoPruebaComprador] = useState(false);
+  const [mensajePruebaGanador, setMensajePruebaGanador] = useState("");
+  const [mensajePruebaComprador, setMensajePruebaComprador] = useState("");
   const [mostrarFormPrueba, setMostrarFormPrueba] = useState(false);
   const [rifaPrueba, setRifaPrueba] = useState(null);
   const [modalEliminar, setModalEliminar] = useState(null);
@@ -96,35 +99,68 @@ export default function RifasPage() {
     }
   };
 
-  const enviarEmailPrueba = async () => {
-    if (!emailPrueba || !emailPrueba.includes("@")) {
-      setMensajePrueba("Ingresa un email válido");
+  const enviarEmailPruebaGanador = async () => {
+    if (!emailPruebaGanador || !emailPruebaGanador.includes("@")) {
+      setMensajePruebaGanador("Ingresa un email válido");
       return;
     }
-    setEnviandoPrueba(true);
-    setMensajePrueba("");
+    setEnviandoPruebaGanador(true);
+    setMensajePruebaGanador("");
     try {
       const auth = await getAdminAuthHeaders();
       const res = await fetch("/api/admin/email-prueba", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...auth },
         body: JSON.stringify({
-          emailDestino: emailPrueba,
+          emailDestino: emailPruebaGanador,
           nombreRifa: rifaPrueba?.nombre,
           precioRifa: rifaPrueba?.precio_boleto,
         }),
       });
       const data = await res.json();
       if (data.success) {
-        setMensajePrueba("✅ Email enviado correctamente");
-        setEmailPrueba("");
+        setMensajePruebaGanador("✅ Email enviado correctamente");
+        setEmailPruebaGanador("");
       } else {
-        setMensajePrueba("❌ " + (data.error || "Error al enviar"));
+        setMensajePruebaGanador("❌ " + (data.error || "Error al enviar"));
       }
     } catch {
-      setMensajePrueba("❌ Error de conexión");
+      setMensajePruebaGanador("❌ Error de conexión");
     } finally {
-      setEnviandoPrueba(false);
+      setEnviandoPruebaGanador(false);
+    }
+  };
+
+  const enviarEmailPruebaComprador = async () => {
+    if (!emailPruebaComprador || !emailPruebaComprador.includes("@")) {
+      setMensajePruebaComprador("Ingresa un email válido");
+      return;
+    }
+    setEnviandoPruebaComprador(true);
+    setMensajePruebaComprador("");
+    try {
+      const auth = await getAdminAuthHeaders();
+      const res = await fetch("/api/admin/email-prueba", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...auth },
+        body: JSON.stringify({
+          emailDestino: emailPruebaComprador,
+          nombreRifa: rifaPrueba?.nombre,
+          precioRifa: rifaPrueba?.precio_boleto,
+          tipo: "comprador",
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMensajePruebaComprador("✅ Email enviado correctamente");
+        setEmailPruebaComprador("");
+      } else {
+        setMensajePruebaComprador("❌ " + (data.error || "Error al enviar"));
+      }
+    } catch {
+      setMensajePruebaComprador("❌ Error de conexión");
+    } finally {
+      setEnviandoPruebaComprador(false);
     }
   };
 
@@ -314,7 +350,10 @@ export default function RifasPage() {
                     onClick={() => {
                       setRifaPrueba(rifa);
                       setMostrarFormPrueba(true);
-                      setMensajePrueba("");
+                      setMensajePruebaGanador("");
+                      setMensajePruebaComprador("");
+                      setEmailPruebaGanador("");
+                      setEmailPruebaComprador("");
                     }}
                     style={{
                       backgroundColor: "transparent",
@@ -394,6 +433,10 @@ export default function RifasPage() {
                           action: () => {
                             setRifaPrueba(rifa);
                             setMostrarFormPrueba(true);
+                            setMensajePruebaGanador("");
+                            setMensajePruebaComprador("");
+                            setEmailPruebaGanador("");
+                            setEmailPruebaComprador("");
                           },
                         },
                         {
@@ -462,7 +505,9 @@ export default function RifasPage() {
               borderRadius: "16px",
               padding: "24px",
               width: "100%",
-              maxWidth: "400px",
+              maxWidth: "420px",
+              maxHeight: "90vh",
+              overflowY: "auto",
             }}
           >
             <h3
@@ -472,93 +517,202 @@ export default function RifasPage() {
                 fontSize: "18px",
               }}
             >
-              📧 Email de prueba
+              📧 Emails de prueba
             </h3>
-            <p
-              style={{
-                color: "rgba(248,250,252,0.6)",
-                fontSize: "13px",
-                margin: "0 0 4px",
-              }}
-            >
-              Recibirás el mismo email que el ganador real.
-            </p>
             <p
               style={{
                 color: "#F8FAFC",
                 fontSize: "13px",
                 fontWeight: "600",
-                margin: "0 0 16px",
+                margin: "0 0 20px",
               }}
             >
               Sorteo: {rifaPrueba?.nombre}
             </p>
 
-            <input
-              type="email"
-              placeholder="correo@ejemplo.com"
-              value={emailPrueba}
-              onChange={(e) => setEmailPrueba(e.target.value)}
-              style={{
-                width: "100%",
-                backgroundColor: "#071521",
-                border: "1.5px solid rgba(242,178,51,0.3)",
-                borderRadius: "10px",
-                color: "#F8FAFC",
-                fontSize: "15px",
-                padding: "12px 14px",
-                outline: "none",
-                boxSizing: "border-box",
-                marginBottom: "12px",
-                fontFamily: "Poppins, sans-serif",
-              }}
-            />
-
-            {mensajePrueba && (
-              <p
+            {/* Sección ganador */}
+            <div style={{ marginBottom: "4px" }}>
+              <h4
                 style={{
-                  color: mensajePrueba.includes("✅") ? "#22C55E" : "#f87171",
-                  fontSize: "13px",
-                  margin: "0 0 12px",
-                  textAlign: "center",
+                  color: "#F8FAFC",
+                  margin: "0 0 6px",
+                  fontSize: "16px",
+                  fontWeight: "700",
                 }}
               >
-                {mensajePrueba}
+                🏆 Correo de ganador
+              </h4>
+              <p
+                style={{
+                  color: "rgba(248,250,252,0.55)",
+                  fontSize: "12px",
+                  margin: "0 0 12px",
+                  lineHeight: 1.45,
+                }}
+              >
+                Así verá el ganador su notificación
               </p>
-            )}
+              <input
+                type="email"
+                placeholder="Correo donde enviar la prueba"
+                value={emailPruebaGanador}
+                onChange={(e) => setEmailPruebaGanador(e.target.value)}
+                style={{
+                  width: "100%",
+                  backgroundColor: "#071521",
+                  border: "1.5px solid rgba(242,178,51,0.3)",
+                  borderRadius: "10px",
+                  color: "#F8FAFC",
+                  fontSize: "15px",
+                  padding: "12px 14px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  marginBottom: "12px",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              />
+              {mensajePruebaGanador && (
+                <p
+                  style={{
+                    color: mensajePruebaGanador.includes("✅")
+                      ? "#22C55E"
+                      : "#f87171",
+                    fontSize: "13px",
+                    margin: "0 0 12px",
+                    textAlign: "center",
+                  }}
+                >
+                  {mensajePruebaGanador}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={enviarEmailPruebaGanador}
+                disabled={enviandoPruebaGanador}
+                style={{
+                  width: "100%",
+                  backgroundColor: enviandoPruebaGanador
+                    ? "rgba(242,178,51,0.4)"
+                    : "#F2B233",
+                  color: "#071521",
+                  fontWeight: "700",
+                  fontSize: "15px",
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "none",
+                  cursor: enviandoPruebaGanador ? "not-allowed" : "pointer",
+                  marginBottom: "0",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
+                {enviandoPruebaGanador
+                  ? "Enviando..."
+                  : "Enviar prueba de ganador"}
+              </button>
+            </div>
 
-            <button
-              type="button"
-              onClick={enviarEmailPrueba}
-              disabled={enviandoPrueba}
+            <div
               style={{
+                height: "1px",
+                backgroundColor: "rgba(242,178,51,0.22)",
+                margin: "20px 0",
                 width: "100%",
-                backgroundColor: enviandoPrueba
-                  ? "rgba(242,178,51,0.4)"
-                  : "#F2B233",
-                color: "#071521",
-                fontWeight: "700",
-                fontSize: "15px",
-                padding: "12px",
-                borderRadius: "10px",
-                border: "none",
-                cursor: enviandoPrueba ? "not-allowed" : "pointer",
-                marginBottom: "8px",
-                fontFamily: "Poppins, sans-serif",
               }}
-            >
-              {enviandoPrueba ? "Enviando..." : "Enviar email de prueba"}
-            </button>
+              aria-hidden="true"
+            />
+
+            {/* Sección comprador */}
+            <div>
+              <h4
+                style={{
+                  color: "#F8FAFC",
+                  margin: "0 0 6px",
+                  fontSize: "16px",
+                  fontWeight: "700",
+                }}
+              >
+                🎟️ Correo de comprador
+              </h4>
+              <p
+                style={{
+                  color: "rgba(248,250,252,0.55)",
+                  fontSize: "12px",
+                  margin: "0 0 12px",
+                  lineHeight: 1.45,
+                }}
+              >
+                Así verá el comprador sus tickets asignados
+              </p>
+              <input
+                type="email"
+                placeholder="Correo donde enviar la prueba"
+                value={emailPruebaComprador}
+                onChange={(e) => setEmailPruebaComprador(e.target.value)}
+                style={{
+                  width: "100%",
+                  backgroundColor: "#071521",
+                  border: "1.5px solid rgba(242,178,51,0.3)",
+                  borderRadius: "10px",
+                  color: "#F8FAFC",
+                  fontSize: "15px",
+                  padding: "12px 14px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  marginBottom: "12px",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              />
+              {mensajePruebaComprador && (
+                <p
+                  style={{
+                    color: mensajePruebaComprador.includes("✅")
+                      ? "#22C55E"
+                      : "#f87171",
+                    fontSize: "13px",
+                    margin: "0 0 12px",
+                    textAlign: "center",
+                  }}
+                >
+                  {mensajePruebaComprador}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={enviarEmailPruebaComprador}
+                disabled={enviandoPruebaComprador}
+                style={{
+                  width: "100%",
+                  backgroundColor: enviandoPruebaComprador
+                    ? "rgba(34,197,94,0.35)"
+                    : "#22C55E",
+                  color: "#071521",
+                  fontWeight: "700",
+                  fontSize: "15px",
+                  padding: "12px",
+                  borderRadius: "10px",
+                  border: "none",
+                  cursor: enviandoPruebaComprador ? "not-allowed" : "pointer",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
+                {enviandoPruebaComprador
+                  ? "Enviando..."
+                  : "Enviar prueba de comprador"}
+              </button>
+            </div>
 
             <button
               type="button"
               onClick={() => {
                 setMostrarFormPrueba(false);
-                setMensajePrueba("");
-                setEmailPrueba("");
+                setMensajePruebaGanador("");
+                setMensajePruebaComprador("");
+                setEmailPruebaGanador("");
+                setEmailPruebaComprador("");
               }}
               style={{
                 width: "100%",
+                marginTop: "16px",
                 backgroundColor: "transparent",
                 border: "1px solid rgba(255,255,255,0.15)",
                 borderRadius: "10px",

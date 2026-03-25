@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generarHtmlEmailGanador } from "@/lib/email";
+import { generarHtmlEmailGanador, enviarTicketCompra } from "@/lib/email";
 import { Resend } from "resend";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
 
@@ -12,7 +12,7 @@ export async function POST(request) {
   }
 
   try {
-    const { emailDestino, nombreRifa, precioRifa } = await request.json();
+    const { emailDestino, nombreRifa, precioRifa, tipo } = await request.json();
 
     if (!emailDestino || !emailDestino.includes("@")) {
       return NextResponse.json(
@@ -26,6 +26,44 @@ export async function POST(request) {
         { error: "RESEND_API_KEY no configurado" },
         { status: 500 }
       );
+    }
+
+    if (tipo === "comprador") {
+      const participanteCompradorPrueba = {
+        id: "00000000-0000-0000-0000-00000000d3d0",
+        nombre: "Juan Prueba",
+        email: emailDestino,
+        cantidad_boletos: 5,
+        total_pagado: 1000,
+      };
+      const rifaCompradorPrueba = {
+        nombre: nombreRifa || "Sorteo de prueba",
+      };
+      const numerosCompradorPrueba = [
+        "1234-56",
+        "7890-12",
+        "3456-78",
+        "9012-34",
+        "5678-90",
+      ];
+
+      try {
+        const data = await enviarTicketCompra(
+          participanteCompradorPrueba,
+          rifaCompradorPrueba,
+          numerosCompradorPrueba
+        );
+        return NextResponse.json({
+          success: true,
+          message: `Email de prueba (comprador) enviado a ${emailDestino}`,
+          id: data?.id,
+        });
+      } catch (sendErr) {
+        return NextResponse.json(
+          { error: sendErr?.message || "Error al enviar email de comprador" },
+          { status: 500 }
+        );
+      }
     }
 
     const participanteSimulado = {
