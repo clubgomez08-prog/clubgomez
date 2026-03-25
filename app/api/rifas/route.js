@@ -16,6 +16,24 @@ function normalizarPaquetesTickets(input) {
   return unique.length >= 1 ? unique : DEFAULT_PAQUETES_TICKETS;
 }
 
+const RE_NUMERO_BENDECIDO = /^\d{4}-\d{2}$/;
+
+function normalizarNumerosBendecidos(input) {
+  if (input === undefined || input === null) return [];
+  if (!Array.isArray(input)) return [];
+  const out = [];
+  const seen = new Set();
+  for (const x of input) {
+    const s = String(x ?? "").trim();
+    if (!RE_NUMERO_BENDECIDO.test(s)) continue;
+    if (seen.has(s)) continue;
+    seen.add(s);
+    out.push(s);
+    if (out.length >= 20) break;
+  }
+  return out;
+}
+
 export async function GET() {
   const { data: rifasData, error } = await supabaseAdmin
     .from("rifas")
@@ -70,6 +88,7 @@ export async function POST(request) {
     imagen_banner_izquierda:
       body.imagen_banner_izquierda?.trim?.() || null,
     imagen_banner_derecha: body.imagen_banner_derecha?.trim?.() || null,
+    numeros_bendecidos: normalizarNumerosBendecidos(body.numeros_bendecidos),
     serie_actual: 0,
   };
 

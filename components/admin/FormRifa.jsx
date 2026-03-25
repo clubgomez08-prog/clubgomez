@@ -33,6 +33,17 @@ function paquetesTicketsParaGuardar(arr) {
   return unique.length >= 1 ? unique : [...DEFAULT_PAQUETES_TICKETS];
 }
 
+const RE_NUMERO_BENDECIDO = /^\d{4}-\d{2}$/;
+
+function esNumeroBendecidoValido(valor) {
+  return RE_NUMERO_BENDECIDO.test(String(valor ?? "").trim());
+}
+
+function parseNumerosBendecidosInicial(raw) {
+  if (!Array.isArray(raw) || raw.length === 0) return [];
+  return raw.map((x) => String(x ?? "").trim()).filter(Boolean);
+}
+
 export default function FormRifa({ rifaId }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -51,6 +62,7 @@ export default function FormRifa({ rifaId }) {
     paquetes_tickets: [...DEFAULT_PAQUETES_TICKETS],
     imagen_banner_izquierda: "",
     imagen_banner_derecha: "",
+    numeros_bendecidos: [],
   });
   const [subiendoImagenAdicional, setSubiendoImagenAdicional] = useState(false);
   const [subiendoBanner, setSubiendoBanner] = useState(null);
@@ -82,6 +94,9 @@ export default function FormRifa({ rifaId }) {
             ),
             imagen_banner_izquierda: data.imagen_banner_izquierda || "",
             imagen_banner_derecha: data.imagen_banner_derecha || "",
+            numeros_bendecidos: parseNumerosBendecidosInicial(
+              data.numeros_bendecidos
+            ),
           });
         })
         .catch(() => setError("Error al cargar rifa"))
@@ -205,6 +220,33 @@ export default function FormRifa({ rifaId }) {
     });
   };
 
+  const cambiarNumeroBendecido = (index, valor) => {
+    setForm((prev) => {
+      const next = [...(prev.numeros_bendecidos || [])];
+      next[index] = valor;
+      return { ...prev, numeros_bendecidos: next };
+    });
+  };
+
+  const agregarNumeroBendecido = () => {
+    setForm((prev) => {
+      if ((prev.numeros_bendecidos || []).length >= 20) return prev;
+      return {
+        ...prev,
+        numeros_bendecidos: [...(prev.numeros_bendecidos || []), ""],
+      };
+    });
+  };
+
+  const eliminarNumeroBendecido = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      numeros_bendecidos: (prev.numeros_bendecidos || []).filter(
+        (_, i) => i !== index
+      ),
+    }));
+  };
+
   async function handleImageChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -263,6 +305,20 @@ export default function FormRifa({ rifaId }) {
     setError("");
     setLoading(true);
 
+    const rawBendecidos = (form.numeros_bendecidos || [])
+      .map((s) => String(s ?? "").trim())
+      .filter((s) => s !== "");
+    const invalidBendecido = rawBendecidos.some(
+      (s) => !esNumeroBendecidoValido(s)
+    );
+    if (invalidBendecido) {
+      setError(
+        'Cada número bendecido debe tener el formato exacto 0000-00 (4 dígitos, guion, 2 dígitos). Revisa los campos en rojo o vacía los inválidos.'
+      );
+      setLoading(false);
+      return;
+    }
+
     const payload = {
       nombre: form.nombre.trim(),
       descripcion: form.descripcion.trim() || null,
@@ -276,6 +332,7 @@ export default function FormRifa({ rifaId }) {
       paquetes_tickets: paquetesTicketsParaGuardar(form.paquetes_tickets),
       imagen_banner_izquierda: form.imagen_banner_izquierda?.trim() || null,
       imagen_banner_derecha: form.imagen_banner_derecha?.trim() || null,
+      numeros_bendecidos: rawBendecidos,
     };
 
     if (!payload.nombre || !payload.precio_boleto) {
@@ -457,6 +514,61 @@ export default function FormRifa({ rifaId }) {
               className="mt-3 px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-amber-400 text-sm font-medium hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               + Agregar paquete
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-2">
+              Números bendecidos
+            </label>
+            <p className="text-xs text-zinc-500 mb-3">
+              Formato exacto <span className="text-amber-500/90">0000-00</span>{" "}
+              (4 dígitos, guion, 2 dígitos). Máximo 20. Se guardan como JSON en
+              la rifa.
+            </p>
+            <div className="space-y-2">
+              {(form.numeros_bendecidos || []).map((valor, index) => {
+                const t = String(valor ?? "").trim();
+                const mostrarError = t !== "" && !esNumeroBendecidoValido(t);
+                return (
+                  <div
+                    key={index}
+                    className="flex flex-wrap items-center gap-2 sm:gap-3"
+                  >
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      placeholder="0000-00"
+                      value={valor}
+                      onChange={(e) =>
+                        cambiarNumeroBendecido(index, e.target.value)
+                      }
+                      className={
+                        mostrarError
+                          ? "w-full min-w-0 sm:max-w-[200px] px-4 py-3 bg-zinc-800 border-2 border-red-500 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 font-mono text-sm"
+                          : "w-full min-w-0 sm:max-w-[200px] px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 font-mono text-sm"
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={() => eliminarNumeroBendecido(index)}
+                      className="shrink-0 px-3 py-2 rounded-lg border border-zinc-600 text-zinc-300 hover:bg-zinc-800 text-sm"
+                      aria-label="Eliminar número bendecido"
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={agregarNumeroBendecido}
+              disabled={(form.numeros_bendecidos || []).length >= 20}
+              className="mt-3 px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-amber-400 text-sm font-medium hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              + Agregar número
             </button>
           </div>
 
