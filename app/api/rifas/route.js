@@ -4,7 +4,7 @@ import { verificarSesionAdmin } from "@/lib/auth-admin";
 
 export const dynamic = "force-dynamic";
 
-const DEFAULT_PAQUETES_TICKETS = [50, 100, 150, 200, 250, 500, 1000];
+const DEFAULT_PAQUETES_TICKETS = [50, 100, 150, 200, 250, 500, 600, 850, 1000];
 
 function normalizarPaquetesTickets(input) {
   if (input === undefined || input === null) return DEFAULT_PAQUETES_TICKETS;
@@ -12,7 +12,7 @@ function normalizarPaquetesTickets(input) {
   const nums = input
     .map((x) => parseInt(x, 10))
     .filter((n) => !isNaN(n) && n >= 1);
-  const unique = [...new Set(nums)].sort((a, b) => a - b).slice(0, 8);
+  const unique = [...new Set(nums)].sort((a, b) => a - b).slice(0, 9);
   return unique.length >= 1 ? unique : DEFAULT_PAQUETES_TICKETS;
 }
 

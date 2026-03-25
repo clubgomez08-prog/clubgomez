@@ -12,7 +12,7 @@ const ACCEPT_IMAGEN_Y_VIDEO =
 const ACCEPT_SOLO_IMAGEN =
   "image/*,.jpg,.jpeg,.png,.gif,.webp,.avif,.svg";
 
-const DEFAULT_PAQUETES_TICKETS = [50, 100, 150, 200, 250, 500, 1000];
+const DEFAULT_PAQUETES_TICKETS = [50, 100, 150, 200, 250, 500, 600, 850, 1000];
 
 function parsePaquetesTicketsInicial(raw) {
   if (!Array.isArray(raw) || raw.length === 0) {
@@ -21,7 +21,7 @@ function parsePaquetesTicketsInicial(raw) {
   const nums = raw
     .map((x) => parseInt(x, 10))
     .filter((n) => !isNaN(n) && n >= 1);
-  const unique = [...new Set(nums)].sort((a, b) => a - b).slice(0, 8);
+  const unique = [...new Set(nums)].sort((a, b) => a - b).slice(0, 9);
   return unique.length >= 1 ? unique : [...DEFAULT_PAQUETES_TICKETS];
 }
 
@@ -29,7 +29,7 @@ function paquetesTicketsParaGuardar(arr) {
   const nums = (arr || [])
     .map((n) => parseInt(n, 10))
     .filter((n) => !isNaN(n) && n >= 1);
-  const unique = [...new Set(nums)].sort((a, b) => a - b).slice(0, 8);
+  const unique = [...new Set(nums)].sort((a, b) => a - b).slice(0, 9);
   return unique.length >= 1 ? unique : [...DEFAULT_PAQUETES_TICKETS];
 }
 
@@ -201,7 +201,7 @@ export default function FormRifa({ rifaId }) {
 
   const agregarPaqueteTicket = () => {
     setForm((prev) => {
-      if (prev.paquetes_tickets.length >= 8) return prev;
+      if (prev.paquetes_tickets.length >= 9) return prev;
       const last = prev.paquetes_tickets[prev.paquetes_tickets.length - 1] || 50;
       return {
         ...prev,
@@ -476,7 +476,7 @@ export default function FormRifa({ rifaId }) {
               Paquetes de tickets
             </label>
             <p className="text-xs text-zinc-500 mb-3">
-              Cantidades mostradas en la landing (1 a 8 paquetes, enteros
+              Cantidades mostradas en la landing (1 a 9 paquetes, enteros
               positivos; al guardar se ordenan de menor a mayor).
             </p>
             <div className="space-y-2">
@@ -510,7 +510,7 @@ export default function FormRifa({ rifaId }) {
             <button
               type="button"
               onClick={agregarPaqueteTicket}
-              disabled={form.paquetes_tickets.length >= 8}
+              disabled={form.paquetes_tickets.length >= 9}
               className="mt-3 px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-amber-400 text-sm font-medium hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               + Agregar paquete
