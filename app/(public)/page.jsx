@@ -360,6 +360,7 @@ export default function LandingPage() {
         </>
       )}
       <PremiosAnticipados />
+      <NumeroBendecido />
       <PaquetesBoletos
         rifa={rifa}
         paquetesConfig={rifa?.paquetes_tickets}
@@ -371,7 +372,6 @@ export default function LandingPage() {
         convertirPrecio={convertirPrecio}
         cargandoTasas={cargandoTasas}
       />
-      <NumeroBendecido />
       <ReenviarCodigos />
       </div>
     </main>
