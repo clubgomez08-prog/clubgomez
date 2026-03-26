@@ -5,6 +5,7 @@ import confetti from "canvas-confetti";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { getAdminAuthHeaders } from "@/lib/auth";
 import { useToast } from "@/components/admin/Toast";
+import { parseNumerosBendecidos } from "@/lib/numeros-bendecidos";
 
 function formatPrecio(n) {
   return new Intl.NumberFormat("es-CO", {
@@ -49,6 +50,21 @@ export default function SorteoPage() {
   const [ganadoresPremios, setGanadoresPremios] = useState({});
   const [notificandoPremio, setNotificandoPremio] = useState(null);
   const [mensajesPremios, setMensajesPremios] = useState({});
+  const [numerosBendecidosLocal, setNumerosBendecidosLocal] = useState([]);
+  const [savingBendecidoIdx, setSavingBendecidoIdx] = useState(null);
+
+  useEffect(() => {
+    if (!rifaId) {
+      setNumerosBendecidosLocal([]);
+      return;
+    }
+    const r = rifas.find((x) => x.id === rifaId);
+    if (!r) {
+      setNumerosBendecidosLocal([]);
+      return;
+    }
+    setNumerosBendecidosLocal(parseNumerosBendecidos(r.numeros_bendecidos));
+  }, [rifaId, rifas]);
 
   useEffect(() => {
     fetch("/api/rifas")
@@ -373,6 +389,43 @@ export default function SorteoPage() {
     }
   };
 
+  const toggleBendecidoBloqueo = async (index) => {
+    if (savingBendecidoIdx !== null || !rifaId) return;
+    const prevList = numerosBendecidosLocal.map((x) => ({ ...x }));
+    const nextList = prevList.map((item, i) =>
+      i === index ? { ...item, bloqueado: !item.bloqueado } : item
+    );
+    setNumerosBendecidosLocal(nextList);
+    setSavingBendecidoIdx(index);
+    try {
+      const auth = await getAdminAuthHeaders();
+      const res = await fetch(`/api/rifas/${rifaId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...auth },
+        body: JSON.stringify({ numeros_bendecidos: nextList }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setNumerosBendecidosLocal(prevList);
+        addToast(data.error || "Error al actualizar el número", "error");
+        return;
+      }
+      setRifas((prev) =>
+        prev.map((r) =>
+          r.id === rifaId
+            ? { ...r, numeros_bendecidos: data.numeros_bendecidos ?? nextList }
+            : r
+        )
+      );
+      addToast("✅ Número actualizado", "success");
+    } catch (err) {
+      setNumerosBendecidosLocal(prevList);
+      addToast(err.message || "Error de conexión", "error");
+    } finally {
+      setSavingBendecidoIdx(null);
+    }
+  };
+
   const notificarGanadorPremio = async (premioIndex) => {
     const ganador = ganadoresPremios[premioIndex];
     if (!ganador) return;
@@ -483,6 +536,150 @@ export default function SorteoPage() {
                 {listo ? "Listo para sortear" : "En progreso"}
               </span>
             </div>
+          </div>
+
+          <div
+            style={{
+              backgroundColor: "#1a1a1a",
+              border: "1px solid rgba(242,178,51,0.2)",
+              borderRadius: "16px",
+              padding: "24px",
+              marginTop: "24px",
+            }}
+          >
+            <h2
+              style={{
+                color: "#F8FAFC",
+                fontSize: "18px",
+                fontWeight: "700",
+                margin: "0 0 6px",
+              }}
+            >
+              🌟 Números bendecidos
+            </h2>
+            <p
+              style={{
+                color: "rgba(248,250,252,0.5)",
+                fontSize: "13px",
+                margin: "0 0 20px",
+              }}
+            >
+              Activa o bloquea cada número individualmente
+            </p>
+
+            {numerosBendecidosLocal.length === 0 ? (
+              <p
+                style={{
+                  color: "rgba(248,250,252,0.55)",
+                  fontSize: "14px",
+                  lineHeight: 1.55,
+                  margin: 0,
+                }}
+              >
+                Esta rifa no tiene números bendecidos configurados.
+                Agrégalos desde Rifas → Editar.
+              </p>
+            ) : (
+              <div
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                style={{ marginTop: "4px" }}
+              >
+                {numerosBendecidosLocal.map((item, index) => {
+                  const bloqueado = Boolean(item.bloqueado);
+                  const disabled = savingBendecidoIdx !== null;
+                  return (
+                    <div
+                      key={`${item.numero}-${index}`}
+                      style={{
+                        backgroundColor: "rgba(10,10,10,0.6)",
+                        border: "1.5px solid rgba(242,178,51,0.25)",
+                        borderRadius: "14px",
+                        padding: "16px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "12px",
+                        flexWrap: "wrap",
+                        minHeight: "52px",
+                      }}
+                    >
+                      <div style={{ flex: "1 1 auto", minWidth: 0 }}>
+                        <p
+                          style={{
+                            margin: "0 0 8px",
+                            fontFamily:
+                              "ui-monospace, Consolas, 'Courier New', monospace",
+                            fontSize: "22px",
+                            fontWeight: "800",
+                            color: "#F2B233",
+                            letterSpacing: "0.02em",
+                          }}
+                        >
+                          {item.numero}
+                        </p>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            fontSize: "11px",
+                            fontWeight: "700",
+                            padding: "4px 10px",
+                            borderRadius: "999px",
+                            border: bloqueado
+                              ? "1px solid rgba(239,68,68,0.45)"
+                              : "1px solid rgba(34,197,94,0.45)",
+                            backgroundColor: bloqueado
+                              ? "rgba(239,68,68,0.12)"
+                              : "rgba(34,197,94,0.12)",
+                            color: bloqueado ? "#fca5a5" : "#86efac",
+                          }}
+                        >
+                          {bloqueado ? "🔴 Bloqueado" : "🟢 Activo"}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={!bloqueado}
+                        aria-label={
+                          bloqueado
+                            ? `Activar número ${item.numero}`
+                            : `Bloquear número ${item.numero}`
+                        }
+                        disabled={disabled}
+                        onClick={() => toggleBendecidoBloqueo(index)}
+                        style={{
+                          flexShrink: 0,
+                          width: "52px",
+                          height: "30px",
+                          borderRadius: "999px",
+                          border: "2px solid rgba(242,178,51,0.35)",
+                          backgroundColor: bloqueado ? "#3f1d1d" : "#14532d",
+                          position: "relative",
+                          cursor: disabled ? "not-allowed" : "pointer",
+                          opacity: disabled ? 0.55 : 1,
+                          transition: "background-color 0.2s ease",
+                          padding: 0,
+                        }}
+                      >
+                        <span
+                          style={{
+                            position: "absolute",
+                            top: "3px",
+                            left: bloqueado ? "4px" : "26px",
+                            width: "22px",
+                            height: "22px",
+                            borderRadius: "50%",
+                            backgroundColor: bloqueado ? "#f87171" : "#4ade80",
+                            boxShadow: "0 1px 4px rgba(0,0,0,0.35)",
+                            transition: "left 0.2s ease",
+                          }}
+                        />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div style={{
