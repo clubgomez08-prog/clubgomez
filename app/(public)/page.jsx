@@ -344,6 +344,46 @@ export default function LandingPage() {
         paquetesRef={paquetesRef}
         convertirPrecio={convertirPrecio}
       />
+      {rifa && (
+        <div
+          className="flex justify-center px-4"
+          style={{ marginTop: "4px", marginBottom: "10px" }}
+        >
+          <button
+            type="button"
+            onClick={() =>
+              paquetesRef.current?.scrollIntoView({ behavior: "smooth" })
+            }
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 35%, transparent 65%), #ef4444",
+              borderRadius: "999px",
+              padding: "10px 20px",
+              border: "none",
+              cursor: "pointer",
+              boxShadow:
+                "0 -2px 6px rgba(255,180,100,0.3), 0 3px 12px rgba(239,68,68,0.5)",
+              maxWidth: "100%",
+            }}
+          >
+            <span
+              style={{
+                color: "white",
+                fontSize: "12px",
+                fontWeight: "800",
+                letterSpacing: "0.4px",
+                lineHeight: 1.25,
+              }}
+            >
+              Comprar tickets
+            </span>
+          </button>
+        </div>
+      )}
       {rifas?.length > 1 && (
         <>
           <button
