@@ -2,11 +2,13 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import Hero from "@/components/public/Hero";
 import PaquetesBoletos, { PAQUETES } from "@/components/public/PaquetesBoletos";
 import PremiosAnticipados from "@/components/public/PremiosAnticipados";
 import NumeroBendecido from "@/components/public/NumeroBendecido";
 import ReenviarCodigos from "@/components/public/ReenviarCodigos";
+import WhatsAppFlotante from "@/components/public/WhatsAppFlotante";
 
 const comprasEnVivo = [
   { nombre: "Carlos M.", cantidad: 10, tiempo: "hace 2 min" },
@@ -27,6 +29,8 @@ export default function LandingPage() {
   const [tasas, setTasas] = useState({ COP: 1, USD: 1, VES: 1, EUR: 1, MXN: 1 });
   const [cargandoTasas, setCargandoTasas] = useState(true);
   const paquetesRef = useRef(null);
+  const [whatsappNumero, setWhatsappNumero] = useState("+573114405488");
+  const [whatsappActivo, setWhatsappActivo] = useState(true);
 
   const rifa = rifas?.[rifaActual] ?? null;
   const stats = rifa ? {
@@ -38,6 +42,23 @@ export default function LandingPage() {
   } : null;
 
   useEffect(() => {
+    supabaseBrowser
+      .from("configuracion")
+      .select("whatsapp_numero, whatsapp_activo")
+      .eq("id", "global")
+      .single()
+      .then(({ data, error }) => {
+        if (error || !data) return;
+        if (
+          data.whatsapp_numero != null &&
+          String(data.whatsapp_numero).trim() !== ""
+        ) {
+          setWhatsappNumero(String(data.whatsapp_numero).trim());
+        }
+        setWhatsappActivo(data.whatsapp_activo !== false);
+      })
+      .catch(() => {});
+
     fetch("/api/rifas", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
@@ -373,6 +394,7 @@ export default function LandingPage() {
         cargandoTasas={cargandoTasas}
       />
       <ReenviarCodigos />
+      <WhatsAppFlotante numero={whatsappNumero} activo={whatsappActivo} />
       </div>
     </main>
   );

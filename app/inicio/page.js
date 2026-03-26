@@ -3,22 +3,34 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import WhatsAppFlotante from "@/components/public/WhatsAppFlotante";
 import styles from "./inicio.module.css";
 
 export default function InicioPage() {
   const [imgBannerIzq, setImgBannerIzq] = useState(null);
   const [imgBannerDer, setImgBannerDer] = useState(null);
+  const [whatsappNumero, setWhatsappNumero] = useState("+573114405488");
+  const [whatsappActivo, setWhatsappActivo] = useState(true);
 
   useEffect(() => {
     supabaseBrowser
       .from("configuracion")
-      .select("imagen_banner_izquierda, imagen_banner_derecha")
+      .select(
+        "imagen_banner_izquierda, imagen_banner_derecha, whatsapp_numero, whatsapp_activo"
+      )
       .eq("id", "global")
       .single()
       .then(({ data, error }) => {
         if (error || !data) return;
         setImgBannerIzq(data.imagen_banner_izquierda || null);
         setImgBannerDer(data.imagen_banner_derecha || null);
+        if (
+          data.whatsapp_numero != null &&
+          String(data.whatsapp_numero).trim() !== ""
+        ) {
+          setWhatsappNumero(String(data.whatsapp_numero).trim());
+        }
+        setWhatsappActivo(data.whatsapp_activo !== false);
       });
   }, []);
 
@@ -311,6 +323,7 @@ export default function InicioPage() {
           </a>
         </div>
       </div>
+      <WhatsAppFlotante numero={whatsappNumero} activo={whatsappActivo} />
     </div>
   );
 }
