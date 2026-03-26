@@ -1,6 +1,10 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import {
+  getNumerosActivos,
+  parseNumerosBendecidos,
+} from '@/lib/numeros-bendecidos'
 
 export default function MisTickets() {
   const [cedula, setCedula] = useState('')
@@ -38,14 +42,20 @@ export default function MisTickets() {
       if (!res.ok) {
         throw new Error(data.error || 'Error al buscar tickets')
       }
-      const enriched = Array.isArray(data.resultados) ? data.resultados : []
+      const enrichedRaw = Array.isArray(data.resultados) ? data.resultados : []
 
-      if (enriched.length === 0) {
+      if (enrichedRaw.length === 0) {
         setError('No encontramos tickets con esos datos. Verifica tu cédula y email.')
         setBuscando(false)
         return
       }
 
+      const enriched = enrichedRaw.map((p) => ({
+        ...p,
+        numeros_bendecidos: getNumerosActivos(
+          parseNumerosBendecidos(p.numeros_bendecidos)
+        ),
+      }))
       setNumerosBendecidos(enriched.map((x) => x.numeros_bendecidos || []))
       setResultados(enriched)
     } catch (err) {
@@ -111,6 +121,18 @@ export default function MisTickets() {
       padding: '16px',
       fontFamily: 'Poppins, sans-serif'
     }}>
+      <style>{`
+        @keyframes rifexPulseGold {
+          0%, 100% {
+            box-shadow: 0 0 6px rgba(242,178,51,0.45), 0 0 14px rgba(242,178,51,0.2);
+            filter: brightness(1);
+          }
+          50% {
+            box-shadow: 0 0 16px rgba(242,178,51,0.75), 0 0 26px rgba(242,178,51,0.35);
+            filter: brightness(1.06);
+          }
+        }
+      `}</style>
 
       {/* Overlay oscuro */}
       <div style={{
@@ -413,7 +435,9 @@ export default function MisTickets() {
                                 fontSize: '15px',
                                 fontWeight: '800',
                                 fontFamily: 'ui-monospace, Consolas, monospace',
-                                boxShadow: '0 0 10px rgba(242,178,51,0.65)'
+                                boxShadow: '0 0 10px rgba(242,178,51,0.65)',
+                                animation: 'rifexPulseGold 2.8s ease-in-out infinite',
+                                willChange: 'box-shadow, filter'
                               }}>
                                 ✨ {numStr}
                               </span>

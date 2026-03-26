@@ -4,7 +4,15 @@ export const dynamic = "force-dynamic";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { supabaseAdmin } from "@/lib/supabase";
 import { asignarNumerosParticipante } from "@/lib/numeros";
-import { enviarTicketCompra, enviarConfirmacionAdmin } from "@/lib/email";
+import {
+  enviarTicketCompra,
+  enviarConfirmacionAdmin,
+  enviarNotificacionBendecido,
+} from "@/lib/email";
+import {
+  parseNumerosBendecidos,
+  getNumerosString,
+} from "@/lib/numeros-bendecidos";
 import {
   politicaVerificacionWebhookMp,
   verificarFirmaWebhookMercadoPago,
@@ -181,7 +189,7 @@ async function procesarPago(paymentId) {
 
     const { data: rifa } = await supabaseAdmin
       .from("rifas")
-      .select("id, nombre, precio_boleto")
+      .select("id, nombre, precio_boleto, numeros_bendecidos")
       .eq("id", rifaId)
       .single();
 
@@ -201,6 +209,27 @@ async function procesarPago(paymentId) {
           "[Webhook] Error notificación admin:",
           emailErr?.message || "Error desconocido"
         );
+      }
+
+      const bendecidosSet = new Set(
+        getNumerosString(parseNumerosBendecidos(rifa.numeros_bendecidos))
+      );
+      const numerosBendecidosAsignados = numeros.filter((n) =>
+        bendecidosSet.has(String(n ?? "").trim())
+      );
+      if (numerosBendecidosAsignados.length > 0) {
+        try {
+          await enviarNotificacionBendecido(
+            participanteActual,
+            rifa,
+            numerosBendecidosAsignados
+          );
+        } catch (bendErr) {
+          console.error(
+            "[Webhook MP] Error notificación bendecido:",
+            bendErr?.message || "Error desconocido"
+          );
+        }
       }
     }
 

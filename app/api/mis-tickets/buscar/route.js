@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import {
+  parseNumerosBendecidos,
+  getNumerosActivos,
+} from "@/lib/numeros-bendecidos";
 
 export const dynamic = "force-dynamic";
 
@@ -72,9 +76,9 @@ export async function POST(request) {
           .eq("participante_id", p.id)
           .order("numero", { ascending: true });
 
-        const nb = Array.isArray(p.rifas?.numeros_bendecidos)
-          ? p.rifas.numeros_bendecidos.map((x) => String(x ?? "").trim())
-          : [];
+        const nb = getNumerosActivos(
+          parseNumerosBendecidos(p.rifas?.numeros_bendecidos)
+        );
 
         return {
           id: p.id,

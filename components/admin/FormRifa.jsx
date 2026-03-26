@@ -41,7 +41,15 @@ function esNumeroBendecidoValido(valor) {
 
 function parseNumerosBendecidosInicial(raw) {
   if (!Array.isArray(raw) || raw.length === 0) return [];
-  return raw.map((x) => String(x ?? "").trim()).filter(Boolean);
+  return raw.map((x) => {
+    if (typeof x === "string") {
+      return { numero: String(x ?? "").trim(), bloqueado: true };
+    }
+    return {
+      numero: String(x?.numero ?? "").trim(),
+      bloqueado: Boolean(x?.bloqueado),
+    };
+  });
 }
 
 export default function FormRifa({ rifaId }) {
@@ -223,7 +231,20 @@ export default function FormRifa({ rifaId }) {
   const cambiarNumeroBendecido = (index, valor) => {
     setForm((prev) => {
       const next = [...(prev.numeros_bendecidos || [])];
-      next[index] = valor;
+      const cur = next[index];
+      const bloqueado =
+        cur && typeof cur === "object" ? Boolean(cur.bloqueado) : true;
+      next[index] = { numero: valor, bloqueado };
+      return { ...prev, numeros_bendecidos: next };
+    });
+  };
+
+  const toggleBloqueadoBendecido = (index) => {
+    setForm((prev) => {
+      const next = [...(prev.numeros_bendecidos || [])];
+      const cur = next[index];
+      if (!cur || typeof cur !== "object") return prev;
+      next[index] = { ...cur, bloqueado: !cur.bloqueado };
       return { ...prev, numeros_bendecidos: next };
     });
   };
@@ -233,7 +254,10 @@ export default function FormRifa({ rifaId }) {
       if ((prev.numeros_bendecidos || []).length >= 20) return prev;
       return {
         ...prev,
-        numeros_bendecidos: [...(prev.numeros_bendecidos || []), ""],
+        numeros_bendecidos: [
+          ...(prev.numeros_bendecidos || []),
+          { numero: "", bloqueado: true },
+        ],
       };
     });
   };
@@ -306,10 +330,20 @@ export default function FormRifa({ rifaId }) {
     setLoading(true);
 
     const rawBendecidos = (form.numeros_bendecidos || [])
-      .map((s) => String(s ?? "").trim())
-      .filter((s) => s !== "");
+      .map((item) => {
+        const numero =
+          typeof item === "string"
+            ? String(item ?? "").trim()
+            : String(item?.numero ?? "").trim();
+        const bloqueado =
+          typeof item === "object" && item != null
+            ? Boolean(item.bloqueado)
+            : true;
+        return { numero, bloqueado };
+      })
+      .filter((x) => x.numero !== "");
     const invalidBendecido = rawBendecidos.some(
-      (s) => !esNumeroBendecidoValido(s)
+      (x) => !esNumeroBendecidoValido(x.numero)
     );
     if (invalidBendecido) {
       setError(
@@ -332,7 +366,10 @@ export default function FormRifa({ rifaId }) {
       paquetes_tickets: paquetesTicketsParaGuardar(form.paquetes_tickets),
       imagen_banner_izquierda: form.imagen_banner_izquierda?.trim() || null,
       imagen_banner_derecha: form.imagen_banner_derecha?.trim() || null,
-      numeros_bendecidos: rawBendecidos,
+      numeros_bendecidos: rawBendecidos.map((x) => ({
+        numero: x.numero,
+        bloqueado: x.bloqueado,
+      })),
     };
 
     if (!payload.nombre || !payload.precio_boleto) {
@@ -527,7 +564,13 @@ export default function FormRifa({ rifaId }) {
               la rifa.
             </p>
             <div className="space-y-2">
-              {(form.numeros_bendecidos || []).map((valor, index) => {
+              {(form.numeros_bendecidos || []).map((item, index) => {
+                const valor =
+                  typeof item === "string" ? item : item?.numero ?? "";
+                const bloqueado =
+                  typeof item === "object" && item != null
+                    ? Boolean(item.bloqueado)
+                    : true;
                 const t = String(valor ?? "").trim();
                 const mostrarError = t !== "" && !esNumeroBendecidoValido(t);
                 return (
@@ -550,6 +593,23 @@ export default function FormRifa({ rifaId }) {
                           : "w-full min-w-0 sm:max-w-[200px] px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 font-mono text-sm"
                       }
                     />
+                    <button
+                      type="button"
+                      onClick={() => toggleBloqueadoBendecido(index)}
+                      className={`shrink-0 px-3 py-2 rounded-lg border text-xs font-semibold min-h-[44px] min-w-[120px] sm:min-w-[140px] transition-colors ${
+                        bloqueado
+                          ? "border-red-500/50 bg-red-950/40 text-red-200"
+                          : "border-green-500/50 bg-green-950/40 text-green-200"
+                      }`}
+                      aria-pressed={bloqueado}
+                      aria-label={
+                        bloqueado
+                          ? "Marcar número como activo"
+                          : "Marcar número como bloqueado"
+                      }
+                    >
+                      {bloqueado ? "🔴 Bloqueado" : "🟢 Activo"}
+                    </button>
                     <button
                       type="button"
                       onClick={() => eliminarNumeroBendecido(index)}
