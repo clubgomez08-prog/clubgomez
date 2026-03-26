@@ -213,6 +213,13 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
     <section className="relative flex flex-col overflow-hidden">
       <div className="relative flex flex-col items-center justify-start px-4 pt-4 pb-3">
         <div className="relative max-w-4xl w-full mx-auto text-center">
+          <p className="text-white font-bold text-2xl text-center mb-3 drop-shadow-sm">
+            SI LLEGASTE AQUÍ TÚ
+            <br />
+            PUEDES SER EL PRÓXIMO
+            <br />
+            <span style={{ color: "#F2B233" }}>BENDECIDO</span>
+          </p>
           <div style={{ position: "relative", width: "100%" }} className="max-w-sm md:max-w-lg mx-auto mb-3">
             {todosLosSlides.length > 0 &&
               (slideActual?.tipo === "video" ? (
