@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export const PAQUETES = [50, 100, 150, 200, 250, 500, 600, 850, 1000];
-const MIN_TICKETS = 1;
+const MIN_TICKETS = 50;
 const MAX_MANUAL = 10000;
 
 export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refProp, divisa, setDivisa, convertirPrecio, cargandoTasas, paquetesConfig }) {
