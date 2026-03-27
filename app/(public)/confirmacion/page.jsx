@@ -28,6 +28,12 @@ function ConfirmacionContent() {
       .then((participante) => {
         if (participante.error) throw new Error(participante.error);
         setData(participante);
+        if (typeof window !== "undefined" && window.fbq) {
+          window.fbq("track", "Purchase", {
+            value: participante.total_pagado,
+            currency: "COP",
+          });
+        }
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));

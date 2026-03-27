@@ -228,6 +228,13 @@ export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refPr
           type="button"
           onClick={() => {
             onSelect(cantidadActual);
+            if (typeof window !== "undefined" && window.fbq) {
+              window.fbq("track", "InitiateCheckout", {
+                value: montoTotal,
+                currency: "COP",
+                num_items: cantidadActual,
+              });
+            }
             router.push(`/formulario?cantidad=${cantidadActual}&monto=${montoTotal}&divisa=${divisa}`);
           }}
           style={{
