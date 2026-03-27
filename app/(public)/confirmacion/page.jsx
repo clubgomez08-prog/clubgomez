@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import QRCode from "qrcode";
@@ -13,6 +13,8 @@ function ConfirmacionContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [qrUrl, setQrUrl] = useState("");
+  const purchaseTracked = useRef(false);
+  const lastPurchaseParticipanteIdRef = useRef(null);
 
   useEffect(() => {
     if (!participanteId) {
@@ -23,20 +25,33 @@ function ConfirmacionContent() {
       return () => clearTimeout(timer);
     }
 
-    fetch(`/api/participantes/${participanteId}`)
+    const controller = new AbortController();
+    if (lastPurchaseParticipanteIdRef.current !== participanteId) {
+      lastPurchaseParticipanteIdRef.current = participanteId;
+      purchaseTracked.current = false;
+    }
+
+    fetch(`/api/participantes/${participanteId}`, { signal: controller.signal })
       .then((res) => res.json())
       .then((participante) => {
         if (participante.error) throw new Error(participante.error);
         setData(participante);
         if (typeof window !== "undefined" && window.fbq) {
+          if (purchaseTracked.current) return;
+          purchaseTracked.current = true;
           window.fbq("track", "Purchase", {
             value: participante.total_pagado,
             currency: "COP",
           });
         }
       })
-      .catch((err) => setError(err.message))
+      .catch((err) => {
+        if (err?.name === "AbortError") return;
+        setError(err.message);
+      })
       .finally(() => setLoading(false));
+
+    return () => controller.abort();
   }, [participanteId]);
 
   useEffect(() => {
