@@ -17,6 +17,13 @@ function normalizarPaquetesTickets(input) {
   return unique.length >= 1 ? unique : DEFAULT_PAQUETES_TICKETS;
 }
 
+function normalizarPorcentajeVisualMinimo(raw) {
+  if (raw === undefined || raw === null || raw === "") return null;
+  const n = Number(raw);
+  if (Number.isNaN(n) || n < 0 || n > 100) return null;
+  return n;
+}
+
 export async function GET() {
   const { data: rifasData, error } = await supabaseAdmin
     .from("rifas")
@@ -73,6 +80,9 @@ export async function POST(request) {
     imagen_banner_derecha: body.imagen_banner_derecha?.trim?.() || null,
     numeros_bendecidos: parseNumerosBendecidos(body.numeros_bendecidos).map(
       (x) => ({ numero: x.numero, bloqueado: true })
+    ),
+    porcentaje_visual_minimo: normalizarPorcentajeVisualMinimo(
+      body.porcentaje_visual_minimo
     ),
     serie_actual: 0,
   };

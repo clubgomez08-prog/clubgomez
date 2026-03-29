@@ -71,6 +71,7 @@ export default function FormRifa({ rifaId }) {
     imagen_banner_izquierda: "",
     imagen_banner_derecha: "",
     numeros_bendecidos: [],
+    porcentaje_visual_minimo: "",
   });
   const [subiendoImagenAdicional, setSubiendoImagenAdicional] = useState(false);
   const [subiendoBanner, setSubiendoBanner] = useState(null);
@@ -105,6 +106,11 @@ export default function FormRifa({ rifaId }) {
             numeros_bendecidos: parseNumerosBendecidosInicial(
               data.numeros_bendecidos
             ),
+            porcentaje_visual_minimo:
+              data.porcentaje_visual_minimo != null &&
+              data.porcentaje_visual_minimo !== ""
+                ? String(data.porcentaje_visual_minimo)
+                : "",
           });
         })
         .catch(() => setError("Error al cargar rifa"))
@@ -370,6 +376,15 @@ export default function FormRifa({ rifaId }) {
         numero: x.numero,
         bloqueado: x.bloqueado,
       })),
+      porcentaje_visual_minimo:
+        form.porcentaje_visual_minimo === "" ||
+        form.porcentaje_visual_minimo == null
+          ? null
+          : (() => {
+              const n = Number(form.porcentaje_visual_minimo);
+              if (Number.isNaN(n) || n < 0 || n > 100) return null;
+              return n;
+            })(),
     };
 
     if (!payload.nombre || !payload.precio_boleto) {
@@ -505,6 +520,31 @@ export default function FormRifa({ rifaId }) {
                 }))
               }
               className="w-full max-w-[120px] px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-2">
+              % mínimo visible en la barra
+            </label>
+            <p className="text-xs text-zinc-500 mb-2">
+              Se mostrará este porcentaje hasta que las ventas reales lo
+              superen. Dejar vacío para mostrar el real.
+            </p>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={0.01}
+              value={form.porcentaje_visual_minimo}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  porcentaje_visual_minimo: e.target.value,
+                }))
+              }
+              className="w-full max-w-[140px] px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+              placeholder="ej: 7.8"
             />
           </div>
 

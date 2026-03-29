@@ -58,6 +58,21 @@ export async function PATCH(request, { params }) {
   if (body.porcentaje_sorteo !== undefined) {
     rifa.porcentaje_sorteo = body.porcentaje_sorteo ?? 80;
   }
+  if (body.porcentaje_visual_minimo !== undefined) {
+    const v = body.porcentaje_visual_minimo;
+    if (v === null || v === "") {
+      rifa.porcentaje_visual_minimo = null;
+    } else {
+      const n = Number(v);
+      if (Number.isNaN(n) || n < 0 || n > 100) {
+        return NextResponse.json(
+          { error: "porcentaje_visual_minimo debe ser un número entre 0 y 100" },
+          { status: 400 }
+        );
+      }
+      rifa.porcentaje_visual_minimo = n;
+    }
+  }
   if (body.premios_anticipados !== undefined) {
     rifa.premios_anticipados = body.premios_anticipados;
   }

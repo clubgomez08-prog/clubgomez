@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import StatsCard from "@/components/admin/StatsCard";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { getAdminAuthHeaders } from "@/lib/auth";
 
 function formatFecha(dateStr) {
   if (!dateStr) return "—";
@@ -32,6 +33,11 @@ export default function AdminDashboardPage() {
   const [recaudacionPorRifa, setRecaudacionPorRifa] = useState([]);
   const [ultimosParticipantes, setUltimosParticipantes] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [finanzasVisibles, setFinanzasVisibles] = useState(false);
+  const [modalFinanzas, setModalFinanzas] = useState(false);
+  const [passwordFinanzas, setPasswordFinanzas] = useState("");
+  const [errorFinanzas, setErrorFinanzas] = useState("");
+  const [cargandoFinanzas, setCargandoFinanzas] = useState(false);
 
   useEffect(() => {
     const cargarStats = async () => {
@@ -155,9 +161,61 @@ export default function AdminDashboardPage() {
     cargarStats();
   }, []);
 
+  async function confirmarUnlockFinanzas() {
+    setCargandoFinanzas(true);
+    setErrorFinanzas("");
+    try {
+      const auth = await getAdminAuthHeaders();
+      const res = await fetch("/api/admin/unlock-finanzas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...auth },
+        body: JSON.stringify({ password: passwordFinanzas }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorFinanzas(data.error || "Contraseña incorrecta");
+        return;
+      }
+      if (data.success) {
+        setFinanzasVisibles(true);
+        setModalFinanzas(false);
+        setPasswordFinanzas("");
+      }
+    } catch {
+      setErrorFinanzas("Error de conexión");
+    } finally {
+      setCargandoFinanzas(false);
+    }
+  }
+
   return (
     <div className="py-6">
-      <h1 className="text-2xl font-semibold text-white mb-4">Dashboard</h1>
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 mb-4">
+        <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          {finanzasVisibles ? (
+            <button
+              type="button"
+              onClick={() => setFinanzasVisibles(false)}
+              className="px-3 py-2 rounded-lg text-sm font-medium bg-zinc-800 border border-zinc-600 text-zinc-200 hover:bg-zinc-700"
+            >
+              🔓 Ocultar finanzas
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setErrorFinanzas("");
+                setPasswordFinanzas("");
+                setModalFinanzas(true);
+              }}
+              className="px-3 py-2 rounded-lg text-sm font-medium bg-zinc-800 border border-amber-500/40 text-amber-400 hover:bg-zinc-700"
+            >
+              🔒 Ver finanzas
+            </button>
+          )}
+        </div>
+      </div>
 
       {cargando ? (
         <div className="flex justify-center py-6 mb-4">
@@ -181,7 +239,11 @@ export default function AdminDashboardPage() {
             />
             <StatsCard
               title="Ventas totales"
-              value={"$ " + stats.ventasTotales.toLocaleString("es-CO")}
+              value={
+                finanzasVisibles
+                  ? "$ " + stats.ventasTotales.toLocaleString("es-CO")
+                  : "$ ***"
+              }
             />
             <StatsCard
               title="Boletos vendidos"
@@ -216,7 +278,9 @@ export default function AdminDashboardPage() {
                       {r.nombre}
                     </p>
                     <p className="text-lg font-bold text-amber-400 mt-1">
-                      $ {r.total.toLocaleString("es-CO")}
+                      {finanzasVisibles
+                        ? `$ ${r.total.toLocaleString("es-CO")}`
+                        : "$ ***"}
                     </p>
                     <p className="text-xs text-zinc-500 mt-1">
                       Suma de pagos aprobados
@@ -289,8 +353,16 @@ export default function AdminDashboardPage() {
                             {p.cantidad_boletos ?? 0}
                           </td>
                           <td className="px-3 py-3 sm:px-6 sm:py-4 text-amber-400 text-sm font-medium">
-                            ${" "}
-                            {Number(p.total_pagado || 0).toLocaleString("es-CO")}
+                            {finanzasVisibles ? (
+                              <>
+                                ${" "}
+                                {Number(p.total_pagado || 0).toLocaleString(
+                                  "es-CO"
+                                )}
+                              </>
+                            ) : (
+                              "$ ***"
+                            )}
                           </td>
                           <td className="px-3 py-3 sm:px-6 sm:py-4">
                             <span
@@ -396,6 +468,106 @@ export default function AdminDashboardPage() {
           ))}
         </div>
       </div>
+
+      {modalFinanzas && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.85)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#1a1a1a",
+              border: "1.5px solid rgba(242,178,51,0.35)",
+              borderRadius: "20px",
+              padding: "28px 24px",
+              width: "100%",
+              maxWidth: "420px",
+            }}
+          >
+            <h2
+              style={{
+                color: "#F8FAFC",
+                fontSize: "20px",
+                fontWeight: "800",
+                textAlign: "center",
+                margin: "0 0 8px",
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
+              Acceso a finanzas
+            </h2>
+            <p
+              style={{
+                color: "rgba(248,250,252,0.5)",
+                fontSize: "13px",
+                textAlign: "center",
+                margin: "0 0 20px",
+                lineHeight: 1.5,
+              }}
+            >
+              Ingresa la contraseña secundaria para ver montos y recaudación.
+            </p>
+            <input
+              type="password"
+              value={passwordFinanzas}
+              onChange={(e) => setPasswordFinanzas(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") confirmarUnlockFinanzas();
+              }}
+              className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 mb-3"
+              placeholder="Contraseña"
+              autoComplete="current-password"
+            />
+            {errorFinanzas ? (
+              <p className="text-sm text-red-400 mb-3 text-center">
+                {errorFinanzas}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={confirmarUnlockFinanzas}
+              disabled={cargandoFinanzas}
+              style={{
+                width: "100%",
+                backgroundColor: cargandoFinanzas ? "#52525b" : "#F2B233",
+                color: "#0a0a0a",
+                fontWeight: "700",
+                fontSize: "15px",
+                padding: "14px",
+                borderRadius: "12px",
+                border: "none",
+                cursor: cargandoFinanzas ? "not-allowed" : "pointer",
+                marginBottom: "8px",
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
+              {cargandoFinanzas ? "…" : "Confirmar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setModalFinanzas(false);
+                setPasswordFinanzas("");
+                setErrorFinanzas("");
+              }}
+              className="w-full bg-transparent border border-zinc-600 rounded-xl text-zinc-400 text-sm py-3 cursor-pointer hover:bg-zinc-800/50"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

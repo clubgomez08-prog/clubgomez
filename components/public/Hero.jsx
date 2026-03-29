@@ -207,7 +207,16 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
     return new Intl.NumberFormat("es-CO").format(n);
   }
 
-  const displayPct = 89.99;
+  const realPct = total > 0 ? (vendidos / total) * 100 : 0;
+  const minVisual =
+    rifa?.porcentaje_visual_minimo != null
+      ? Number(rifa.porcentaje_visual_minimo)
+      : null;
+  const pctMostrado =
+    minVisual != null && !Number.isNaN(minVisual) && realPct < minVisual
+      ? minVisual
+      : realPct;
+  const displayPct = Math.min(100, pctMostrado);
 
   return (
     <section className="relative flex flex-col overflow-hidden">
@@ -484,7 +493,7 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
                   zIndex: 2,
                 }}
               >
-                50%
+                {`${pctMostrado.toFixed(1)}%`}
               </span>
             </div>
           </div>
