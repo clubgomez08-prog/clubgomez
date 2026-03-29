@@ -7,9 +7,42 @@ const inputClass =
 
 export default function ReenviarCodigos() {
   const [email, setEmail] = useState("");
+  const [cargando, setCargando] = useState(false);
+  const [mensaje, setMensaje] = useState("");
+  const [tipoMensaje, setTipoMensaje] = useState("");
 
-  function handleEnviar() {
-    window.alert("Funcionalidad próximamente disponible");
+  async function handleEnviar() {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setMensaje("Ingresa tu correo electrónico.");
+      setTipoMensaje("error");
+      return;
+    }
+    setCargando(true);
+    setMensaje("");
+    setTipoMensaje("");
+    try {
+      const res = await fetch("/api/reenviar-codigos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmed }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        setMensaje(
+          "✅ Te reenviamos tus códigos. Revisa tu bandeja y carpeta de spam."
+        );
+        setTipoMensaje("success");
+      } else {
+        setMensaje(data.error || "No pudimos completar el reenvío.");
+        setTipoMensaje("error");
+      }
+    } catch {
+      setMensaje("Error de conexión. Intenta de nuevo.");
+      setTipoMensaje("error");
+    } finally {
+      setCargando(false);
+    }
   }
 
   return (
@@ -72,13 +105,18 @@ export default function ReenviarCodigos() {
             name="email-reenvio"
             autoComplete="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setMensaje("");
+              setTipoMensaje("");
+            }}
             className={inputClass}
             placeholder="Tu correo electrónico"
           />
           <button
             type="button"
             onClick={handleEnviar}
+            disabled={cargando}
             className="w-full font-extrabold text-lg py-5 px-4 rounded-[14px] border-none cursor-pointer text-[#071521]"
             style={{
               background: "linear-gradient(135deg, #22C55E 0%, #16a34a 100%)",
@@ -87,8 +125,19 @@ export default function ReenviarCodigos() {
               animation: "pulse-glow-green 2s ease-in-out infinite",
             }}
           >
-            Enviar mis códigos
+            {cargando ? "Enviando..." : "Enviar mis códigos"}
           </button>
+          {mensaje ? (
+            <p
+              className={
+                tipoMensaje === "success"
+                  ? "text-sm text-center text-green-400 px-1"
+                  : "text-sm text-center text-red-400 px-1"
+              }
+            >
+              {mensaje}
+            </p>
+          ) : null}
         </div>
       </div>
     </section>
