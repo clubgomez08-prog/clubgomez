@@ -122,12 +122,19 @@ export async function POST(request) {
       }
     })
 
+    console.log('MP RESPONSE COMPLETA:', JSON.stringify(response, null, 2))
+    console.log('init_point:', response.init_point)
+    console.log('sandbox_init_point:', response.sandbox_init_point)
+
     return Response.json({
       init_point: response.init_point || response.sandbox_init_point,
       preference_id: response.id
     })
 
   } catch (error) {
+    console.error('MP ERROR COMPLETO:', JSON.stringify(error, null, 2))
+    console.error('MP STATUS:', error?.status)
+    console.error('MP CAUSE:', JSON.stringify(error?.cause, null, 2))
     console.error('[crear-preferencia] Error:', error?.message || 'Error desconocido')
     return Response.json(
       { error: 'Error al crear preferencia de pago' },
