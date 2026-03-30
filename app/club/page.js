@@ -93,20 +93,6 @@ const css = `
         0 0 6px rgba(255, 255, 255, 0.16) inset;
     }
   }
-  @keyframes club-hand-bounce {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    40% {
-      transform: translateY(7px);
-    }
-    55% {
-      transform: translateY(3px);
-    }
-    70% {
-      transform: translateY(6px);
-    }
-  }
   @keyframes club-star-rise {
     0% {
       transform: translateY(10px);
@@ -172,10 +158,6 @@ const css = `
       club-btn-in 1s ease-in both,
       club-btn-glow 2.4s ease-in-out 1s infinite;
     border: 2px solid rgba(242, 178, 51, 0.55);
-  }
-  .club-hand-tap {
-    animation: club-hand-bounce 0.8s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-    display: inline-block;
   }
   .club-dot-1 {
     animation: club-dot-seq-1 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
@@ -302,15 +284,12 @@ export default function ClubPage() {
                   onClick={() => {
                     window.location.href = "https://rifex.app";
                   }}
-                  className="club-btn-visible club-btn-pulse flex w-full max-w-sm items-center justify-center gap-3 rounded-2xl px-5 py-5 text-center text-base font-extrabold tracking-wide text-[#071521] outline-none transition-[filter] active:brightness-95 sm:text-lg"
+                  className="club-btn-visible club-btn-pulse flex w-full max-w-sm items-center justify-center rounded-2xl px-5 py-5 text-center text-base font-extrabold tracking-wide text-[#071521] outline-none transition-[filter] active:brightness-95 sm:text-lg"
                   style={{
                     backgroundColor: "#F2B233",
                     fontFamily: "var(--font-poppins), system-ui, sans-serif",
                   }}
                 >
-                  <span className="club-hand-tap text-2xl leading-none" aria-hidden>
-                    👆
-                  </span>
                   Toca para continuar
                 </button>
               ) : (
