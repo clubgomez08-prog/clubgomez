@@ -2,6 +2,9 @@
 import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
+/** Si es true, tras el registro se ofrece pago por WhatsApp en lugar de Mercado Pago */
+const PAGO_WHATSAPP_ACTIVO = true
+
 function FormularioContent() {
   const searchParams = useSearchParams()
 
@@ -21,6 +24,7 @@ function FormularioContent() {
   const [mostrarTerminos, setMostrarTerminos] = useState(false)
   const [confirmoMayorEdad, setConfirmoMayorEdad] = useState(false)
   const [initPoint, setInitPoint] = useState('')
+  const [reservaWhatsapp, setReservaWhatsapp] = useState(null)
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -52,6 +56,21 @@ function FormularioContent() {
       const participante = regData.participante
       if (!participante?.id) {
         throw new Error('Error al guardar datos')
+      }
+
+      if (PAGO_WHATSAPP_ACTIVO) {
+        const cantidadNum = parseInt(cantidad, 10)
+        const totalNum = parseInt(String(monto).replace(/\D/g, ''), 10)
+        setReservaWhatsapp({
+          participanteId: participante.id,
+          nombre: String(form.nombre || '').trim(),
+          email: participante.email,
+          cedula: String(form.cedula || '').trim(),
+          cantidad: cantidadNum,
+          total: totalNum,
+        })
+        setLoading(false)
+        return
       }
 
       const res = await fetch('/api/crear-preferencia', {
@@ -90,6 +109,24 @@ function FormularioContent() {
     if (confirmoMayorEdad) {
       window.location.href = initPoint
     }
+  }
+
+  function abrirWhatsappPago() {
+    if (!reservaWhatsapp) return
+    const { participanteId, nombre, email, cedula, cantidad: qty, total } =
+      reservaWhatsapp
+    const lineas = [
+      'Hola RIFEX! Quiero pagar mis tickets.',
+      `Nombre: ${nombre}`,
+      `Email: ${email}`,
+      `Cédula: ${cedula}`,
+      `Cantidad: ${qty} tickets`,
+      `Total: $${Number(total).toLocaleString('es-CO')} COP`,
+      `ID de reserva: ${participanteId}`,
+    ]
+    const text = lineas.join('\n')
+    const url = `https://wa.me/573114405488?text=${encodeURIComponent(text)}`
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   const inputStyle = {
@@ -506,10 +543,59 @@ function FormularioContent() {
               marginTop: '4px'
             }}
           >
-            {loading ? 'Procesando...' : 'Ir a pagar →'}
+            {loading
+              ? 'Procesando...'
+              : PAGO_WHATSAPP_ACTIVO
+                ? 'Continuar →'
+                : 'Ir a pagar →'}
           </button>
         </form>
       </div>
+
+      {PAGO_WHATSAPP_ACTIVO && reservaWhatsapp && (
+        <div
+          style={{
+            backgroundColor: 'rgba(10,10,10,0.9)',
+            border: '1.5px solid rgba(37,211,102,0.35)',
+            borderRadius: '16px',
+            padding: '18px 16px',
+            marginBottom: '16px',
+            textAlign: 'center',
+          }}
+        >
+          <p
+            style={{
+              color: 'rgba(248,250,252,0.85)',
+              fontSize: '14px',
+              margin: '0 0 14px',
+              lineHeight: 1.5,
+            }}
+          >
+            Tu reserva quedó guardada. Paga por WhatsApp y envía el comprobante
+            con tu ID de reserva.
+          </p>
+          <button
+            type="button"
+            onClick={abrirWhatsappPago}
+            style={{
+              width: '100%',
+              maxWidth: '100%',
+              backgroundColor: '#25D366',
+              color: '#fff',
+              fontWeight: '800',
+              fontSize: '17px',
+              padding: '18px 16px',
+              borderRadius: '14px',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'Poppins, sans-serif',
+              boxShadow: '0 4px 18px rgba(37,211,102,0.35)',
+            }}
+          >
+            Pagar por WhatsApp 💬
+          </button>
+        </div>
+      )}
 
       {/* Sello de seguridad */}
       <div style={{ textAlign: 'center', marginBottom: '16px' }}>
@@ -517,7 +603,9 @@ function FormularioContent() {
           color: 'rgba(248,250,252,0.4)', 
           fontSize: '12px' 
         }}>
-          🔒 Pago 100% seguro · MercadoPago oficial
+          {PAGO_WHATSAPP_ACTIVO
+            ? '🔒 Completa tu pago con el equipo por WhatsApp'
+            : '🔒 Pago 100% seguro · MercadoPago oficial'}
         </span>
       </div>
 

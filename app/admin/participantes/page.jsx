@@ -19,6 +19,9 @@ export default function ParticipantesPage() {
   const [notificando, setNotificando] = useState(null);
   const [modalConfirmacion, setModalConfirmacion] = useState(null);
   const [mensajeNotificacion, setMensajeNotificacion] = useState("");
+  const [modalAprobar, setModalAprobar] = useState(null);
+  const [aprobandoId, setAprobandoId] = useState(null);
+  const [mensajeAprobar, setMensajeAprobar] = useState("");
 
   const [filtros, setFiltros] = useState({
     buscar: "",
@@ -117,6 +120,44 @@ export default function ParticipantesPage() {
       }));
     }
     setFilaExpandida(participanteId);
+  };
+
+  const confirmarAprobarPago = async (participante) => {
+    setAprobandoId(participante.id);
+    setMensajeAprobar("");
+    try {
+      const auth = await getAdminAuthHeaders();
+      const res = await fetch("/api/admin/aprobar-pago", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...auth },
+        body: JSON.stringify({
+          participante_id: participante.id,
+          metodo_pago: "manual",
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMensajeAprobar(data.error || "No se pudo aprobar el pago");
+        return;
+      }
+      setParticipantes((prev) =>
+        prev.map((x) =>
+          x.id === participante.id
+            ? { ...x, estado_pago: "aprobado" }
+            : x
+        )
+      );
+      setBoletosParticipante((prev) => {
+        const next = { ...prev };
+        delete next[participante.id];
+        return next;
+      });
+      setModalAprobar(null);
+    } catch (e) {
+      setMensajeAprobar("Error de conexión al aprobar");
+    } finally {
+      setAprobandoId(null);
+    }
   };
 
   const notificarGanador = async (participante) => {
@@ -335,6 +376,29 @@ export default function ParticipantesPage() {
                         >
                           {filaExpandida === p.id ? "▲ Ocultar" : "🎟 Ver tickets"}
                         </button>
+                        {p.estado_pago === "pendiente" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setModalAprobar(p);
+                              setMensajeAprobar("");
+                            }}
+                            style={{
+                              backgroundColor: "rgba(34,197,94,0.12)",
+                              border: "1px solid rgba(34,197,94,0.5)",
+                              borderRadius: "6px",
+                              color: "#22C55E",
+                              fontSize: "11px",
+                              padding: "4px 8px",
+                              cursor: "pointer",
+                              fontFamily: "Poppins, sans-serif",
+                              marginLeft: "6px",
+                              fontWeight: "600",
+                            }}
+                          >
+                            Aprobar pago manual ✅
+                          </button>
+                        )}
                         <button
                           onClick={() => setModalConfirmacion(p)}
                           style={{
@@ -483,6 +547,121 @@ export default function ParticipantesPage() {
           </div>
         )}
       </div>
+
+      {modalAprobar && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.85)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#1a1a1a",
+              border: "1.5px solid rgba(34,197,94,0.35)",
+              borderRadius: "20px",
+              padding: "28px 24px",
+              width: "100%",
+              maxWidth: "420px",
+            }}
+          >
+            <h2
+              style={{
+                color: "#F8FAFC",
+                fontSize: "18px",
+                fontWeight: "800",
+                textAlign: "center",
+                margin: "0 0 12px",
+              }}
+            >
+              Confirmar aprobación manual
+            </h2>
+            <p
+              style={{
+                color: "rgba(248,250,252,0.75)",
+                fontSize: "14px",
+                textAlign: "center",
+                lineHeight: 1.5,
+                margin: "0 0 20px",
+              }}
+            >
+              ¿Confirmas aprobar el pago de{" "}
+              <strong style={{ color: "#22C55E" }}>
+                {modalAprobar.nombre || "este participante"}
+              </strong>
+              ? Se asignarán sus números y se enviará el correo.
+            </p>
+            {mensajeAprobar && (
+              <p
+                style={{
+                  color: "#f87171",
+                  fontSize: "13px",
+                  textAlign: "center",
+                  margin: "0 0 12px",
+                  fontWeight: "600",
+                }}
+              >
+                {mensajeAprobar}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => confirmarAprobarPago(modalAprobar)}
+              disabled={aprobandoId === modalAprobar.id}
+              style={{
+                width: "100%",
+                background:
+                  aprobandoId === modalAprobar.id
+                    ? "rgba(34,197,94,0.45)"
+                    : "#22C55E",
+                color: "#052e16",
+                fontWeight: "800",
+                fontSize: "15px",
+                padding: "14px",
+                borderRadius: "12px",
+                border: "none",
+                cursor:
+                  aprobandoId === modalAprobar.id ? "not-allowed" : "pointer",
+                marginBottom: "10px",
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
+              {aprobandoId === modalAprobar.id ? "Procesando..." : "Confirmar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setModalAprobar(null);
+                setMensajeAprobar("");
+              }}
+              disabled={aprobandoId === modalAprobar.id}
+              style={{
+                width: "100%",
+                backgroundColor: "transparent",
+                border: "1px solid rgba(255,255,255,0.15)",
+                borderRadius: "12px",
+                color: "rgba(248,250,252,0.55)",
+                fontSize: "14px",
+                padding: "12px",
+                cursor:
+                  aprobandoId === modalAprobar.id ? "not-allowed" : "pointer",
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       {modalConfirmacion && (
         <div

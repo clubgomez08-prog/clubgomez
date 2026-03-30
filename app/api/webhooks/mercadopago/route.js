@@ -3,16 +3,7 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { supabaseAdmin } from "@/lib/supabase";
-import { asignarNumerosParticipante } from "@/lib/numeros";
-import {
-  enviarTicketCompra,
-  enviarConfirmacionAdmin,
-  enviarNotificacionBendecido,
-} from "@/lib/email";
-import {
-  parseNumerosBendecidos,
-  getNumerosString,
-} from "@/lib/numeros-bendecidos";
+import { ejecutarAprobacionBoletosYCorreos } from "@/lib/aprobar-participante";
 import {
   politicaVerificacionWebhookMp,
   verificarFirmaWebhookMercadoPago,
@@ -111,129 +102,21 @@ async function procesarPago(paymentId) {
       return { received: true, skipped: true, reason: "monto_invalido" };
     }
 
-    const rifaId = participante.rifa_id;
-    const cantidad = participante.cantidad_boletos ?? 1;
+    const resultado = await ejecutarAprobacionBoletosYCorreos({
+      participanteId: participante.id,
+      referenciaPago: String(payment.id),
+      metodo_pago: "mercadopago",
+    });
 
-    const { count: countAntes } = await supabaseAdmin
-      .from("boletos")
-      .select("*", { count: "exact", head: true })
-      .eq("participante_id", participante.id);
-
-    const nAntes = countAntes ?? 0;
-
-    const { data: claimedRows, error: claimError } = await supabaseAdmin
-      .from("participantes")
-      .update({
-        estado_pago: "aprobado",
-        mp_payment_id: String(payment.id),
-      })
-      .eq("id", participante.id)
-      .eq("estado_pago", "pendiente")
-      .select("id");
-
-    if (claimError) {
-      throw new Error(claimError.message);
+    if (!resultado.success && resultado.skipped) {
+      return { received: true, skipped: true, reason: resultado.reason };
     }
 
-    let claimedThisRequest = Array.isArray(claimedRows) && claimedRows.length > 0;
-    let participanteActual = participante;
-
-    if (!claimedThisRequest) {
-      const { data: p2, error: e2 } = await supabaseAdmin
-        .from("participantes")
-        .select("id, rifa_id, cantidad_boletos, nombre, email, estado_pago, total_pagado, mp_payment_id")
-        .eq("id", participante.id)
-        .single();
-
-      if (e2 || !p2) {
-        throw new Error("Participante no encontrado tras claim");
-      }
-
-      if (
-        p2.estado_pago === "aprobado" &&
-        String(p2.mp_payment_id) === String(payment.id)
-      ) {
-        participanteActual = p2;
-      } else if (p2.estado_pago === "aprobado") {
-        return { received: true, skipped: true, reason: "race_otro_pago" };
-      } else {
-        return { received: true, skipped: true, reason: "no_claim_pendiente" };
-      }
+    if (!resultado.success) {
+      throw new Error("Error al procesar aprobación");
     }
 
-    let numeros = [];
-    try {
-      numeros = await asignarNumerosParticipante(
-        rifaId,
-        participanteActual.id,
-        cantidad
-      );
-    } catch (assignErr) {
-      if (claimedThisRequest) {
-        const { error: revErr } = await supabaseAdmin
-          .from("participantes")
-          .update({ estado_pago: "pendiente", mp_payment_id: null })
-          .eq("id", participanteActual.id)
-          .eq("mp_payment_id", String(payment.id));
-        if (revErr) {
-          console.error("[Webhook MP] Revert participante falló:", revErr.message);
-        }
-      }
-      console.error("[Webhook MP] Error asignando boletos:", assignErr?.message);
-      throw assignErr;
-    }
-
-    const completo = numeros.length >= cantidad;
-    const enviarCorreos =
-      completo && (claimedThisRequest || nAntes < cantidad);
-
-    const { data: rifa } = await supabaseAdmin
-      .from("rifas")
-      .select("id, nombre, precio_boleto, numeros_bendecidos")
-      .eq("id", rifaId)
-      .single();
-
-    if (rifa && enviarCorreos) {
-      try {
-        await enviarTicketCompra(participanteActual, rifa, numeros);
-      } catch (emailErr) {
-        console.error(
-          "[Webhook MP] Error enviando ticket:",
-          emailErr?.message || "Error desconocido"
-        );
-      }
-      try {
-        await enviarConfirmacionAdmin(participanteActual, rifa);
-      } catch (emailErr) {
-        console.error(
-          "[Webhook] Error notificación admin:",
-          emailErr?.message || "Error desconocido"
-        );
-      }
-
-      const bendecidosSet = new Set(
-        getNumerosString(parseNumerosBendecidos(rifa.numeros_bendecidos))
-      );
-      const numerosBendecidosAsignados = numeros.filter((n) =>
-        bendecidosSet.has(String(n ?? "").trim())
-      );
-      if (numerosBendecidosAsignados.length > 0) {
-        try {
-          await enviarNotificacionBendecido(
-            participanteActual,
-            rifa,
-            numerosBendecidosAsignados
-          );
-        } catch (bendErr) {
-          console.error(
-            "[Webhook MP] Error notificación bendecido:",
-            bendErr?.message || "Error desconocido"
-          );
-        }
-      }
-    }
-
-    return { received: true, numeros };
+    return { received: true, numeros: resultado.numeros };
   }
 
   if (status === "rejected" || status === "cancelled") {
