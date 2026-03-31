@@ -168,6 +168,16 @@ function FormularioContent() {
 
   return (
     <>
+      <style>{`
+        @keyframes bounceDown {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(4px); }
+        }
+        .formulario-activar-acceso-flecha {
+          display: inline-block;
+          animation: bounceDown 1s ease-in-out infinite;
+        }
+      `}</style>
       {mostrarTerminos && (
         <div style={{
           position: 'fixed',
@@ -586,9 +596,14 @@ function FormularioContent() {
               ? PAGO_WHATSAPP_ACTIVO
                 ? 'Abriendo WhatsApp...'
                 : 'Procesando...'
-              : PAGO_WHATSAPP_ACTIVO
-                ? 'Activar acceso ↓'
-                : 'Ir a pagar →'}
+              : PAGO_WHATSAPP_ACTIVO ? (
+                <>
+                  Activar acceso{' '}
+                  <span className="formulario-activar-acceso-flecha">▼</span>
+                </>
+              ) : (
+                'Ir a pagar →'
+              )}
           </button>
         </form>
         {PAGO_WHATSAPP_ACTIVO && reservaWhatsapp && (
