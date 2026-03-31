@@ -25,10 +25,12 @@ export default function NumeroBendecido() {
       `}</style>
       <div className="max-w-2xl mx-auto">
         <h2 className="text-white font-bold text-lg text-center mb-2 drop-shadow-sm">
-          ✨ Números bendecidos ✨
+          ✨ Claves activas dentro de la experiencia ✨
         </h2>
         <p className="text-[#F8FAFC]/90 text-center text-xs font-semibold mb-4 px-1">
-          Cada número tiene un valor de $3.000.000
+          Cada una de estas claves representa $3.000.000
+          <br />
+          para quien la tenga.
         </p>
 
         <div className="grid grid-cols-2 gap-3 mb-4">
@@ -53,7 +55,7 @@ export default function NumeroBendecido() {
         </div>
 
         <p className="text-[#F8FAFC] text-center text-sm font-semibold leading-snug px-2">
-          Si tienes uno de estos números en tu ticket, ¡eres ganador anticipado!
+          Revisa tus claves… una de estas puede ser tuya.
         </p>
       </div>
     </section>

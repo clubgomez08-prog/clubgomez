@@ -247,7 +247,7 @@ export default function LandingPage() {
           alignItems: "center",
           gap: "6px",
           backgroundColor: "transparent",
-          border: "1.5px solid #F2B233",
+          border: "1px solid #F2B233",
           borderRadius: "999px",
           padding: "6px 14px",
           color: "#F2B233",
@@ -256,7 +256,7 @@ export default function LandingPage() {
           textDecoration: "none",
           fontFamily: "Poppins, sans-serif",
         }}>
-          🎟 Mis tickets
+          🎟 Consultar mis claves
         </a>
       </div>
 
@@ -379,7 +379,7 @@ export default function LandingPage() {
                 lineHeight: 1.25,
               }}
             >
-              Comprar tickets
+              Activar acceso
             </span>
           </button>
         </div>

@@ -16,7 +16,7 @@ export default function PremiosAnticipados() {
       `}</style>
       <div className="max-w-4xl mx-auto">
         <h2 className="text-white font-bold text-xl text-center mb-2 drop-shadow-sm">
-          🏆 Premios anticipados 🏆
+          No se trata de uno solo…
         </h2>
         <div
           className="max-w-md mx-auto"
@@ -36,14 +36,18 @@ export default function PremiosAnticipados() {
             lineHeight: 1.45,
           }}
         >
-          <p style={{ fontWeight: "700", margin: 0 }}>Aquí no hay un solo ganador…</p>
-          <p style={{ fontWeight: "600", margin: "12px 0 0", marginBottom: 0 }}>
-            Hay 10 oportunidades adicionales de llevarte
+          <p style={{ fontWeight: "600", margin: 0 }}>
+            Dentro de esta experiencia hay beneficios
             <br />
-            $3.000.000 cada una 💰
+            que se activan antes.
+          </p>
+          <p style={{ fontWeight: "600", margin: "12px 0 0", marginBottom: 0 }}>
+            💰 10 accesos activan $3.000.000 cada uno
           </p>
           <p style={{ fontWeight: "500", fontSize: "14px", margin: "12px 0 0", marginBottom: 0 }}>
-            Mientras otros esperan… tú puedes ganar desde el inicio 💵
+            Mientras algunos esperan…
+            <br />
+            otros ya están desbloqueando beneficios.
           </p>
         </div>
       </div>

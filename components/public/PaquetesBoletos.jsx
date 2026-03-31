@@ -76,7 +76,7 @@ export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refPr
     <section ref={refProp} className="py-4 px-4 scroll-mt-20 overflow-visible rounded-2xl">
       <div className="max-w-2xl mx-auto">
         <h2 className="text-white font-bold text-lg text-center mb-3 drop-shadow-sm">
-          Elige la cantidad de tickets
+          ¿Cuántas claves quieres activar?
         </h2>
 
         {/* Grid de cantidades */}
@@ -171,7 +171,7 @@ export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refPr
               }}
             />
             <span style={{ color: "rgba(248,250,252,0.5)", fontSize: "10px", marginTop: "2px" }}>
-              tickets
+              claves
             </span>
           </div>
           <button
@@ -255,7 +255,7 @@ export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refPr
             animation: "pulse-glow-green 2s ease-in-out infinite",
           }}
         >
-          Comprar tickets
+          Activar claves
         </button>
 
         {/* Top compradores */}
@@ -277,7 +277,7 @@ export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refPr
               textAlign: "center",
             }}
           >
-            🏆 Top compradores
+            🏆 Comunidad activa
           </p>
 
           {[
@@ -321,7 +321,7 @@ export default function PaquetesBoletos({ rifa, selectedPackage, onSelect, refPr
                   fontWeight: "700",
                 }}
               >
-                {c.tickets} tickets
+                {c.tickets} claves
               </span>
             </div>
           ))}

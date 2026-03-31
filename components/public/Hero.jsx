@@ -427,7 +427,9 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
           </h1>
 
           <p className="text-[#F8FAFC] font-semibold text-base text-center mb-3 drop-shadow-sm">
-            Un número puede cambiar tu vida
+            Activa tu acceso y entra a una comunidad donde
+            <br />
+            las oportunidades ya están cambiando vidas.
           </p>
 
           {/* Barra de progreso */}
