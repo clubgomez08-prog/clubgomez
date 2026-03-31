@@ -563,12 +563,12 @@ function FormularioContent() {
               width: '100%',
               background: PAGO_WHATSAPP_ACTIVO
                 ? loading
-                  ? 'rgba(37,211,102,0.5)'
-                  : '#25D366'
+                  ? 'rgba(242,178,51,0.5)'
+                  : '#F2B233'
                 : loading
                   ? 'rgba(34,197,94,0.5)'
                   : 'linear-gradient(135deg, #22C55E 0%, #16a34a 100%)',
-              color: 'white',
+              color: PAGO_WHATSAPP_ACTIVO ? '#071521' : 'white',
               fontWeight: '800',
               fontSize: '18px',
               padding: '18px 16px',
@@ -576,7 +576,7 @@ function FormularioContent() {
               border: 'none',
               cursor: loading ? 'not-allowed' : 'pointer',
               boxShadow: PAGO_WHATSAPP_ACTIVO
-                ? '0 4px 20px rgba(37,211,102,0.4)'
+                ? '0 4px 20px rgba(242,178,51,0.4)'
                 : '0 4px 20px rgba(34,197,94,0.4)',
               fontFamily: 'Poppins, sans-serif',
               marginTop: '4px'
@@ -587,7 +587,7 @@ function FormularioContent() {
                 ? 'Abriendo WhatsApp...'
                 : 'Procesando...'
               : PAGO_WHATSAPP_ACTIVO
-                ? 'Continuar vía WhatsApp 💬'
+                ? 'Activar acceso ↓'
                 : 'Ir a pagar →'}
           </button>
         </form>
@@ -614,7 +614,7 @@ function FormularioContent() {
               onClick={abrirWhatsappPago}
               style={{
                 width: '100%',
-                backgroundColor: '#25D366',
+                backgroundColor: '#22C55E',
                 color: '#fff',
                 fontWeight: '800',
                 fontSize: '17px',
@@ -623,10 +623,10 @@ function FormularioContent() {
                 border: 'none',
                 cursor: 'pointer',
                 fontFamily: 'Poppins, sans-serif',
-                boxShadow: '0 4px 18px rgba(37,211,102,0.35)',
+                boxShadow: '0 4px 18px rgba(34,197,94,0.35)',
               }}
             >
-              Abrir WhatsApp 💬
+              Entrar ahora 💬
             </button>
           </div>
         )}
