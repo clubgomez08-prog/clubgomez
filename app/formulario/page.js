@@ -46,9 +46,23 @@ function FormularioContent() {
   const [mostrarTerminos, setMostrarTerminos] = useState(false)
   const [confirmoMayorEdad, setConfirmoMayorEdad] = useState(false)
   const [initPoint, setInitPoint] = useState('')
+  const [reservaWhatsapp, setReservaWhatsapp] = useState(null)
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  function abrirWhatsappPago() {
+    if (!reservaWhatsapp) return
+    const url = construirUrlWhatsappPago({
+      participanteId: reservaWhatsapp.participanteId,
+      nombre: reservaWhatsapp.nombre,
+      email: reservaWhatsapp.email,
+      cedula: reservaWhatsapp.cedula,
+      cantidad: reservaWhatsapp.cantidad,
+      total: reservaWhatsapp.total,
+    })
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   const handleSubmit = async (e) => {
@@ -80,7 +94,7 @@ function FormularioContent() {
       }
 
       if (PAGO_WHATSAPP_ACTIVO) {
-        const url = construirUrlWhatsappPago({
+        setReservaWhatsapp({
           participanteId: participante.id,
           nombre: String(form.nombre || '').trim(),
           email: participante.email,
@@ -89,7 +103,6 @@ function FormularioContent() {
           total: parseInt(String(monto).replace(/\D/g, ''), 10),
         })
         setLoading(false)
-        window.open(url, '_blank', 'noopener,noreferrer')
         return
       }
 
@@ -578,6 +591,45 @@ function FormularioContent() {
                 : 'Ir a pagar →'}
           </button>
         </form>
+        {PAGO_WHATSAPP_ACTIVO && reservaWhatsapp && (
+          <div
+            style={{
+              marginTop: '16px',
+              textAlign: 'center',
+            }}
+          >
+            <p
+              style={{
+                color: 'rgba(248,250,252,0.7)',
+                fontSize: '13px',
+                marginBottom: '12px',
+                lineHeight: 1.5,
+              }}
+            >
+              Tu reserva quedó guardada.
+              Toca el botón para pagar por WhatsApp 👇
+            </p>
+            <button
+              type="button"
+              onClick={abrirWhatsappPago}
+              style={{
+                width: '100%',
+                backgroundColor: '#25D366',
+                color: '#fff',
+                fontWeight: '800',
+                fontSize: '17px',
+                padding: '18px 16px',
+                borderRadius: '14px',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'Poppins, sans-serif',
+                boxShadow: '0 4px 18px rgba(37,211,102,0.35)',
+              }}
+            >
+              Abrir WhatsApp 💬
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Sello de seguridad */}
