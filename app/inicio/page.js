@@ -9,7 +9,7 @@ import styles from "./inicio.module.css";
 export default function InicioPage() {
   const [imgBannerIzq, setImgBannerIzq] = useState(null);
   const [imgBannerDer, setImgBannerDer] = useState(null);
-  const [whatsappNumero, setWhatsappNumero] = useState("+573114405488");
+  const [whatsappNumero, setWhatsappNumero] = useState("+573137453511");
   const [whatsappActivo, setWhatsappActivo] = useState(true);
 
   useEffect(() => {
@@ -229,7 +229,7 @@ export default function InicioPage() {
         {/* Botón Soporte — WhatsApp */}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
           <a
-            href="https://wa.me/573114405488"
+            href="https://wa.me/573137453511"
             target="_blank"
             rel="noopener noreferrer"
             style={{

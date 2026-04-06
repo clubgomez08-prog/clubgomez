@@ -13,7 +13,7 @@ export default function AdminLandingPage() {
   const [subiendoDer, setSubiendoDer] = useState(false);
   const inputIzqRef = useRef(null);
   const inputDerRef = useRef(null);
-  const [whatsappNumero, setWhatsappNumero] = useState("+573114405488");
+  const [whatsappNumero, setWhatsappNumero] = useState("+573137453511");
   const [whatsappActivo, setWhatsappActivo] = useState(true);
   const [guardandoWa, setGuardandoWa] = useState(false);
 
@@ -99,7 +99,7 @@ export default function AdminLandingPage() {
           id: "global",
           imagen_banner_izquierda: imagenIzq,
           imagen_banner_derecha: imagenDer,
-          whatsapp_numero: whatsappNumero.trim() || "+573114405488",
+          whatsapp_numero: whatsappNumero.trim() || "+573137453511",
           whatsapp_activo: Boolean(whatsappActivo),
         },
         { onConflict: "id" }
@@ -251,7 +251,7 @@ export default function AdminLandingPage() {
             type="text"
             value={whatsappNumero}
             onChange={(e) => setWhatsappNumero(e.target.value)}
-            placeholder="+573114405488"
+            placeholder="+573137453511"
             className="w-full px-4 py-3 rounded-lg bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 mb-4 text-sm"
             autoComplete="tel"
           />

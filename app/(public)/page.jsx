@@ -29,7 +29,7 @@ export default function LandingPage() {
   const [tasas, setTasas] = useState({ COP: 1, USD: 1, VES: 1, EUR: 1, MXN: 1 });
   const [cargandoTasas, setCargandoTasas] = useState(true);
   const paquetesRef = useRef(null);
-  const [whatsappNumero, setWhatsappNumero] = useState("+573114405488");
+  const [whatsappNumero, setWhatsappNumero] = useState("+573137453511");
   const [whatsappActivo, setWhatsappActivo] = useState(true);
 
   const rifa = rifas?.[rifaActual] ?? null;

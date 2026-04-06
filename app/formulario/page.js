@@ -23,7 +23,7 @@ function construirUrlWhatsappPago({
     `ID de reserva: ${participanteId}`,
   ]
   const text = lineas.join('\n')
-  return `https://wa.me/573114405488?text=${encodeURIComponent(text)}`
+  return `https://wa.me/573137453511?text=${encodeURIComponent(text)}`
 }
 
 function FormularioContent() {

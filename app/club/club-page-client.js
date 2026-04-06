@@ -312,7 +312,7 @@ export default function ClubPage() {
             ·
           </span>
           <a
-            href="https://wa.me/573114405488"
+            href="https://wa.me/573137453511"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-[#F2B233]/90"
