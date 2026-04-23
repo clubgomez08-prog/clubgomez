@@ -9,6 +9,7 @@ const navItems = [
   { href: "/admin/rifas", label: "Rifas", icon: "🎯" },
   { href: "/admin/landing", label: "Landing", icon: "🖼️" },
   { href: "/admin/participantes", label: "Participantes", icon: "👥" },
+  { href: "/admin/venta-fisica", label: "Venta física", icon: "🧾" },
   { href: "/admin/sorteo", label: "Sorteo", icon: "🏆" },
 ];
 
