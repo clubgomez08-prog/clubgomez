@@ -78,6 +78,9 @@ export async function PATCH(request, { params }) {
   }
   if (body.imagenes_url !== undefined) rifa.imagenes_url = body.imagenes_url;
   if (body.video_url !== undefined) rifa.video_url = body.video_url;
+  if (body.mostrar_video !== undefined) {
+    rifa.mostrar_video = body.mostrar_video !== false;
+  }
   if (body.estado !== undefined && body.estado !== null) rifa.estado = body.estado;
   if (body.paquetes_tickets !== undefined) {
     rifa.paquetes_tickets = normalizarPaquetesTickets(body.paquetes_tickets);

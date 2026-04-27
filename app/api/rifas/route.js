@@ -69,6 +69,7 @@ export async function POST(request) {
     descripcion: body.descripcion ?? null,
     imagen_url: body.imagen_url ?? null,
     video_url: body.video_url || "",
+    mostrar_video: body.mostrar_video !== false,
     imagenes_url: body.imagenes_url || [],
     precio_boleto: body.precio_boleto,
     total_numeros: body.total_numeros ?? 10000,

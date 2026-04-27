@@ -65,6 +65,7 @@ export default function FormRifa({ rifaId }) {
     porcentaje_sorteo: 80,
     imagen_url: "",
     video_url: "",
+    mostrar_video: true,
     imagenes_url: [],
     premios_anticipados: [],
     paquetes_tickets: [...DEFAULT_PAQUETES_TICKETS],
@@ -92,6 +93,7 @@ export default function FormRifa({ rifaId }) {
             porcentaje_sorteo: data.porcentaje_sorteo ?? 80,
             imagen_url: data.imagen_url || "",
             video_url: data.video_url || "",
+            mostrar_video: data.mostrar_video ?? true,
             imagenes_url: data.imagenes_url || [],
             premios_anticipados: (data.premios_anticipados || []).map((p) =>
               typeof p === "string"
@@ -367,6 +369,7 @@ export default function FormRifa({ rifaId }) {
       porcentaje_sorteo: Number(form.porcentaje_sorteo) || 80,
       imagen_url: form.imagen_url || null,
       video_url: form.video_url || "",
+      mostrar_video: form.mostrar_video,
       imagenes_url: form.imagenes_url || [],
       premios_anticipados: form.premios_anticipados || [],
       paquetes_tickets: paquetesTicketsParaGuardar(form.paquetes_tickets),
@@ -777,6 +780,47 @@ export default function FormRifa({ rifaId }) {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: "20px" }}>
+            <div style={{ display: "flex", alignItems: "center",
+              justifyContent: "space-between",
+              backgroundColor: "rgba(242,178,51,0.06)",
+              border: "1.5px solid rgba(242,178,51,0.2)",
+              borderRadius: "12px", padding: "12px 16px" }}>
+              <div>
+                <p style={{ color: "#F8FAFC", fontWeight: "700",
+                  fontSize: "14px", margin: "0 0 2px" }}>
+                  🎬 Mostrar video en landing
+                </p>
+                <p style={{ color: "rgba(248,250,252,0.4)",
+                  fontSize: "11px", margin: 0 }}>
+                  Si está desactivado, solo se muestran las imágenes
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({
+                  ...f, mostrar_video: !f.mostrar_video
+                }))}
+                style={{
+                  width: "48px", height: "26px", borderRadius: "999px",
+                  border: "none", cursor: "pointer",
+                  backgroundColor: form.mostrar_video
+                    ? "#22C55E" : "rgba(255,255,255,0.15)",
+                  position: "relative", transition: "background 0.2s",
+                  flexShrink: 0,
+                }}
+              >
+                <span style={{
+                  position: "absolute", top: "3px",
+                  left: form.mostrar_video ? "24px" : "3px",
+                  width: "20px", height: "20px", borderRadius: "50%",
+                  backgroundColor: "white",
+                  transition: "left 0.2s",
+                }} />
+              </button>
             </div>
           </div>
 

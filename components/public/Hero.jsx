@@ -11,7 +11,7 @@ const VIDEO_PUBLIC_RIFEX =
  * TEMPORAL (extraoficial): en true ignora video_url del panel y siempre muestra el MP4 de /public.
  * Ponlo en false cuando el admin ya cargue bien la URL.
  */
-const HERO_VIDEO_FORZAR_SOLO_PUBLIC = true;
+const HERO_VIDEO_FORZAR_SOLO_PUBLIC = false;
 
 /** Por defecto el mismo MP4; opcional NEXT_PUBLIC_HERO_VIDEO_DEFAULT para otro archivo. */
 const VIDEO_LOCAL_DEFAULT =
@@ -131,11 +131,11 @@ export default function Hero({ rifa, stats, onParticipar, paquetesRef, convertir
         : normalizarSrcVideoLocal(videoUrlRaw)
       : null;
 
-  const videoUrl = rifa
+  const mostrarVideo = rifa?.mostrar_video !== false;
+  const videoUrl = rifa && mostrarVideo
     ? HERO_VIDEO_FORZAR_SOLO_PUBLIC
       ? VIDEO_PUBLIC_RIFEX
-      : videoUrlFromAdmin ||
-        (!videoUrlRaw ? VIDEO_LOCAL_DEFAULT : null)
+      : videoUrlFromAdmin || (!videoUrlRaw ? VIDEO_LOCAL_DEFAULT : null)
     : null;
 
   const todosLosSlides = rifa
