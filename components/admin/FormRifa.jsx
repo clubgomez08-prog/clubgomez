@@ -439,593 +439,719 @@ export default function FormRifa({ rifaId }) {
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Nombre de la rifa *
-            </label>
-            <input
-              type="text"
-              value={form.nombre}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, nombre: e.target.value }))
-              }
-              required
-              className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
-              placeholder="Ej: Rifa navideña 2025"
-            />
-          </div>
+        {/* SECCIÓN 1 — Datos básicos */}
+        <div
+          style={{
+            backgroundColor: "#0B1F33",
+            border: "1.5px solid rgba(242,178,51,0.2)",
+            borderRadius: "16px",
+            padding: "20px",
+            marginBottom: "16px",
+          }}
+        >
+          <p
+            style={{
+              color: "#F2B233",
+              fontSize: "13px",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              marginBottom: "16px",
+            }}
+          >
+            Datos básicos
+          </p>
 
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Descripción
-            </label>
-            <textarea
-              value={form.descripcion}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, descripcion: e.target.value }))
-              }
-              rows={3}
-              className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 resize-none"
-              placeholder="Describe el premio o propósito de la rifa"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-zinc-300 mb-2">
-                Precio por boleto (COP) *
+                Nombre de la rifa *
               </label>
               <input
-                type="number"
-                min={1}
-                value={form.precio_boleto}
+                type="text"
+                value={form.nombre}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, precio_boleto: e.target.value }))
+                  setForm((f) => ({ ...f, nombre: e.target.value }))
                 }
                 required
                 className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
-                placeholder="10000"
+                placeholder="Ej: Rifa navideña 2025"
               />
             </div>
+
             <div>
               <label className="block text-sm font-medium text-zinc-300 mb-2">
-                Total de números
+                Descripción
               </label>
-              <input
-                type="number"
-                min={1}
-                value={form.total_numeros}
+              <textarea
+                value={form.descripcion}
                 onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    total_numeros: Number(e.target.value) || 10000,
-                  }))
+                  setForm((f) => ({ ...f, descripcion: e.target.value }))
                 }
-                className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                rows={3}
+                className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 resize-none"
+                placeholder="Describe el premio o propósito de la rifa"
               />
             </div>
           </div>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Porcentaje para activar sorteo (%)
-            </label>
-            <input
-              type="number"
-              min={1}
-              max={100}
-              value={form.porcentaje_sorteo}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  porcentaje_sorteo: Number(e.target.value) || 80,
-                }))
-              }
-              className="w-full max-w-[120px] px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
-            />
-          </div>
+        {/* SECCIÓN 2 — Configuración de venta */}
+        <div
+          style={{
+            backgroundColor: "#0B1F33",
+            border: "1.5px solid rgba(242,178,51,0.2)",
+            borderRadius: "16px",
+            padding: "20px",
+            marginBottom: "16px",
+          }}
+        >
+          <p
+            style={{
+              color: "#F2B233",
+              fontSize: "13px",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              marginBottom: "16px",
+            }}
+          >
+            Configuración de venta
+          </p>
 
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
-              % mínimo visible en la barra
-            </label>
-            <p className="text-xs text-zinc-500 mb-2">
-              Se mostrará este porcentaje hasta que las ventas reales lo
-              superen. Dejar vacío para mostrar el real.
-            </p>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              step={0.01}
-              value={form.porcentaje_visual_minimo}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  porcentaje_visual_minimo: e.target.value,
-                }))
-              }
-              className="w-full max-w-[140px] px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
-              placeholder="ej: 7.8"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Paquetes de tickets
-            </label>
-            <p className="text-xs text-zinc-500 mb-3">
-              Cantidades mostradas en la landing (1 a 9 paquetes, enteros
-              positivos; al guardar se ordenan de menor a mayor).
-            </p>
-            <div className="space-y-2">
-              {form.paquetes_tickets.map((cant, index) => (
-                <div
-                  key={index}
-                  className="flex flex-wrap items-center gap-2 sm:gap-3"
-                >
-                  <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    value={cant}
-                    onChange={(e) =>
-                      cambiarPaqueteTicket(index, e.target.value)
-                    }
-                    className="w-full min-w-0 sm:w-28 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => eliminarPaqueteTicket(index)}
-                    disabled={form.paquetes_tickets.length <= 1}
-                    className="shrink-0 px-3 py-2 rounded-lg border border-zinc-600 text-zinc-300 hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
-                    aria-label="Eliminar paquete"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  Precio por boleto (COP) *
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={form.precio_boleto}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, precio_boleto: e.target.value }))
+                  }
+                  required
+                  className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                  placeholder="10000"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
+                  Total de números
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={form.total_numeros}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      total_numeros: Number(e.target.value) || 10000,
+                    }))
+                  }
+                  className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                />
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={agregarPaqueteTicket}
-              disabled={form.paquetes_tickets.length >= 9}
-              className="mt-3 px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-amber-400 text-sm font-medium hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              + Agregar paquete
-            </button>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Números bendecidos
-            </label>
-            <p className="text-xs text-zinc-500 mb-3">
-              Formato exacto <span className="text-amber-500/90">0000-00</span>{" "}
-              (4 dígitos, guion, 2 dígitos). Máximo 20. Se guardan como JSON en
-              la rifa.
-            </p>
-            <div className="space-y-2">
-              {(form.numeros_bendecidos || []).map((item, index) => {
-                const valor =
-                  typeof item === "string" ? item : item?.numero ?? "";
-                const bloqueado =
-                  typeof item === "object" && item != null
-                    ? Boolean(item.bloqueado)
-                    : true;
-                const t = String(valor ?? "").trim();
-                const mostrarError = t !== "" && !esNumeroBendecidoValido(t);
-                return (
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                Paquetes de tickets
+              </label>
+              <p className="text-xs text-zinc-500 mb-3">
+                Cantidades mostradas en la landing (1 a 9 paquetes, enteros
+                positivos; al guardar se ordenan de menor a mayor).
+              </p>
+              <div className="space-y-2">
+                {form.paquetes_tickets.map((cant, index) => (
                   <div
                     key={index}
                     className="flex flex-wrap items-center gap-2 sm:gap-3"
                   >
                     <input
-                      type="text"
-                      inputMode="numeric"
-                      autoComplete="off"
-                      placeholder="0000-00"
-                      value={valor}
+                      type="number"
+                      min={1}
+                      step={1}
+                      value={cant}
                       onChange={(e) =>
-                        cambiarNumeroBendecido(index, e.target.value)
+                        cambiarPaqueteTicket(index, e.target.value)
                       }
-                      className={
-                        mostrarError
-                          ? "w-full min-w-0 sm:max-w-[200px] px-4 py-3 bg-zinc-800 border-2 border-red-500 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 font-mono text-sm"
-                          : "w-full min-w-0 sm:max-w-[200px] px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 font-mono text-sm"
-                      }
+                      className="w-full min-w-0 sm:w-28 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
                     />
                     <button
                       type="button"
-                      onClick={() => toggleBloqueadoBendecido(index)}
-                      className={`shrink-0 px-3 py-2 rounded-lg border text-xs font-semibold min-h-[44px] min-w-[120px] sm:min-w-[140px] transition-colors ${
-                        bloqueado
-                          ? "border-red-500/50 bg-red-950/40 text-red-200"
-                          : "border-green-500/50 bg-green-950/40 text-green-200"
-                      }`}
-                      aria-pressed={bloqueado}
-                      aria-label={
-                        bloqueado
-                          ? "Marcar número como activo"
-                          : "Marcar número como bloqueado"
-                      }
-                    >
-                      {bloqueado ? "🔴 Bloqueado" : "🟢 Activo"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => eliminarNumeroBendecido(index)}
-                      className="shrink-0 px-3 py-2 rounded-lg border border-zinc-600 text-zinc-300 hover:bg-zinc-800 text-sm"
-                      aria-label="Eliminar número bendecido"
-                    >
-                      ×
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-            <button
-              type="button"
-              onClick={agregarNumeroBendecido}
-              disabled={(form.numeros_bendecidos || []).length >= 20}
-              className="mt-3 px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-amber-400 text-sm font-medium hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              + Agregar número
-            </button>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Imagen o video principal
-            </label>
-            <input
-              type="file"
-              accept={ACCEPT_IMAGEN_Y_VIDEO}
-              onChange={handleImageChange}
-              className="block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-zinc-900 file:bg-amber-500 file:cursor-pointer hover:file:bg-amber-400"
-            />
-            {form.imagen_url && (
-              <div className="mt-2">
-                {esUrlVideo(form.imagen_url) ? (
-                  <video
-                    src={form.imagen_url}
-                    controls
-                    playsInline
-                    className="h-24 w-auto max-w-full object-cover rounded-lg border border-zinc-700 bg-black"
-                  />
-                ) : (
-                  <img
-                    src={form.imagen_url}
-                    alt="Preview"
-                    className="h-24 object-cover rounded-lg border border-zinc-700"
-                  />
-                )}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Imágenes del banner
-            </label>
-            <p className="text-xs text-zinc-500 mb-4">
-              Banner &quot;Sorteo abierto&quot; en la landing (lado izquierdo y
-              derecho). Opcional; si no subes imagen se usan las por defecto.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-2">
-                  Imagen izquierda
-                </label>
-                <input
-                  type="file"
-                  accept={ACCEPT_SOLO_IMAGEN}
-                  disabled={subiendoBanner === "izq"}
-                  onChange={(e) => handleBannerImageChange("izq", e)}
-                  className="block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-zinc-900 file:bg-amber-500 file:cursor-pointer hover:file:bg-amber-400 disabled:opacity-50"
-                />
-                {subiendoBanner === "izq" && (
-                  <p className="text-xs text-amber-500 mt-1">Subiendo…</p>
-                )}
-                {form.imagen_banner_izquierda && (
-                  <div className="mt-2">
-                    <img
-                      src={form.imagen_banner_izquierda}
-                      alt="Preview banner izquierda"
-                      className="h-24 w-auto max-w-full object-contain rounded-lg border border-zinc-700 bg-zinc-950"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setForm((f) => ({ ...f, imagen_banner_izquierda: "" }))
-                      }
-                      className="mt-2 text-xs text-red-400 hover:text-red-300"
-                    >
-                      Quitar imagen
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-zinc-400 mb-2">
-                  Imagen derecha
-                </label>
-                <input
-                  type="file"
-                  accept={ACCEPT_SOLO_IMAGEN}
-                  disabled={subiendoBanner === "der"}
-                  onChange={(e) => handleBannerImageChange("der", e)}
-                  className="block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-zinc-900 file:bg-amber-500 file:cursor-pointer hover:file:bg-amber-400 disabled:opacity-50"
-                />
-                {subiendoBanner === "der" && (
-                  <p className="text-xs text-amber-500 mt-1">Subiendo…</p>
-                )}
-                {form.imagen_banner_derecha && (
-                  <div className="mt-2">
-                    <img
-                      src={form.imagen_banner_derecha}
-                      alt="Preview banner derecha"
-                      className="h-24 w-auto max-w-full object-contain rounded-lg border border-zinc-700 bg-zinc-950"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setForm((f) => ({ ...f, imagen_banner_derecha: "" }))
-                      }
-                      className="mt-2 text-xs text-red-400 hover:text-red-300"
-                    >
-                      Quitar imagen
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ marginTop: "20px" }}>
-            <div style={{ display: "flex", alignItems: "center",
-              justifyContent: "space-between",
-              backgroundColor: "rgba(242,178,51,0.06)",
-              border: "1.5px solid rgba(242,178,51,0.2)",
-              borderRadius: "12px", padding: "12px 16px" }}>
-              <div>
-                <p style={{ color: "#F8FAFC", fontWeight: "700",
-                  fontSize: "14px", margin: "0 0 2px" }}>
-                  🎬 Mostrar video en landing
-                </p>
-                <p style={{ color: "rgba(248,250,252,0.4)",
-                  fontSize: "11px", margin: 0 }}>
-                  Si está desactivado, solo se muestran las imágenes
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setForm((f) => ({
-                  ...f, mostrar_video: !f.mostrar_video
-                }))}
-                style={{
-                  width: "48px", height: "26px", borderRadius: "999px",
-                  border: "none", cursor: "pointer",
-                  backgroundColor: form.mostrar_video
-                    ? "#22C55E" : "rgba(255,255,255,0.15)",
-                  position: "relative", transition: "background 0.2s",
-                  flexShrink: 0,
-                }}
-              >
-                <span style={{
-                  position: "absolute", top: "3px",
-                  left: form.mostrar_video ? "24px" : "3px",
-                  width: "20px", height: "20px", borderRadius: "50%",
-                  backgroundColor: "white",
-                  transition: "left 0.2s",
-                }} />
-              </button>
-            </div>
-          </div>
-
-          <div style={{ marginTop: "20px" }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                marginBottom: "10px",
-              }}
-            >
-              <span style={{ fontSize: "18px" }}>🎬</span>
-              <div>
-                <p
-                  style={{
-                    color: "#F8FAFC",
-                    fontWeight: "700",
-                    fontSize: "14px",
-                    margin: 0,
-                  }}
-                >
-                  Video del premio
-                </p>
-                <p
-                  style={{
-                    color: "rgba(248,250,252,0.4)",
-                    fontSize: "11px",
-                    margin: 0,
-                  }}
-                >
-                  Pega el link de YouTube (No listado). Se reproducirá
-                  automáticamente en la landing.
-                </p>
-              </div>
-            </div>
-            <input
-              type="text"
-              placeholder="https://www.youtube.com/watch?v=..."
-              value={form.video_url}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, video_url: e.target.value }))
-              }
-              style={{
-                width: "100%",
-                backgroundColor: "#1a1a1a",
-                border: "1.5px solid rgba(242,178,51,0.25)",
-                borderRadius: "10px",
-                color: "#F8FAFC",
-                fontSize: "14px",
-                padding: "10px 14px",
-                outline: "none",
-                boxSizing: "border-box",
-                fontFamily: "Poppins, sans-serif",
-              }}
-            />
-          </div>
-
-          <div style={{ marginTop: "20px" }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                marginBottom: "10px",
-              }}
-            >
-              <span style={{ fontSize: "18px" }}>🖼️</span>
-              <div>
-                <p
-                  style={{
-                    color: "#F8FAFC",
-                    fontWeight: "700",
-                    fontSize: "14px",
-                    margin: 0,
-                  }}
-                >
-                  Imágenes o videos adicionales
-                </p>
-                <p
-                  style={{
-                    color: "rgba(248,250,252,0.4)",
-                    fontSize: "11px",
-                    margin: 0,
-                  }}
-                >
-                  Carrusel junto al medio principal (incluye MOV, MP4, WEBM…)
-                </p>
-              </div>
-            </div>
-
-            {form.imagenes_url?.length > 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "8px",
-                  marginBottom: "12px",
-                }}
-              >
-                {form.imagenes_url.map((url, i) => (
-                  <div key={i} style={{ position: "relative" }}>
-                    {esUrlVideo(url) ? (
-                      <video
-                        src={url}
-                        muted
-                        playsInline
-                        loop
-                        autoPlay
-                        style={{
-                          width: "72px",
-                          height: "72px",
-                          objectFit: "cover",
-                          borderRadius: "8px",
-                          border: "2px solid rgba(242,178,51,0.4)",
-                          backgroundColor: "#0a0a0a",
-                        }}
-                      />
-                    ) : (
-                      <img
-                        src={url}
-                        alt={`Imagen ${i + 1}`}
-                        style={{
-                          width: "72px",
-                          height: "72px",
-                          objectFit: "cover",
-                          borderRadius: "8px",
-                          border: "2px solid rgba(242,178,51,0.4)",
-                        }}
-                      />
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => eliminarImagenAdicional(i)}
-                      style={{
-                        position: "absolute",
-                        top: "-6px",
-                        right: "-6px",
-                        backgroundColor: "#ef4444",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "50%",
-                        width: "20px",
-                        height: "20px",
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: "700",
-                      }}
+                      onClick={() => eliminarPaqueteTicket(index)}
+                      disabled={form.paquetes_tickets.length <= 1}
+                      className="shrink-0 px-3 py-2 rounded-lg border border-zinc-600 text-zinc-300 hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
+                      aria-label="Eliminar paquete"
                     >
                       ×
                     </button>
                   </div>
                 ))}
               </div>
-            )}
+              <button
+                type="button"
+                onClick={agregarPaqueteTicket}
+                disabled={form.paquetes_tickets.length >= 9}
+                className="mt-3 px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-amber-400 text-sm font-medium hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                + Agregar paquete
+              </button>
+            </div>
+          </div>
+        </div>
 
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                backgroundColor: "rgba(242,178,51,0.08)",
-                border: "1.5px dashed rgba(242,178,51,0.4)",
-                borderRadius: "12px",
-                padding: "12px 16px",
-                cursor: "pointer",
-                marginTop: "8px",
-              }}
-            >
-              <span style={{ fontSize: "24px" }}>📷</span>
-              <div>
-                <p
-                  style={{
-                    color: "#F2B233",
-                    fontWeight: "600",
-                    fontSize: "14px",
-                    margin: "0 0 2px",
-                  }}
-                >
-                  {subiendoImagenAdicional
-                    ? "Subiendo..."
-                    : "+ Agregar imagen o video"}
-                </p>
-                <p
-                  style={{
-                    color: "rgba(248,250,252,0.4)",
-                    fontSize: "11px",
-                    margin: 0,
-                  }}
-                >
-                  Imagen (JPG, PNG, WEBP) o video (MOV, MP4…)
-                </p>
+        {/* SECCIÓN 3 — Reglas de la rifa */}
+        <div
+          style={{
+            backgroundColor: "#0B1F33",
+            border: "1.5px solid rgba(242,178,51,0.2)",
+            borderRadius: "16px",
+            padding: "20px",
+            marginBottom: "16px",
+          }}
+        >
+          <p
+            style={{
+              color: "#F2B233",
+              fontSize: "13px",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              marginBottom: "16px",
+            }}
+          >
+            Reglas de la rifa
+          </p>
+
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                Porcentaje para activar sorteo (%)
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={form.porcentaje_sorteo}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    porcentaje_sorteo: Number(e.target.value) || 80,
+                  }))
+                }
+                className="w-full max-w-[120px] px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                % mínimo visible en la barra
+              </label>
+              <p className="text-xs text-zinc-500 mb-2">
+                Se mostrará este porcentaje hasta que las ventas reales lo
+                superen. Dejar vacío para mostrar el real.
+              </p>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step={0.01}
+                value={form.porcentaje_visual_minimo}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    porcentaje_visual_minimo: e.target.value,
+                  }))
+                }
+                className="w-full max-w-[140px] px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+                placeholder="ej: 7.8"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                Números bendecidos
+              </label>
+              <p className="text-xs text-zinc-500 mb-3">
+                Formato exacto <span className="text-amber-500/90">0000-00</span>{" "}
+                (4 dígitos, guion, 2 dígitos). Máximo 20. Se guardan como JSON en
+                la rifa.
+              </p>
+              <div className="space-y-2">
+                {(form.numeros_bendecidos || []).map((item, index) => {
+                  const valor =
+                    typeof item === "string" ? item : item?.numero ?? "";
+                  const bloqueado =
+                    typeof item === "object" && item != null
+                      ? Boolean(item.bloqueado)
+                      : true;
+                  const t = String(valor ?? "").trim();
+                  const mostrarError = t !== "" && !esNumeroBendecidoValido(t);
+                  return (
+                    <div
+                      key={index}
+                      className="flex flex-wrap items-center gap-2 sm:gap-3"
+                    >
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        placeholder="0000-00"
+                        value={valor}
+                        onChange={(e) =>
+                          cambiarNumeroBendecido(index, e.target.value)
+                        }
+                        className={
+                          mostrarError
+                            ? "w-full min-w-0 sm:max-w-[200px] px-4 py-3 bg-zinc-800 border-2 border-red-500 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 font-mono text-sm"
+                            : "w-full min-w-0 sm:max-w-[200px] px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 font-mono text-sm"
+                        }
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleBloqueadoBendecido(index)}
+                        className={`shrink-0 px-3 py-2 rounded-lg border text-xs font-semibold min-h-[44px] min-w-[120px] sm:min-w-[140px] transition-colors ${
+                          bloqueado
+                            ? "border-red-500/50 bg-red-950/40 text-red-200"
+                            : "border-green-500/50 bg-green-950/40 text-green-200"
+                        }`}
+                        aria-pressed={bloqueado}
+                        aria-label={
+                          bloqueado
+                            ? "Marcar número como activo"
+                            : "Marcar número como bloqueado"
+                        }
+                      >
+                        {bloqueado ? "🔴 Bloqueado" : "🟢 Activo"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => eliminarNumeroBendecido(index)}
+                        className="shrink-0 px-3 py-2 rounded-lg border border-zinc-600 text-zinc-300 hover:bg-zinc-800 text-sm"
+                        aria-label="Eliminar número bendecido"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
+              <button
+                type="button"
+                onClick={agregarNumeroBendecido}
+                disabled={(form.numeros_bendecidos || []).length >= 20}
+                className="mt-3 px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-amber-400 text-sm font-medium hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                + Agregar número
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* SECCIÓN 4 — Visual de la landing */}
+        <div
+          style={{
+            backgroundColor: "#0B1F33",
+            border: "1.5px solid rgba(242,178,51,0.2)",
+            borderRadius: "16px",
+            padding: "20px",
+            marginBottom: "16px",
+          }}
+        >
+          <p
+            style={{
+              color: "#F2B233",
+              fontSize: "13px",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              marginBottom: "16px",
+            }}
+          >
+            Visual de la landing
+          </p>
+
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                Imagen o video principal
+              </label>
               <input
                 type="file"
                 accept={ACCEPT_IMAGEN_Y_VIDEO}
-                disabled={subiendoImagenAdicional}
-                onChange={(e) => subirImagenAdicional(e.target.files?.[0])}
-                style={{ display: "none" }}
+                onChange={handleImageChange}
+                className="block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-zinc-900 file:bg-amber-500 file:cursor-pointer hover:file:bg-amber-400"
               />
-            </label>
+              {form.imagen_url && (
+                <div className="mt-2">
+                  {esUrlVideo(form.imagen_url) ? (
+                    <video
+                      src={form.imagen_url}
+                      controls
+                      playsInline
+                      className="h-24 w-auto max-w-full object-cover rounded-lg border border-zinc-700 bg-black"
+                    />
+                  ) : (
+                    <img
+                      src={form.imagen_url}
+                      alt="Preview"
+                      className="h-24 object-cover rounded-lg border border-zinc-700"
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-300 mb-2">
+                Imágenes del banner
+              </label>
+              <p className="text-xs text-zinc-500 mb-4">
+                Banner &quot;Sorteo abierto&quot; en la landing (lado izquierdo y
+                derecho). Opcional; si no subes imagen se usan las por defecto.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-2">
+                    Imagen izquierda
+                  </label>
+                  <input
+                    type="file"
+                    accept={ACCEPT_SOLO_IMAGEN}
+                    disabled={subiendoBanner === "izq"}
+                    onChange={(e) => handleBannerImageChange("izq", e)}
+                    className="block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-zinc-900 file:bg-amber-500 file:cursor-pointer hover:file:bg-amber-400 disabled:opacity-50"
+                  />
+                  {subiendoBanner === "izq" && (
+                    <p className="text-xs text-amber-500 mt-1">Subiendo…</p>
+                  )}
+                  {form.imagen_banner_izquierda && (
+                    <div className="mt-2">
+                      <img
+                        src={form.imagen_banner_izquierda}
+                        alt="Preview banner izquierda"
+                        className="h-24 w-auto max-w-full object-contain rounded-lg border border-zinc-700 bg-zinc-950"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setForm((f) => ({ ...f, imagen_banner_izquierda: "" }))
+                        }
+                        className="mt-2 text-xs text-red-400 hover:text-red-300"
+                      >
+                        Quitar imagen
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-zinc-400 mb-2">
+                    Imagen derecha
+                  </label>
+                  <input
+                    type="file"
+                    accept={ACCEPT_SOLO_IMAGEN}
+                    disabled={subiendoBanner === "der"}
+                    onChange={(e) => handleBannerImageChange("der", e)}
+                    className="block w-full text-sm text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-zinc-900 file:bg-amber-500 file:cursor-pointer hover:file:bg-amber-400 disabled:opacity-50"
+                  />
+                  {subiendoBanner === "der" && (
+                    <p className="text-xs text-amber-500 mt-1">Subiendo…</p>
+                  )}
+                  {form.imagen_banner_derecha && (
+                    <div className="mt-2">
+                      <img
+                        src={form.imagen_banner_derecha}
+                        alt="Preview banner derecha"
+                        className="h-24 w-auto max-w-full object-contain rounded-lg border border-zinc-700 bg-zinc-950"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setForm((f) => ({ ...f, imagen_banner_derecha: "" }))
+                        }
+                        className="mt-2 text-xs text-red-400 hover:text-red-300"
+                      >
+                        Quitar imagen
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: "20px" }}>
+              <div style={{ display: "flex", alignItems: "center",
+                justifyContent: "space-between",
+                backgroundColor: "rgba(242,178,51,0.06)",
+                border: "1.5px solid rgba(242,178,51,0.2)",
+                borderRadius: "12px", padding: "12px 16px" }}>
+                <div>
+                  <p style={{ color: "#F8FAFC", fontWeight: "700",
+                    fontSize: "14px", margin: "0 0 2px" }}>
+                    🎬 Mostrar video en landing
+                  </p>
+                  <p style={{ color: "rgba(248,250,252,0.4)",
+                    fontSize: "11px", margin: 0 }}>
+                    Si está desactivado, solo se muestran las imágenes
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({
+                    ...f, mostrar_video: !f.mostrar_video
+                  }))}
+                  style={{
+                    width: "48px", height: "26px", borderRadius: "999px",
+                    border: "none", cursor: "pointer",
+                    backgroundColor: form.mostrar_video
+                      ? "#22C55E" : "rgba(255,255,255,0.15)",
+                    position: "relative", transition: "background 0.2s",
+                    flexShrink: 0,
+                  }}
+                >
+                  <span style={{
+                    position: "absolute", top: "3px",
+                    left: form.mostrar_video ? "24px" : "3px",
+                    width: "20px", height: "20px", borderRadius: "50%",
+                    backgroundColor: "white",
+                    transition: "left 0.2s",
+                  }} />
+                </button>
+              </div>
+            </div>
+
+            <div style={{ marginTop: "20px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginBottom: "10px",
+                }}
+              >
+                <span style={{ fontSize: "18px" }}>🎬</span>
+                <div>
+                  <p
+                    style={{
+                      color: "#F8FAFC",
+                      fontWeight: "700",
+                      fontSize: "14px",
+                      margin: 0,
+                    }}
+                  >
+                    Video del premio
+                  </p>
+                  <p
+                    style={{
+                      color: "rgba(248,250,252,0.4)",
+                      fontSize: "11px",
+                      margin: 0,
+                    }}
+                  >
+                    Pega el link de YouTube (No listado). Se reproducirá
+                    automáticamente en la landing.
+                  </p>
+                </div>
+              </div>
+              <input
+                type="text"
+                placeholder="https://www.youtube.com/watch?v=..."
+                value={form.video_url}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, video_url: e.target.value }))
+                }
+                style={{
+                  width: "100%",
+                  backgroundColor: "#1a1a1a",
+                  border: "1.5px solid rgba(242,178,51,0.25)",
+                  borderRadius: "10px",
+                  color: "#F8FAFC",
+                  fontSize: "14px",
+                  padding: "10px 14px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              />
+            </div>
+
+            <div style={{ marginTop: "20px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  marginBottom: "10px",
+                }}
+              >
+                <span style={{ fontSize: "18px" }}>🖼️</span>
+                <div>
+                  <p
+                    style={{
+                      color: "#F8FAFC",
+                      fontWeight: "700",
+                      fontSize: "14px",
+                      margin: 0,
+                    }}
+                  >
+                    Imágenes o videos adicionales
+                  </p>
+                  <p
+                    style={{
+                      color: "rgba(248,250,252,0.4)",
+                      fontSize: "11px",
+                      margin: 0,
+                    }}
+                  >
+                    Carrusel junto al medio principal (incluye MOV, MP4, WEBM…)
+                  </p>
+                </div>
+              </div>
+
+              {form.imagenes_url?.length > 0 && (
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "8px",
+                    marginBottom: "12px",
+                  }}
+                >
+                  {form.imagenes_url.map((url, i) => (
+                    <div key={i} style={{ position: "relative" }}>
+                      {esUrlVideo(url) ? (
+                        <video
+                          src={url}
+                          muted
+                          playsInline
+                          loop
+                          autoPlay
+                          style={{
+                            width: "72px",
+                            height: "72px",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                            border: "2px solid rgba(242,178,51,0.4)",
+                            backgroundColor: "#0a0a0a",
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src={url}
+                          alt={`Imagen ${i + 1}`}
+                          style={{
+                            width: "72px",
+                            height: "72px",
+                            objectFit: "cover",
+                            borderRadius: "8px",
+                            border: "2px solid rgba(242,178,51,0.4)",
+                          }}
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => eliminarImagenAdicional(i)}
+                        style={{
+                          position: "absolute",
+                          top: "-6px",
+                          right: "-6px",
+                          backgroundColor: "#ef4444",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "50%",
+                          width: "20px",
+                          height: "20px",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: "700",
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  backgroundColor: "rgba(242,178,51,0.08)",
+                  border: "1.5px dashed rgba(242,178,51,0.4)",
+                  borderRadius: "12px",
+                  padding: "12px 16px",
+                  cursor: "pointer",
+                  marginTop: "8px",
+                }}
+              >
+                <span style={{ fontSize: "24px" }}>📷</span>
+                <div>
+                  <p
+                    style={{
+                      color: "#F2B233",
+                      fontWeight: "600",
+                      fontSize: "14px",
+                      margin: "0 0 2px",
+                    }}
+                  >
+                    {subiendoImagenAdicional
+                      ? "Subiendo..."
+                      : "+ Agregar imagen o video"}
+                  </p>
+                  <p
+                    style={{
+                      color: "rgba(248,250,252,0.4)",
+                      fontSize: "11px",
+                      margin: 0,
+                    }}
+                  >
+                    Imagen (JPG, PNG, WEBP) o video (MOV, MP4…)
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  accept={ACCEPT_IMAGEN_Y_VIDEO}
+                  disabled={subiendoImagenAdicional}
+                  onChange={(e) => subirImagenAdicional(e.target.files?.[0])}
+                  style={{ display: "none" }}
+                />
+              </label>
+            </div>
           </div>
+        </div>
+
+        {/* SECCIÓN 5 — Premios anticipados */}
+        <div
+          style={{
+            backgroundColor: "#0B1F33",
+            border: "1.5px solid rgba(242,178,51,0.2)",
+            borderRadius: "16px",
+            padding: "20px",
+            marginBottom: "16px",
+          }}
+        >
+          <p
+            style={{
+              color: "#F2B233",
+              fontSize: "13px",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              marginBottom: "16px",
+            }}
+          >
+            Premios anticipados
+          </p>
 
           <div style={{ marginTop: "20px" }}>
             <div

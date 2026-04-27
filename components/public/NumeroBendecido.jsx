@@ -25,12 +25,12 @@ export default function NumeroBendecido() {
       `}</style>
       <div className="max-w-2xl mx-auto">
         <h2 className="text-white font-bold text-lg text-center mb-2 drop-shadow-sm">
-          ✨ Claves activas dentro de la experiencia ✨
+          ⚡ ¿Tienes una de estas claves?
         </h2>
         <p className="text-[#F8FAFC]/90 text-center text-xs font-semibold mb-4 px-1">
-          Cada una de estas claves representa $3.000.000
+          Estas 10 claves ya valen $3.000.000 cada una.
           <br />
-          para quien la tenga.
+          Revisa tus claves — una puede ser tuya.
         </p>
 
         <div className="grid grid-cols-2 gap-3 mb-4">

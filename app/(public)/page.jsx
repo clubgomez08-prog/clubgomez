@@ -6,6 +6,7 @@ import { supabaseBrowser } from "@/lib/supabase-browser";
 import Hero from "@/components/public/Hero";
 import PaquetesBoletos, { PAQUETES } from "@/components/public/PaquetesBoletos";
 import PremiosAnticipados from "@/components/public/PremiosAnticipados";
+import PremiosSemanales from "@/components/public/PremiosSemanales";
 import NumeroBendecido from "@/components/public/NumeroBendecido";
 import ReenviarCodigos from "@/components/public/ReenviarCodigos";
 import WhatsAppFlotante from "@/components/public/WhatsAppFlotante";
@@ -421,6 +422,7 @@ export default function LandingPage() {
         </>
       )}
       <PremiosAnticipados />
+      <PremiosSemanales />
       <NumeroBendecido />
       <PaquetesBoletos
         rifa={rifa}
