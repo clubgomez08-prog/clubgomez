@@ -1,6 +1,6 @@
 // Nota: logo-rifex.png en /public es archivo legacy
 // Los logos activos son: logo_principal.png y logo_hero.png
-import { Poppins } from "next/font/google";
+import { Bebas_Neue, Oswald, Poppins } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
@@ -10,11 +10,24 @@ const poppins = Poppins({
   subsets: ["latin"],
 });
 
+const bebas = Bebas_Neue({
+  variable: "--font-bebas",
+  weight: "400",
+  subsets: ["latin"],
+});
+
+const oswald = Oswald({
+  variable: "--font-oswald",
+  weight: ["500", "600", "700"],
+  subsets: ["latin"],
+});
+
 export const metadata = {
-  title: "RIFEX - Un número puede cambiar tu vida",
-  description: "Plataforma oficial de rifas digitales RIFEX",
+  title: "Club Gómez — Membresía exclusiva",
+  description: "Únete a Club Gómez. Descuentos exclusivos y beneficios del Club.",
   icons: {
-    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23071521'/><text y='.9em' font-size='80' x='10' fill='%23F2B233' font-family='Arial Black' font-weight='900'>R</text></svg>",
+    icon: [{ url: "/club-gomez/logo-mark.jpg", type: "image/jpeg" }],
+    apple: "/club-gomez/logo-mark.jpg",
   },
 };
 
@@ -36,7 +49,7 @@ export default function RootLayout({ children }) {
         `}
       </Script>
       <body
-        className={`${poppins.variable} font-poppins antialiased`}
+        className={`${poppins.variable} ${bebas.variable} ${oswald.variable} font-poppins antialiased`}
       >
         <noscript>
           <img

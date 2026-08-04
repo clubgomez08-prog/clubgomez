@@ -1,8 +1,15 @@
 import { Suspense } from "react";
 
 export const metadata = {
-  title: "RIFEX - Un número puede cambiar tu vida",
-  description: "RIFEX - Participa en sorteos seguros. Un número puede cambiar tu vida.",
+  title: "Club Gómez — Membresía exclusiva",
+  description:
+    "Únete a Club Gómez. Obtén descuentos exclusivos, beneficios sorpresa y sé parte del Club.",
+  openGraph: {
+    title: "Club Gómez — Membresía exclusiva",
+    description:
+      "Únete a Club Gómez. Obtén descuentos exclusivos, beneficios sorpresa y sé parte del Club.",
+    type: "website",
+  },
 };
 
 export default function PublicLayout({ children }) {
