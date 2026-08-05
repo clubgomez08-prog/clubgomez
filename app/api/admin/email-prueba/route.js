@@ -3,11 +3,11 @@ import {
   generarHtmlEmailGanador,
   enviarTicketCompra,
   resendFromAddress,
+  getResendClient,
 } from "@/lib/email";
-import { Resend } from "resend";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+export const dynamic = "force-dynamic";
 
 export async function POST(request) {
   const user = await verificarSesionAdmin(request);
@@ -31,6 +31,8 @@ export async function POST(request) {
         { status: 500 }
       );
     }
+
+    const resend = getResendClient();
 
     if (tipo === "comprador") {
       const participanteCompradorPrueba = {
