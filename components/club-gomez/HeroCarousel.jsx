@@ -32,6 +32,24 @@ const SLIDES = [
     mobile: "/club-gomez/hero-movil-3.png",
     showBadge: false,
   },
+  {
+    id: 3,
+    title: "PREMIOS",
+    titleAccent: "DEL CLUB",
+    lines: ["TECH · HOGAR · EXPERIENCIAS"],
+    pc: "/club-gomez/hero-pc-4.png",
+    mobile: "/club-gomez/hero-movil-4.png",
+    showBadge: false,
+  },
+  {
+    id: 4,
+    title: "¡ÚNETE!",
+    titleAccent: null,
+    lines: ["2 MOTOS · BENEFICIOS DEL MES"],
+    pc: "/club-gomez/hero-pc-5.png",
+    mobile: "/club-gomez/hero-movil-5.png",
+    showBadge: true,
+  },
 ];
 
 export default function HeroCarousel() {
@@ -41,7 +59,7 @@ export default function HeroCarousel() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const t = setInterval(() => {
       setIndex((i) => (i + 1) % SLIDES.length);
-    }, 5500);
+    }, 3500);
     return () => clearInterval(t);
   }, []);
 

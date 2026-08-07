@@ -145,7 +145,7 @@ export default function SidebarMock({ abierto, onClose, className = "" }) {
             marginBottom: 8,
           }}
         >
-          → Panel RIFEX oficial
+          → Panel operativo
         </Link>
         <button
           onClick={() => {

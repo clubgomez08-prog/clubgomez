@@ -54,7 +54,7 @@ export default function Footer() {
               Horario: L-V de 9 a 6pm · Sáb. de 9am a 2pm
             </p>
             <p style={{ margin: "12px 0 0", fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
-              (Placeholder contacto / redes — por confirmar)
+              Instagram y WhatsApp — por confirmar
             </p>
           </div>
 
@@ -105,12 +105,6 @@ export default function Footer() {
           <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
             © {new Date().getFullYear()} Club Gómez. Todos los derechos reservados.
           </p>
-          <a
-            href="/vieja"
-            style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", textDecoration: "none" }}
-          >
-            Ver versión anterior
-          </a>
         </div>
       </div>
     </footer>

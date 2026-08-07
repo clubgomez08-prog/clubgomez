@@ -14,8 +14,9 @@ const PLANES = [
     badge: "Recomendado por el Club",
     highlight: true,
     equiv: "La experiencia completa del Club",
+    claves: 10,
     extras: ["Te conviertes en miembro VIP"],
-    avatarPos: "center 20%",
+    avatar: "/club-gomez/plan-elite.png",
     sticker: STICKERS.corona,
   },
   {
@@ -26,8 +27,9 @@ const PLANES = [
     badge: null,
     highlight: false,
     equiv: "El equilibrio ideal",
+    claves: 7,
     extras: [],
-    avatarPos: "center 25%",
+    avatar: "/club-gomez/plan-selecto.png",
     sticker: STICKERS.cadena,
   },
   {
@@ -38,8 +40,9 @@ const PLANES = [
     badge: null,
     highlight: false,
     equiv: "O sea, entras mes a mes",
+    claves: 3,
     extras: [],
-    avatarPos: "center 18%",
+    avatar: "/club-gomez/plan-esencial.png",
     sticker: STICKERS.llave,
   },
 ];
@@ -59,13 +62,19 @@ export default function Membresias() {
         />
       </div>
 
+      <div className="cg-planes__floaters" aria-hidden="true">
+        <img src={STICKERS.rayo} alt="" className="cg-sticker-img cg-planes__floater cg-planes__floater--1" />
+        <img src={STICKERS.dolar} alt="" className="cg-sticker-img cg-planes__floater cg-planes__floater--2" />
+        <img src={STICKERS.cohete} alt="" className="cg-sticker-img cg-planes__floater cg-planes__floater--3" />
+        <img src={STICKERS.trofeo} alt="" className="cg-sticker-img cg-planes__floater cg-planes__floater--4" />
+        <img src={STICKERS.casco} alt="" className="cg-sticker-img cg-planes__floater cg-planes__floater--5" />
+        <img src={STICKERS.billetes} alt="" className="cg-sticker-img cg-planes__floater cg-planes__floater--6" />
+        <img src={STICKERS.mano} alt="" className="cg-sticker-img cg-planes__floater cg-planes__floater--7" />
+        <img src={STICKERS.moneda} alt="" className="cg-sticker-img cg-planes__floater cg-planes__floater--8" />
+      </div>
+
       <div className="cg-planes__inner">
         <div className="cg-planes__head">
-          <div className="cg-planes__stickers" aria-hidden="true">
-            <img src={STICKERS.rayo} alt="" className="cg-sticker-img cg-planes__sticker cg-planes__sticker--1" />
-            <img src={STICKERS.dolar} alt="" className="cg-sticker-img cg-planes__sticker cg-planes__sticker--2" />
-            <img src={STICKERS.cohete} alt="" className="cg-sticker-img cg-planes__sticker cg-planes__sticker--3" />
-          </div>
           <h2>
             Elige tu <span>membresía</span>
           </h2>
@@ -80,6 +89,17 @@ export default function Membresias() {
             >
               {p.badge && <span className="cg-plan-card__ribbon">{p.badge}</span>}
 
+              <div className="cg-plan-card__figure" aria-hidden="true">
+                <Image
+                  src={p.avatar}
+                  alt=""
+                  width={440}
+                  height={520}
+                  sizes="220px"
+                  style={{ objectFit: "contain", objectPosition: "center top" }}
+                />
+              </div>
+
               <div className="cg-plan-card__sticker" aria-hidden="true">
                 <img src={p.sticker} alt="" className="cg-sticker-img" />
               </div>
@@ -90,18 +110,12 @@ export default function Membresias() {
                   <h3>{p.nombre}</h3>
                   <p className="cg-plan-card__tag">{p.tag}</p>
                 </div>
-                <div className="cg-plan-card__avatar">
-                  <Image
-                    src="/club-gomez/plan-daniel.png"
-                    alt="Club Gómez"
-                    width={88}
-                    height={88}
-                    style={{ objectFit: "cover", objectPosition: p.avatarPos }}
-                  />
-                </div>
               </div>
 
               <ul className="cg-plan-card__list">
+                <li>
+                  <strong>{p.claves} claves</strong> con oportunidades
+                </li>
                 <li>Mientras tu membresía esté activa: accedes a descuentos exclusivos en marcas aliadas.</li>
                 <li>Participas de los beneficios durante el mes.</li>
                 {p.extras.map((ex) => (

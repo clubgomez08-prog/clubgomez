@@ -44,7 +44,7 @@ export default function AdminMockDashboardPage() {
   }, []);
 
   function confirmarUnlockFinanzas() {
-    if (passwordFinanzas === "demo123" || passwordFinanzas === "rifex") {
+    if (passwordFinanzas === "demo123" || passwordFinanzas === "clubgomez") {
       setFinanzasVisibles(true);
       setModalFinanzas(false);
       setPasswordFinanzas("");

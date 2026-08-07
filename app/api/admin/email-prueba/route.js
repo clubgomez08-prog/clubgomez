@@ -92,7 +92,7 @@ export async function POST(request) {
     const { data, error } = await resend.emails.send({
       from: resendFromAddress(),
       to: [emailDestino],
-      subject: `🏆 [PRUEBA] RIFEX — Notificación de ganador: ${nombreRifa || "Sorteo de prueba"}`,
+      subject: `🏆 [PRUEBA] Club Gómez — Notificación: ${nombreRifa || "Beneficio de prueba"}`,
       html: htmlEmail,
     });
 

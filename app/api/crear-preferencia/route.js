@@ -101,7 +101,7 @@ export async function POST(request) {
       body: {
         items: [
           {
-            title: `RIFEX — ${rifa.nombre} (${qty} ticket${qty > 1 ? 's' : ''})`,
+            title: `Club Gómez — ${rifa.nombre} (${qty} ticket${qty > 1 ? 's' : ''})`,
             quantity: 1,
             unit_price: esperado,
             currency_id: 'COP'

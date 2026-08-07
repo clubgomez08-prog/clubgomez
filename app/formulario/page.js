@@ -14,7 +14,7 @@ function construirUrlWhatsappPago({
   total,
 }) {
   const lineas = [
-    'Hola RIFEX! Quiero pagar mis tickets.',
+    'Hola Club Gómez! Quiero activar mi membresía / pagar.',
     `Nombre: ${nombre}`,
     `Email: ${email}`,
     `Cédula: ${cedula}`,
@@ -234,8 +234,8 @@ function FormularioContent() {
                 1. Participación y elegibilidad
               </p>
               <p style={{ marginBottom: '10px' }}>
-                La participación en los sorteos de RIFEX está abierta a personas mayores
-                de 18 años. Al adquirir tickets, el participante confirma que cumple con
+                La participación en Club Gómez está abierta a personas mayores
+                de 18 años. Al adquirir una membresía o tickets, el participante confirma que cumple con
                 este requisito y que la información proporcionada es veraz y verificable.
               </p>
 
@@ -252,9 +252,9 @@ function FormularioContent() {
                 3. Proceso de pago
               </p>
               <p style={{ marginBottom: '10px' }}>
-                Los pagos se procesan a través de MercadoPago, plataforma oficial
-                y certificada. RIFEX no almacena información de tarjetas ni datos
-                bancarios. El ticket se activa únicamente tras confirmación exitosa
+                Los pagos se procesan a través de la pasarela oficial
+                y certificada. Club Gómez no almacena información de tarjetas ni datos
+                bancarios. La membresía o ticket se activa únicamente tras confirmación exitosa
                 del pago.
               </p>
 
@@ -274,7 +274,7 @@ function FormularioContent() {
                 El número ganador se determina usando el resultado de una lotería oficial,
                 la cual será anunciada previamente a los participantes. Se toman los 4 dígitos
                 principales del número ganador y los 2 últimos dígitos del serial, formando
-                así el número ganador RIFEX en formato 0000-00. El resultado es definitivo,
+                así el número ganador Club Gómez en formato 0000-00. El resultado es definitivo,
                 público y verificable.
               </p>
 
@@ -285,7 +285,7 @@ function FormularioContent() {
                 El premio será entregado al ganador previa verificación de identidad
                 mediante documento oficial. Los gastos de trámites, impuestos o
                 transferencia del premio corren por cuenta del ganador salvo
-                indicación expresa de RIFEX.
+                indicación expresa de Club Gómez.
               </p>
 
               <p style={{ fontWeight: '700', color: '#F2B233', marginBottom: '8px' }}>
@@ -293,7 +293,7 @@ function FormularioContent() {
               </p>
               <p>
                 Los datos personales recopilados serán utilizados exclusivamente
-                para gestionar la participación y contactar al ganador. RIFEX no
+                para gestionar la participación y contactar al ganador. Club Gómez no
                 compartirá ni venderá información personal a terceros.
               </p>
             </div>
@@ -417,8 +417,8 @@ function FormularioContent() {
       {/* Header con logo */}
       <div style={{ textAlign: 'center', marginBottom: '16px' }}>
         <img 
-          src="/logo_principal.png" 
-          alt="RIFEX" 
+          src="/club-gomez/logo-header.png" 
+          alt="Club Gómez" 
           style={{ height: '48px', objectFit: 'contain' }} 
         />
       </div>
