@@ -46,7 +46,9 @@ export default function BeneficiosPageView() {
               con oportunidades enviadas a tu correo.
             </p>
             <div className="cg-benef-hero__actions">
-              <CtaButton href="/#membresias">¡Suscribirme!</CtaButton>
+              <CtaButton href="/#membresias" requireAuth>
+                ¡Suscribirme!
+              </CtaButton>
               <Link href="/#beneficios-mes" className="cg-benef-hero__link">
                 Ver en la home →
               </Link>

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase, supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
+import { createAnonAuthClient, supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { cargarPerfilPorAuthUserId } from "@/lib/club-gomez/perfil-miembro";
 import { enviarBienvenidaRegistro } from "@/lib/email";
 
@@ -105,8 +105,9 @@ export async function POST(request) {
 
     const emailEnviado = await tryEnviarBienvenida({ nombre, email });
 
+    const authClient = createAnonAuthClient();
     const { data: sessionData, error: sessionError } =
-      await supabase.auth.signInWithPassword({ email, password });
+      await authClient.auth.signInWithPassword({ email, password });
 
     const perfilFallback = {
       id: miembro.id,

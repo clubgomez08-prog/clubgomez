@@ -115,7 +115,9 @@ export default function Aliados() {
           ))}
         </div>
 
-        <CtaButton onClick={() => scrollToId("membresias")}>¡Quiero mi membresía!</CtaButton>
+        <CtaButton requireAuth onClick={() => scrollToId("membresias")}>
+          ¡Quiero mi membresía!
+        </CtaButton>
       </div>
     </section>
   );

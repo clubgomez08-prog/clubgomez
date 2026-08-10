@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { DEMO_MIEMBRO_CREDS } from "@/lib/club-gomez/demo-miembro";
 import { iniciarSesionCuenta } from "@/lib/club-gomez/cuentas-miembro";
+import {
+  irDespuesDeAuth,
+  rutaRegistroConNext,
+  sanitizarNext,
+} from "@/lib/club-gomez/flujo-suscripcion";
 
-export default function MiembroLoginPage() {
-  const router = useRouter();
+function MiembroLoginForm() {
+  const searchParams = useSearchParams();
+  const next = sanitizarNext(searchParams.get("next"));
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,8 +32,7 @@ export default function MiembroLoginPage() {
         setError(result.error);
         return;
       }
-      router.push("/miembro");
-      router.refresh();
+      irDespuesDeAuth(next, "/miembro");
     } finally {
       setLoading(false);
     }
@@ -80,7 +86,7 @@ export default function MiembroLoginPage() {
               Área de miembros
             </h1>
             <p style={{ margin: "8px 0 0", color: "rgba(255,255,255,0.5)", fontSize: 13 }}>
-              Entra con tu cuenta. También puedes registrarte sin suscribirte.
+              Entra con tu cuenta. Para suscribirte primero debes registrarte.
             </p>
           </div>
 
@@ -179,20 +185,55 @@ export default function MiembroLoginPage() {
             }}
           >
             ¿No tienes cuenta?{" "}
-            <Link href="/miembro/registro" style={{ color: "#B8E351", fontWeight: 600 }}>
+            <Link
+              href={rutaRegistroConNext(next || "/#membresias")}
+              style={{ color: "#B8E351", fontWeight: 600 }}
+            >
               Regístrate gratis
             </Link>
             <br />
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
-              Demo activa: {DEMO_MIEMBRO_CREDS.email} / {DEMO_MIEMBRO_CREDS.password}
-            </span>
+            {process.env.NODE_ENV !== "production" ? (
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
+                Demo activa: {DEMO_MIEMBRO_CREDS.email} / {DEMO_MIEMBRO_CREDS.password}
+              </span>
+            ) : null}
             <br />
-            <Link href="/" style={{ color: "rgba(255,255,255,0.45)", textDecoration: "none", fontSize: 12 }}>
+            <Link
+              href="/"
+              style={{
+                color: "rgba(255,255,255,0.45)",
+                textDecoration: "none",
+                fontSize: 12,
+              }}
+            >
               ← Volver al Club
             </Link>
           </p>
         </div>
       </div>
     </main>
+  );
+}
+
+export default function MiembroLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <main
+          style={{
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#050607",
+            color: "rgba(255,255,255,0.5)",
+          }}
+        >
+          Cargando…
+        </main>
+      }
+    >
+      <MiembroLoginForm />
+    </Suspense>
   );
 }

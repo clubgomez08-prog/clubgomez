@@ -39,7 +39,9 @@ export default function BeneficiosPreview() {
             >
               Todos los beneficios
             </Link>
-            <CtaButton onClick={() => scrollToId("membresias")}>¡Suscribirme ya!</CtaButton>
+            <CtaButton requireAuth onClick={() => scrollToId("membresias")}>
+              ¡Suscribirme ya!
+            </CtaButton>
           </div>
         </div>
 

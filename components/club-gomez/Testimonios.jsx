@@ -128,7 +128,9 @@ export default function Testimonios() {
           </h2>
           <p className="cg-testimonios__sub">Momentos reales del Club</p>
           <div className="cg-testimonios__cta">
-            <CtaButton onClick={() => scrollToId("membresias")}>¡Suscribirme ya!</CtaButton>
+            <CtaButton requireAuth onClick={() => scrollToId("membresias")}>
+              ¡Suscribirme ya!
+            </CtaButton>
           </div>
         </div>
 

@@ -29,7 +29,11 @@ export default function BeneficiosCards() {
             </h2>
             <p>para disfrutar cada mes de:</p>
           </div>
-          <CtaButton onClick={() => scrollToId("membresias")} animate={false}>
+          <CtaButton
+            requireAuth
+            onClick={() => scrollToId("membresias")}
+            animate={false}
+          >
             Quiero suscribirme
           </CtaButton>
         </div>

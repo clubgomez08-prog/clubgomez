@@ -363,7 +363,11 @@ export default function Header() {
               >
                 Registrarse
               </a>
-              <CtaButton onClick={() => goHomeSection("membresias")} animate={false}>
+              <CtaButton
+                onClick={() => goHomeSection("membresias")}
+                animate={false}
+                requireAuth
+              >
                 ¡Suscribirme!
               </CtaButton>
             </div>

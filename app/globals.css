@@ -943,6 +943,7 @@ body {
   justify-content: center;
   width: 100%;
   padding: 14px 18px;
+  border: none;
   border-radius: 12px;
   background: linear-gradient(135deg, #d4f06a 0%, #b8e351 45%, #9bcf2e 100%);
   color: #050607;
@@ -952,6 +953,7 @@ body {
   letter-spacing: 0.03em;
   text-decoration: none;
   text-align: center;
+  cursor: pointer;
   box-shadow: 0 8px 22px rgba(184, 227, 81, 0.45);
   transition: filter 0.25s ease, transform 0.25s ease;
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import CtaButton from "./CtaButton";
 import BeneficioMedia from "./BeneficioMedia";
 import { BENEFICIOS_MES, DESTACADO_MES } from "@/lib/club-gomez/beneficios-data";
+import { irASuscribir } from "@/lib/club-gomez/flujo-suscripcion";
 import { scrollToId, useReveal } from "./hooks";
 
 export default function BeneficiosDelMes() {
@@ -46,7 +47,9 @@ export default function BeneficiosDelMes() {
           >
             Beneficios <span style={{ color: "#B8E351" }}>del mes</span>
           </h2>
-          <CtaButton onClick={() => scrollToId("membresias")}>¡Quiero mi membresía!</CtaButton>
+          <CtaButton requireAuth onClick={() => scrollToId("membresias")}>
+            ¡Quiero mi membresía!
+          </CtaButton>
         </div>
 
         {/* Cápsula destacada PC / móvil */}
@@ -70,7 +73,9 @@ export default function BeneficiosDelMes() {
             <button
               type="button"
               className="cg-capsula-motos__cta"
-              onClick={() => scrollToId("membresias")}
+              onClick={() => {
+                if (irASuscribir({})) scrollToId("membresias");
+              }}
             >
               ¡Participar ya!
             </button>

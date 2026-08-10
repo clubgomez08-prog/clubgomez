@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase, supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
+import { createAnonAuthClient, supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { cargarPerfilPorAuthUserId } from "@/lib/club-gomez/perfil-miembro";
 import {
   DEMO_MIEMBRO_CREDS,
@@ -20,10 +20,11 @@ export async function POST(request) {
 
     if (!email || !password) return bad("Completa email y contraseña.");
 
-    // Demo local (sin tocar Supabase)
+    // Demo local solo en desarrollo
     if (
       email === DEMO_MIEMBRO_CREDS.email &&
-      password === DEMO_MIEMBRO_CREDS.password
+      password === DEMO_MIEMBRO_CREDS.password &&
+      process.env.NODE_ENV !== "production"
     ) {
       return NextResponse.json({
         ok: true,
@@ -37,7 +38,8 @@ export async function POST(request) {
       return bad("Supabase no está configurado en el servidor.", 503);
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const authClient = createAnonAuthClient();
+    const { data, error } = await authClient.auth.signInWithPassword({
       email,
       password,
     });

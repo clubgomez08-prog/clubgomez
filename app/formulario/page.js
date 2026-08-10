@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, Suspense } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -8,6 +8,8 @@ import {
   getPlanById,
   construirUrlWhatsappMembresia,
 } from "@/lib/club-gomez/planes";
+import { leerSesionLocal } from "@/lib/club-gomez/cuentas-miembro";
+import { rutaRegistroConNext } from "@/lib/club-gomez/flujo-suscripcion";
 import styles from "./formulario.module.css";
 
 function FormularioMembresia() {
@@ -17,6 +19,7 @@ function FormularioMembresia() {
     [searchParams]
   );
 
+  const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [enviado, setEnviado] = useState(false);
@@ -27,6 +30,24 @@ function FormularioMembresia() {
     telefono: "",
     ciudad: "",
   });
+
+  useEffect(() => {
+    const sesion = leerSesionLocal();
+    if (!sesion) {
+      const next = `/formulario?plan=${plan.id}`;
+      window.location.replace(rutaRegistroConNext(next));
+      return;
+    }
+    setForm((prev) => ({
+      ...prev,
+      nombre: sesion.nombre || prev.nombre,
+      cedula: sesion.cedula || prev.cedula,
+      email: sesion.email || prev.email,
+      telefono: sesion.telefono || prev.telefono,
+      ciudad: sesion.ciudad || prev.ciudad,
+    }));
+    setReady(true);
+  }, [plan.id]);
 
   function handleChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -88,6 +109,14 @@ function FormularioMembresia() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!ready) {
+    return (
+      <main className={styles.page}>
+        <p className={styles.loading}>Verificando tu cuenta…</p>
+      </main>
+    );
   }
 
   return (
@@ -190,13 +219,13 @@ function FormularioMembresia() {
               </label>
 
               <label className={styles.field}>
-                <span className={styles.fieldLabel}>Email</span>
+                <span className={styles.fieldLabel}>Email (de tu cuenta)</span>
                 <input
                   className={styles.input}
                   name="email"
                   type="email"
                   value={form.email}
-                  onChange={handleChange}
+                  readOnly
                   placeholder="tu@email.com"
                   autoComplete="email"
                   required

@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import { STICKERS } from "@/lib/club-gomez/stickers";
+import { irASuscribir } from "@/lib/club-gomez/flujo-suscripcion";
 import { useReveal } from "./hooks";
 
 const PLANES = [
@@ -131,9 +131,13 @@ export default function Membresias() {
               </div>
               <p className="cg-plan-card__equiv">{p.equiv}</p>
 
-              <Link href={`/formulario?plan=${p.id}`} className="cg-plan-card__cta">
+              <button
+                type="button"
+                className="cg-plan-card__cta"
+                onClick={() => irASuscribir({ planId: p.id })}
+              >
                 ¡Suscribirme ya!
-              </Link>
+              </button>
             </article>
           ))}
         </div>

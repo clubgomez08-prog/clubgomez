@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { registrarCuenta } from "@/lib/club-gomez/cuentas-miembro";
+import {
+  irDespuesDeAuth,
+  rutaLoginConNext,
+  sanitizarNext,
+} from "@/lib/club-gomez/flujo-suscripcion";
 
 const fieldStyle = {
   width: "100%",
@@ -29,8 +34,10 @@ const labelText = {
   fontWeight: 600,
 };
 
-export default function MiembroRegistroPage() {
-  const router = useRouter();
+function MiembroRegistroForm() {
+  const searchParams = useSearchParams();
+  const next = sanitizarNext(searchParams.get("next"));
+
   const [form, setForm] = useState({
     nombre: "",
     cedula: "",
@@ -72,8 +79,7 @@ export default function MiembroRegistroPage() {
         return;
       }
 
-      router.push("/miembro");
-      router.refresh();
+      irDespuesDeAuth(next, "/miembro");
     } finally {
       setLoading(false);
     }
@@ -134,8 +140,9 @@ export default function MiembroRegistroPage() {
                 lineHeight: 1.45,
               }}
             >
-              Puedes registrarte <strong style={{ color: "#B8E351" }}>sin suscribirte aún</strong>.
-              Tu cuenta queda guardada en el Club; eliges el plan cuando quieras.
+              Primero crea tu cuenta.{" "}
+              <strong style={{ color: "#B8E351" }}>Después</strong> eliges tu plan
+              y activas la membresía.
             </p>
           </div>
 
@@ -273,7 +280,10 @@ export default function MiembroRegistroPage() {
             }}
           >
             ¿Ya tienes cuenta?{" "}
-            <Link href="/miembro/login" style={{ color: "#B8E351", fontWeight: 600 }}>
+            <Link
+              href={rutaLoginConNext(next || "/#membresias")}
+              style={{ color: "#B8E351", fontWeight: 600 }}
+            >
               Inicia sesión
             </Link>
             <br />
@@ -291,5 +301,28 @@ export default function MiembroRegistroPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function MiembroRegistroPage() {
+  return (
+    <Suspense
+      fallback={
+        <main
+          style={{
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#050607",
+            color: "rgba(255,255,255,0.5)",
+          }}
+        >
+          Cargando…
+        </main>
+      }
+    >
+      <MiembroRegistroForm />
+    </Suspense>
   );
 }

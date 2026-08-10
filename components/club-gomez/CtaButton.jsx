@@ -1,5 +1,7 @@
 "use client";
 
+import { irASuscribir } from "@/lib/club-gomez/flujo-suscripcion";
+
 export default function CtaButton({
   children,
   onClick,
@@ -7,6 +9,9 @@ export default function CtaButton({
   variant = "primary",
   className = "",
   animate = true,
+  /** Si true: sin sesión → registro; con sesión → onClick o href */
+  requireAuth = false,
+  planId = null,
 }) {
   const base = {
     display: "inline-flex",
@@ -51,7 +56,22 @@ export default function CtaButton({
 
   const cls = `${animate && variant === "primary" ? "cg-cta-bounce cg-pulse-glow " : ""}${className}`;
 
-  if (href) {
+  function handleClick(e) {
+    if (requireAuth) {
+      const ok = irASuscribir({ planId });
+      if (!ok) {
+        e.preventDefault();
+        return;
+      }
+      if (planId) {
+        e.preventDefault();
+        return;
+      }
+    }
+    onClick?.(e);
+  }
+
+  if (href && !requireAuth) {
     return (
       <a href={href} style={styles} className={cls} onClick={onClick}>
         {children}
@@ -59,8 +79,16 @@ export default function CtaButton({
     );
   }
 
+  if (href && requireAuth) {
+    return (
+      <a href={href} style={styles} className={cls} onClick={handleClick}>
+        {children}
+      </a>
+    );
+  }
+
   return (
-    <button type="button" style={styles} className={cls} onClick={onClick}>
+    <button type="button" style={styles} className={cls} onClick={handleClick}>
       {children}
     </button>
   );

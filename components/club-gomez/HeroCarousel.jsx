@@ -122,7 +122,11 @@ export default function HeroCarousel() {
             </div>
           </div>
           <div className="cg-hero__cta">
-            <CtaButton animate={false} onClick={() => scrollToId("membresias")}>
+            <CtaButton
+              animate={false}
+              requireAuth
+              onClick={() => scrollToId("membresias")}
+            >
               ¡Suscribirme!
             </CtaButton>
           </div>
