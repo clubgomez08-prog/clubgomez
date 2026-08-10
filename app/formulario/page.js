@@ -10,6 +10,11 @@ import {
 } from "@/lib/club-gomez/planes";
 import { leerSesionLocal } from "@/lib/club-gomez/cuentas-miembro";
 import { rutaRegistroConNext } from "@/lib/club-gomez/flujo-suscripcion";
+import {
+  trackAddPaymentInfo,
+  trackInitiateCheckout,
+  trackPurchase,
+} from "@/lib/club-gomez/meta-pixel";
 import styles from "./formulario.module.css";
 
 function FormularioMembresia() {
@@ -47,6 +52,7 @@ function FormularioMembresia() {
       ciudad: sesion.ciudad || prev.ciudad,
     }));
     setReady(true);
+    trackInitiateCheckout(plan);
   }, [plan.id]);
 
   function handleChange(e) {
@@ -102,6 +108,8 @@ function FormularioMembresia() {
         return;
       }
 
+      trackAddPaymentInfo(plan);
+      trackPurchase(plan, { orderId: data.id });
       window.open(abrirWhatsapp(), "_blank", "noopener,noreferrer");
       setEnviado(true);
     } catch {

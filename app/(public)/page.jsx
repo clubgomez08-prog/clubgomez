@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Header from "@/components/club-gomez/Header";
 import AmbientBg from "@/components/club-gomez/AmbientBg";
 import HeroCarousel from "@/components/club-gomez/HeroCarousel";
@@ -10,8 +11,13 @@ import Membresias from "@/components/club-gomez/Membresias";
 import Testimonios from "@/components/club-gomez/Testimonios";
 import FAQ from "@/components/club-gomez/FAQ";
 import Footer from "@/components/club-gomez/Footer";
+import { trackViewContent } from "@/lib/club-gomez/meta-pixel";
 
 export default function ClubGomezHomePage() {
+  useEffect(() => {
+    trackViewContent();
+  }, []);
+
   return (
     <div className="cg-home">
       <AmbientBg />

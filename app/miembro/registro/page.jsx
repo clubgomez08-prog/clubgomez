@@ -10,6 +10,7 @@ import {
   rutaLoginConNext,
   sanitizarNext,
 } from "@/lib/club-gomez/flujo-suscripcion";
+import { trackCompleteRegistration } from "@/lib/club-gomez/meta-pixel";
 
 const fieldStyle = {
   width: "100%",
@@ -79,6 +80,7 @@ function MiembroRegistroForm() {
         return;
       }
 
+      trackCompleteRegistration({ content_name: form.email });
       irDespuesDeAuth(next, "/miembro");
     } finally {
       setLoading(false);
