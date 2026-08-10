@@ -4,37 +4,32 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  crearDemoMiembro,
-  DEMO_MIEMBRO_CREDS,
-  SESSION_KEY,
-} from "@/lib/club-gomez/demo-miembro";
+import { DEMO_MIEMBRO_CREDS } from "@/lib/club-gomez/demo-miembro";
+import { iniciarSesionCuenta } from "@/lib/club-gomez/cuentas-miembro";
 
 export default function MiembroLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState(DEMO_MIEMBRO_CREDS.email);
-  const [password, setPassword] = useState(DEMO_MIEMBRO_CREDS.password);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      if (!email.trim() || !password) {
-        setError("Completa email y contraseña.");
-        setLoading(false);
+    try {
+      const result = await iniciarSesionCuenta(email, password);
+      if (!result.ok) {
+        setError(result.error);
         return;
       }
-
-      const miembro = crearDemoMiembro(email.trim());
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(miembro));
       router.push("/miembro");
       router.refresh();
+    } finally {
       setLoading(false);
-    }, 350);
+    }
   }
 
   return (
@@ -85,7 +80,7 @@ export default function MiembroLoginPage() {
               Área de miembros
             </h1>
             <p style={{ margin: "8px 0 0", color: "rgba(255,255,255,0.5)", fontSize: 13 }}>
-              Demo: entra con cualquier email/clave y verás un perfil aleatorio
+              Entra con tu cuenta. También puedes registrarte sin suscribirte.
             </p>
           </div>
 
@@ -99,7 +94,7 @@ export default function MiembroLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="demo@miembro.club"
+                placeholder="tu@email.com"
                 style={{
                   width: "100%",
                   boxSizing: "border-box",
@@ -123,7 +118,7 @@ export default function MiembroLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="demo123"
+                placeholder="Tu contraseña"
                 style={{
                   width: "100%",
                   boxSizing: "border-box",
@@ -178,15 +173,21 @@ export default function MiembroLoginPage() {
             style={{
               margin: "18px 0 0",
               textAlign: "center",
-              fontSize: 12,
-              color: "rgba(255,255,255,0.4)",
-              lineHeight: 1.45,
+              fontSize: 13,
+              color: "rgba(255,255,255,0.5)",
+              lineHeight: 1.5,
             }}
           >
-            Sugerido: <strong style={{ color: "#B8E351" }}>{DEMO_MIEMBRO_CREDS.email}</strong> /{" "}
-            <strong style={{ color: "#B8E351" }}>{DEMO_MIEMBRO_CREDS.password}</strong>
+            ¿No tienes cuenta?{" "}
+            <Link href="/miembro/registro" style={{ color: "#B8E351", fontWeight: 600 }}>
+              Regístrate gratis
+            </Link>
             <br />
-            <Link href="/" style={{ color: "rgba(255,255,255,0.55)", textDecoration: "none" }}>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
+              Demo activa: {DEMO_MIEMBRO_CREDS.email} / {DEMO_MIEMBRO_CREDS.password}
+            </span>
+            <br />
+            <Link href="/" style={{ color: "rgba(255,255,255,0.45)", textDecoration: "none", fontSize: 12 }}>
               ← Volver al Club
             </Link>
           </p>

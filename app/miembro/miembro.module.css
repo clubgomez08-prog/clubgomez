@@ -308,7 +308,9 @@
 }
 
 .cta {
+  display: block;
   width: 100%;
+  box-sizing: border-box;
   padding: 14px 18px;
   border: none;
   border-radius: 12px;
@@ -318,6 +320,8 @@
   font-weight: 700;
   font-size: 15px;
   letter-spacing: 0.03em;
+  text-align: center;
+  text-decoration: none;
   cursor: pointer;
   box-shadow: 0 10px 24px rgba(184, 227, 81, 0.35);
   transition: transform 0.2s, filter 0.2s;
@@ -326,6 +330,40 @@
 .cta:hover {
   filter: brightness(1.05);
   transform: translateY(-1px);
+}
+
+.pendingBox {
+  margin-top: 18px;
+  padding: 16px 16px 18px;
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(184, 227, 81, 0.14), transparent 55%),
+    rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(184, 227, 81, 0.28);
+}
+
+.pendingTitle {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #e8f5b8;
+}
+
+.pendingText {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.nextList {
+  margin: 0 0 16px;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .benefGrid {

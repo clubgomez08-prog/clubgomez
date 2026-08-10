@@ -52,7 +52,7 @@ function FormularioMembresia() {
     });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError("");
     const msg = validar();
@@ -62,9 +62,32 @@ function FormularioMembresia() {
     }
 
     setLoading(true);
-    window.open(abrirWhatsapp(), "_blank", "noopener,noreferrer");
-    setEnviado(true);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/solicitudes-membresia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: plan.id,
+          nombre: form.nombre.trim(),
+          cedula: form.cedula.trim(),
+          email: form.email.trim(),
+          telefono: form.telefono.trim(),
+          ciudad: form.ciudad.trim(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setError(data.error || "No se pudo guardar la solicitud. Intenta de nuevo.");
+        return;
+      }
+
+      window.open(abrirWhatsapp(), "_blank", "noopener,noreferrer");
+      setEnviado(true);
+    } catch {
+      setError("Error de conexión. Intenta de nuevo.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

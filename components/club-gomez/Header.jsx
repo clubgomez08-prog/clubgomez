@@ -187,11 +187,7 @@ export default function Header() {
                   Inicia sesión
                 </a>
                 <a
-                  href="/#membresias"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    goHomeSection("membresias");
-                  }}
+                  href="/miembro/registro"
                   style={{
                     display: "inline-flex",
                     color: "#050607",
@@ -353,12 +349,7 @@ export default function Header() {
                 Inicia sesión
               </a>
               <a
-                href="/#membresias"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setMenuOpen(false);
-                  goHomeSection("membresias");
-                }}
+                href="/miembro/registro"
                 style={{
                   textAlign: "center",
                   color: "#050607",
