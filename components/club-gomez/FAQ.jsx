@@ -7,11 +7,15 @@ import { useReveal } from "./hooks";
 const FAQ_ITEMS = [
   {
     q: "¿Qué es Club Gómez?",
-    a: "Es una membresía exclusiva que te da acceso a descuentos con marcas aliadas, beneficios sorpresa y participación mensual en las experiencias del Club.",
+    a: "Es una membresía exclusiva: un mes de beneficios con descuentos en negocios aliados, premios del Club y claves con oportunidades según tu plan.",
   },
   {
     q: "¿Cómo me uno al Club?",
     a: "Elige tu plan (Élite, Selecto o Esencial), completa el registro y activa tu membresía. En minutos ya formas parte del Club.",
+  },
+  {
+    q: "¿Qué son las claves con oportunidades?",
+    a: "Con tu membresía recibes claves (3, 7 o 10 según el plan). Te las enviamos por correo con la información para participar en los beneficios del mes. También puedes compartirlas por WhatsApp desde el mismo correo.",
   },
   {
     q: "¿Puedo participar desde otra ciudad?",
@@ -22,7 +26,7 @@ const FAQ_ITEMS = [
     a: "Los beneficios del mes se comunican a los miembros activos. Las fechas se confirman por los canales oficiales del Club.",
   },
   {
-    q: "¿Cómo me contactan si fui seleccionado?",
+    q: "¿Cómo me contactan si resulto favorecido?",
     a: "Te contactamos por WhatsApp y/o correo con los datos que registraste al activar tu membresía.",
   },
   {
@@ -139,7 +143,7 @@ export default function FAQ() {
                 </button>
                 <div
                   style={{
-                    maxHeight: isOpen ? 200 : 0,
+                    maxHeight: isOpen ? 280 : 0,
                     overflow: "hidden",
                     transition: "max-height 0.3s ease",
                   }}

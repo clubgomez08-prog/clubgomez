@@ -2,12 +2,15 @@
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import QRCode from "qrcode";
+import { construirUrlWhatsappClaves } from "@/lib/club-gomez/claves-whatsapp";
 
 function ConfirmacionContent() {
   const searchParams = useSearchParams();
-  const participanteId = searchParams.get("participante") || searchParams.get("external_reference");
+  const participanteId =
+    searchParams.get("participante") || searchParams.get("external_reference");
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,7 +22,7 @@ function ConfirmacionContent() {
   useEffect(() => {
     if (!participanteId) {
       const timer = setTimeout(() => {
-        setError("No se especificó participante");
+        setError("No se especificó la membresía");
         setLoading(false);
       }, 0);
       return () => clearTimeout(timer);
@@ -56,11 +59,10 @@ function ConfirmacionContent() {
 
   useEffect(() => {
     if (!data?.id) return;
-
-    const url = typeof window !== "undefined"
-      ? `${window.location.origin}/confirmacion?participante=${data.id}`
-      : "";
-
+    const url =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/confirmacion?participante=${data.id}`
+        : "";
     QRCode.toDataURL(url, { width: 200, margin: 2 })
       .then(setQrUrl)
       .catch(() => setQrUrl(""));
@@ -75,33 +77,72 @@ function ConfirmacionContent() {
     }).format(n);
   }
 
-  function shareWhatsApp() {
-    const rifaId = data?.rifa_id;
-    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    const link = rifaId ? `${baseUrl}/?rifa=${rifaId}` : baseUrl;
-    const text = encodeURIComponent(
-      `¡Participa en esta rifa! ${link}`
+  function openWhatsAppClaves() {
+    const url = construirUrlWhatsappClaves(
+      {
+        nombre: data?.nombre,
+        planNombre: data?.rifas?.nombre || data?.plan || "Membresía",
+        claves: data?.boletos || [],
+      },
+      { incluirMotilon: false }
     );
-    window.open(`https://wa.me/?text=${text}`, "_blank");
+    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="w-12 h-12 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+      <main
+        style={{
+          minHeight: "100vh",
+          background: "#050607",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            border: "2px solid #B8E351",
+            borderTopColor: "transparent",
+            borderRadius: "50%",
+            animation: "spin 0.8s linear infinite",
+          }}
+        />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </main>
     );
   }
 
   if (error || !data) {
     return (
-      <main className="min-h-screen bg-zinc-950 flex items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          <h1 className="font-display text-2xl text-white mb-4">Error</h1>
-          <p className="text-zinc-400 mb-6">{error || "No se encontró el participante"}</p>
+      <main
+        style={{
+          minHeight: "100vh",
+          background: "#050607",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 20,
+        }}
+      >
+        <div style={{ textAlign: "center", maxWidth: 400 }}>
+          <h1 style={{ color: "#fff", fontSize: 24, marginBottom: 12 }}>Error</h1>
+          <p style={{ color: "rgba(255,255,255,0.55)", marginBottom: 20 }}>
+            {error || "No se encontró la membresía"}
+          </p>
           <Link
             href="/"
-            className="inline-block px-6 py-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold rounded-lg"
+            style={{
+              display: "inline-block",
+              padding: "12px 22px",
+              background: "#B8E351",
+              color: "#050607",
+              fontWeight: 700,
+              borderRadius: 12,
+              textDecoration: "none",
+            }}
           >
             Volver al inicio
           </Link>
@@ -110,75 +151,162 @@ function ConfirmacionContent() {
     );
   }
 
+  const claves = data.boletos || [];
+  const planNombre = data.rifas?.nombre || "Membresía Club Gómez";
+
   return (
-    <main className="min-h-screen bg-zinc-950 py-12 px-4">
-      <div className="max-w-md mx-auto">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center">
-          <h1 className="font-display text-4xl md:text-5xl text-amber-500 mb-2">
-            ¡Compra Exitosa!
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "#050607",
+        padding: "28px 20px 56px",
+        fontFamily: "var(--font-poppins), Poppins, sans-serif",
+      }}
+    >
+      <div style={{ maxWidth: 440, margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
+          <Image
+            src="/club-gomez/logo-header.png"
+            alt="Club Gómez"
+            width={140}
+            height={48}
+            style={{ objectFit: "contain", margin: "0 auto" }}
+          />
+        </div>
+
+        <div
+          style={{
+            background: "#121410",
+            border: "1px solid rgba(184,227,81,0.28)",
+            borderRadius: 20,
+            padding: "28px 22px",
+            textAlign: "center",
+          }}
+        >
+          <p
+            style={{
+              margin: "0 0 6px",
+              color: "#B8E351",
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+            }}
+          >
+            Membresía activa
+          </p>
+          <h1
+            style={{
+              margin: "0 0 8px",
+              fontFamily: "var(--font-bebas), Impact, sans-serif",
+              fontSize: "2.4rem",
+              color: "#fff",
+              fontWeight: 400,
+            }}
+          >
+            ¡Bienvenido al Club!
           </h1>
-          <p className="text-zinc-400 text-sm mb-8">
-            Tu ticket digital está listo
+          <p style={{ margin: "0 0 24px", color: "rgba(255,255,255,0.55)", fontSize: 14 }}>
+            Tus claves con oportunidades ya están listas
           </p>
 
-          <div className="space-y-4 text-left mb-8">
-            <div>
-              <p className="text-zinc-500 text-sm">Participante</p>
-              <p className="text-white font-medium text-lg">{data.nombre}</p>
-            </div>
+          <div style={{ textAlign: "left", marginBottom: 22 }}>
+            <p style={{ margin: "0 0 4px", color: "rgba(255,255,255,0.45)", fontSize: 12 }}>
+              Miembro
+            </p>
+            <p style={{ margin: "0 0 14px", color: "#fff", fontWeight: 600, fontSize: 16 }}>
+              {data.nombre}
+            </p>
 
-            <div>
-              <p className="text-zinc-500 text-sm">Boletos comprados</p>
-              <p className="text-white font-medium">{data.cantidad_boletos}</p>
-            </div>
+            <p style={{ margin: "0 0 4px", color: "rgba(255,255,255,0.45)", fontSize: 12 }}>
+              Plan
+            </p>
+            <p style={{ margin: "0 0 14px", color: "#fff", fontWeight: 600 }}>{planNombre}</p>
 
-            <div>
-              <p className="text-zinc-500 text-sm">Total pagado</p>
-              <p className="text-amber-500 font-semibold text-xl">
-                {formatPrecio(data.total_pagado ?? 0)}
+            <p style={{ margin: "0 0 4px", color: "rgba(255,255,255,0.45)", fontSize: 12 }}>
+              Total
+            </p>
+            <p
+              style={{
+                margin: "0 0 16px",
+                color: "#B8E351",
+                fontWeight: 700,
+                fontSize: 20,
+              }}
+            >
+              {formatPrecio(data.total_pagado ?? 0)}
+            </p>
+
+            <p style={{ margin: "0 0 8px", color: "rgba(255,255,255,0.45)", fontSize: 12 }}>
+              Tus claves
+            </p>
+            {claves.length > 0 ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {claves.map((n) => (
+                  <span
+                    key={n}
+                    style={{
+                      padding: "8px 12px",
+                      background: "#0a0c08",
+                      border: "1px solid rgba(184,227,81,0.35)",
+                      borderRadius: 10,
+                      color: "#B8E351",
+                      fontFamily: "Consolas, monospace",
+                      fontSize: 13,
+                    }}
+                  >
+                    {n}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p style={{ margin: 0, color: "rgba(255,255,255,0.5)", fontSize: 13 }}>
+                Tus claves se confirmarán por correo al completar el proceso.
               </p>
-            </div>
-
-            <div>
-              <p className="text-zinc-500 text-sm mb-2">Números asignados</p>
-              {data.boletos && data.boletos.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {data.boletos.map((n) => (
-                    <span
-                      key={n}
-                      className="px-3 py-1 bg-zinc-800 text-amber-400 rounded-lg text-sm font-mono"
-                    >
-                      {n}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-zinc-500 text-sm">
-                  Tu numeración será asignada tras confirmar el pago
-                </p>
-              )}
-            </div>
+            )}
           </div>
 
-          {qrUrl && (
-            <div className="flex justify-center mb-8">
-              <div className="p-4 bg-white rounded-xl inline-block">
-                <img src={qrUrl} alt="QR del ticket" width={200} height={200} />
+          {qrUrl ? (
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+              <div style={{ padding: 12, background: "#fff", borderRadius: 14 }}>
+                <img src={qrUrl} alt="QR de confirmación" width={160} height={160} />
               </div>
             </div>
-          )}
+          ) : null}
 
-          <div className="flex flex-col gap-3">
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <button
               type="button"
-              onClick={shareWhatsApp}
-              className="w-full py-3 px-4 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl transition-colors"
+              onClick={openWhatsAppClaves}
+              style={{
+                width: "100%",
+                padding: "14px 18px",
+                border: "none",
+                borderRadius: 12,
+                background: "linear-gradient(135deg, #d4f06a, #b8e351, #9bcf2e)",
+                color: "#050607",
+                fontWeight: 700,
+                fontSize: 15,
+                cursor: "pointer",
+              }}
             >
-              Compartir en WhatsApp
+              Enviar mis claves por WhatsApp
             </button>
             <Link
               href="/"
-              className="block w-full py-3 px-4 text-center bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold rounded-xl transition-colors"
+              style={{
+                display: "block",
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "12px 18px",
+                textAlign: "center",
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.2)",
+                color: "#fff",
+                textDecoration: "none",
+                fontWeight: 600,
+                fontSize: 14,
+              }}
             >
               Volver al inicio
             </Link>
@@ -193,8 +321,17 @@ export default function ConfirmacionPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-zinc-950 flex items-center justify-center">
-          <div className="w-12 h-12 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        <main
+          style={{
+            minHeight: "100vh",
+            background: "#050607",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "rgba(255,255,255,0.6)",
+          }}
+        >
+          Cargando…
         </main>
       }
     >

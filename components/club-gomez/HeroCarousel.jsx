@@ -129,7 +129,7 @@ export default function HeroCarousel() {
                 alt="Special 110 y NKD 125"
               />
             </span>
-            <span className="cg-hero__badge-date">26 DE SEPTIEMBRE</span>
+            <span className="cg-hero__badge-date">17 Y 31 DE OCTUBRE</span>
           </button>
         )}
 

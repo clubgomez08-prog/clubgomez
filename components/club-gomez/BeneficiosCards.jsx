@@ -9,11 +9,11 @@ const TEXTO_BANDA = [
   "Descuentos exclusivos",
   "Membresía Club Gómez",
   "Beneficios del mes",
-  "Experiencia VIP",
+  "Claves con oportunidades",
+  "Premios del Club",
   "Desde cualquier ciudad",
   "Marcas aliadas",
-  "Actitud Club",
-  "Participación mensual",
+  "Un mes de beneficios",
 ];
 
 export default function BeneficiosCards() {

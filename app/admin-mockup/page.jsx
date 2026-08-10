@@ -112,18 +112,18 @@ export default function AdminMockDashboardPage() {
             className="grid gap-3 mb-4"
             style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}
           >
-            <StatsCard title="Rifas activas" value={stats.rifasActivas} />
-            <StatsCard title="Participantes aprobados" value={stats.participantes} />
+            <StatsCard title="Planes activos" value={stats.rifasActivas} />
+            <StatsCard title="Miembros activos" value={stats.participantes} />
             <StatsCard
-              title="Ventas totales"
+              title="Ingresos membresías"
               value={
                 finanzasVisibles
                   ? "$ " + stats.ventasTotales.toLocaleString("es-CO")
                   : "$ ***"
               }
             />
-            <StatsCard title="Boletos vendidos" value={stats.boletosVendidos} />
-            <StatsCard title="Pendientes de pago" value={stats.pendientes} />
+            <StatsCard title="Claves emitidas" value={stats.boletosVendidos} />
+            <StatsCard title="Pagos pendientes" value={stats.pendientes} />
             <StatsCard title="Pagos rechazados" value={stats.rechazados} />
             <StatsCard title="Tasa conversión" value={`${tasaConversion}%`} />
             <StatsCard
@@ -167,10 +167,10 @@ export default function AdminMockDashboardPage() {
 
           <div className="mb-4">
             <p className="text-xs font-semibold tracking-wide mb-3 text-zinc-500">
-              RECAUDACIÓN POR RIFA ACTIVA
+              RECAUDACIÓN POR PLAN
             </p>
             {stats.recaudacionPorRifa.length === 0 ? (
-              <p className="text-sm text-zinc-500 py-3">No hay rifas activas</p>
+              <p className="text-sm text-zinc-500 py-3">No hay planes activos</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {stats.recaudacionPorRifa.map((r) => (
@@ -193,7 +193,7 @@ export default function AdminMockDashboardPage() {
 
           <div className="mb-4">
             <p className="text-xs font-semibold tracking-wide mb-3 text-zinc-500">
-              ÚLTIMOS PARTICIPANTES
+              ÚLTIMOS MIEMBROS
             </p>
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
               {stats.ultimosParticipantes.length === 0 ? (
@@ -205,7 +205,7 @@ export default function AdminMockDashboardPage() {
                   <table className="w-full" style={{ minWidth: "520px" }}>
                     <thead>
                       <tr className="border-b border-zinc-800">
-                        {["Nombre", "Email", "Rifa", "Boletos", "Total", "Estado", "Fecha"].map(
+                        {["Nombre", "Email", "Plan", "Claves", "Total", "Estado", "Fecha"].map(
                           (h) => (
                             <th
                               key={h}
@@ -267,12 +267,12 @@ export default function AdminMockDashboardPage() {
         </p>
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
           {[
-            { href: `${BASE}/rifas/nueva`, icon: "⭐", label: "Nueva membresía", color: "#B8E351" },
-            { href: `${BASE}/participantes`, icon: "👥", label: "Miembros", color: "#22C55E" },
-            { href: `${BASE}/sorteo`, icon: "🎁", label: "Beneficios del mes", color: "#a78bfa" },
-            { href: `${BASE}/analytics`, icon: "📈", label: "Analytics", color: "#60a5fa" },
-            { href: `${BASE}/campanas`, icon: "📣", label: "Campañas", color: "#f472b6" },
-            { href: `${BASE}/reportes`, icon: "📑", label: "Reportes", color: "#34d399" },
+            { href: `${BASE}/rifas`, icon: "⭐", label: "Membresías", color: "#B8E351" },
+            { href: `${BASE}/participantes`, icon: "👥", label: "Miembros", color: "#B8E351" },
+            { href: `${BASE}/sorteo`, icon: "🎁", label: "Beneficios del mes", color: "#B8E351" },
+            { href: `${BASE}/venta-fisica`, icon: "🧾", label: "Alta presencial", color: "#9bcf2e" },
+            { href: `${BASE}/campanas`, icon: "📣", label: "Campañas", color: "#23430C" },
+            { href: `${BASE}/reportes`, icon: "📑", label: "Reportes", color: "#B8E351" },
           ].map((item, i) => (
             <Link
               key={i}

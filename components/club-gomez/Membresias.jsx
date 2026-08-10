@@ -116,8 +116,9 @@ export default function Membresias() {
                 <li>
                   <strong>{p.claves} claves</strong> con oportunidades
                 </li>
-                <li>Mientras tu membresía esté activa: accedes a descuentos exclusivos en marcas aliadas.</li>
-                <li>Participas de los beneficios durante el mes.</li>
+                <li>Un mes de beneficios: descuentos en marcas aliadas.</li>
+                <li>Participas de los premios y entregas del mes.</li>
+                <li>Recibes tus claves por correo al activar.</li>
                 {p.extras.map((ex) => (
                   <li key={ex}>{ex}</li>
                 ))}

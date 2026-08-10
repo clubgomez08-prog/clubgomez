@@ -169,22 +169,44 @@ export default function Header() {
 
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {isDesktop && (
-              <a
-                href="/admin-mockup/login"
-                style={{
-                  display: "inline-flex",
-                  color: "#fff",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  textDecoration: "none",
-                  padding: "8px 14px",
-                  borderRadius: 999,
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-              >
-                Inicia sesión
-              </a>
+              <>
+                <a
+                  href="/miembro/login"
+                  style={{
+                    display: "inline-flex",
+                    color: "#fff",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    padding: "8px 14px",
+                    borderRadius: 999,
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
+                >
+                  Inicia sesión
+                </a>
+                <a
+                  href="/#membresias"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    goHomeSection("membresias");
+                  }}
+                  style={{
+                    display: "inline-flex",
+                    color: "#050607",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    textDecoration: "none",
+                    padding: "8px 16px",
+                    borderRadius: 999,
+                    background: "#B8E351",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
+                >
+                  Registrarse
+                </a>
+              </>
             )}
             {!isDesktop && (
               <button
@@ -316,7 +338,7 @@ export default function Header() {
             })}
             <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
               <a
-                href="/admin-mockup/login"
+                href="/miembro/login"
                 style={{
                   textAlign: "center",
                   color: "#fff",
@@ -329,6 +351,26 @@ export default function Header() {
                 }}
               >
                 Inicia sesión
+              </a>
+              <a
+                href="/#membresias"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMenuOpen(false);
+                  goHomeSection("membresias");
+                }}
+                style={{
+                  textAlign: "center",
+                  color: "#050607",
+                  textDecoration: "none",
+                  padding: "12px",
+                  borderRadius: 999,
+                  background: "#B8E351",
+                  fontWeight: 700,
+                  fontSize: 14,
+                }}
+              >
+                Registrarse
               </a>
               <CtaButton onClick={() => goHomeSection("membresias")} animate={false}>
                 ¡Suscribirme!

@@ -25,7 +25,7 @@ function formatFecha(dateStr) {
 function badgeEstado(estado) {
   const clases = {
     aprobado: "bg-green-500/20 text-green-400",
-    pendiente: "bg-amber-500/20 text-amber-400",
+    pendiente: "bg-[#B8E351]/20 text-[#B8E351]",
     rechazado: "bg-red-500/20 text-red-400",
   };
   return (
@@ -70,11 +70,11 @@ export default function MockParticipantesPage() {
   }
 
   const inputCls =
-    "px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50";
+    "px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#B8E351]/40";
 
   return (
     <div className="py-6">
-      <h1 className="text-2xl font-semibold text-white mb-1">Participantes</h1>
+      <h1 className="text-2xl font-semibold text-white mb-1">Miembros</h1>
       <p className="text-sm text-zinc-500 mb-6">
         {total} registros · Aprobar/rechazar funcional en demo
       </p>
@@ -101,7 +101,7 @@ export default function MockParticipantesPage() {
           onChange={(e) => setFiltros((f) => ({ ...f, rifa_id: e.target.value, page: 1 }))}
           className={inputCls}
         >
-          <option value="">Todas las rifas</option>
+          <option value="">Todos los planes</option>
           {rifas.map((r) => (
             <option key={r.id} value={r.id}>{r.nombre}</option>
           ))}
@@ -113,7 +113,7 @@ export default function MockParticipantesPage() {
           <table className="w-full" style={{ minWidth: "700px" }}>
             <thead>
               <tr className="border-b border-zinc-800">
-                {["Nombre", "Email", "Rifa", "Boletos", "Total", "Canal", "Estado", "Fecha", "Acciones"].map((h) => (
+                {["Nombre", "Email", "Plan", "Claves", "Total", "Canal", "Estado", "Fecha", "Acciones"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">{h}</th>
                 ))}
               </tr>
@@ -130,12 +130,13 @@ export default function MockParticipantesPage() {
                       <td className="px-4 py-3 text-zinc-300 text-sm">
                         <button
                           onClick={() => setFilaExpandida(filaExpandida === p.id ? null : p.id)}
-                          className="text-amber-400 hover:underline"
+                          className="hover:underline"
+                          style={{ color: "#B8E351" }}
                         >
                           {p.cantidad_boletos} ▾
                         </button>
                       </td>
-                      <td className="px-4 py-3 text-amber-400 text-sm font-medium">{formatPrecio(p.total_pagado)}</td>
+                      <td className="px-4 py-3 text-sm font-medium" style={{ color: "#B8E351" }}>{formatPrecio(p.total_pagado)}</td>
                       <td className="px-4 py-3 text-zinc-400 text-xs">{p.canal}</td>
                       <td className="px-4 py-3">{badgeEstado(p.estado_pago)}</td>
                       <td className="px-4 py-3 text-zinc-500 text-xs whitespace-nowrap">{formatFecha(p.created_at)}</td>
@@ -151,7 +152,7 @@ export default function MockParticipantesPage() {
                     {filaExpandida === p.id && (
                       <tr key={`${p.id}-boletos`} className="bg-zinc-800/30">
                         <td colSpan={9} className="px-4 py-3">
-                          <p className="text-xs text-zinc-500 mb-2">Números asignados:</p>
+                          <p className="text-xs text-zinc-500 mb-2">Claves asignadas:</p>
                           <div className="flex flex-wrap gap-1.5">
                             {(p.boletos || []).map((n) => (
                               <span key={n} className="px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-xs text-zinc-300">{n}</span>
@@ -167,7 +168,7 @@ export default function MockParticipantesPage() {
           </table>
         </div>
         {participantes.length === 0 && (
-          <p className="text-center py-10 text-zinc-500">No hay participantes con estos filtros</p>
+          <p className="text-center py-10 text-zinc-500">No hay miembros con estos filtros</p>
         )}
       </div>
 
@@ -178,8 +179,9 @@ export default function MockParticipantesPage() {
               key={pg}
               onClick={() => setFiltros((f) => ({ ...f, page: pg }))}
               className={`px-3 py-1.5 rounded text-sm ${
-                filtros.page === pg ? "bg-amber-500 text-zinc-950" : "bg-zinc-800 text-zinc-400"
+                filtros.page === pg ? "text-zinc-950" : "bg-zinc-800 text-zinc-400"
               }`}
+              style={filtros.page === pg ? { background: "#B8E351" } : undefined}
             >
               {pg}
             </button>

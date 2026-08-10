@@ -13,7 +13,7 @@ const navItems = [
   { href: `${BASE}/rifas`, label: "Membresías", icon: "⭐" },
   { href: `${BASE}/participantes`, label: "Miembros", icon: "👥" },
   { href: `${BASE}/landing`, label: "Homepage", icon: "🖼️" },
-  { href: `${BASE}/venta-fisica`, label: "Venta física", icon: "🧾" },
+  { href: `${BASE}/venta-fisica`, label: "Alta presencial", icon: "🧾" },
   { href: `${BASE}/sorteo`, label: "Beneficios mes", icon: "🎁" },
   { href: `${BASE}/campanas`, label: "Campañas", icon: "📣" },
   { href: `${BASE}/automatizaciones`, label: "Automatizaciones", icon: "⚡" },

@@ -64,7 +64,7 @@ export default function BeneficiosDelMes() {
 
           <div className="cg-capsula-motos__copy">
             <span className="cg-capsula-motos__pill">DESTACADO DEL MES</span>
-            <p className="cg-capsula-motos__fecha">{DESTACADO_MES.fechas[0]}</p>
+            <p className="cg-capsula-motos__fecha">{DESTACADO_MES.fechas.join(" · ")}</p>
             <h3 className="cg-capsula-motos__title">{DESTACADO_MES.titulo}</h3>
             <p className="cg-capsula-motos__sub">{DESTACADO_MES.subtitulo}</p>
             <button

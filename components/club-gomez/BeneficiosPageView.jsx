@@ -42,7 +42,8 @@ export default function BeneficiosPageView() {
               <span>MEMBRESÍA</span>
             </h1>
             <p className="cg-benef-hero__sub">
-              Motos, tech, hogar y más. Activa tu membresía y participa de los beneficios del mes.
+              Motos, tech, hogar y más. Activa tu membresía: descuentos, premios del mes y claves
+              con oportunidades enviadas a tu correo.
             </p>
             <div className="cg-benef-hero__actions">
               <CtaButton href="/#membresias">¡Suscribirme!</CtaButton>
