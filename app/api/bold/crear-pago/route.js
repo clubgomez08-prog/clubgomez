@@ -9,17 +9,18 @@ import {
   generarIntegritySignature,
 } from "@/lib/club-gomez/bold";
 import { parseFechaNacimiento } from "@/lib/club-gomez/fecha-nacimiento";
+import { asegurarCuentaParaCheckout } from "@/lib/club-gomez/cuenta-checkout";
 
 function bad(msg, status = 400) {
   return NextResponse.json({ ok: false, error: msg }, { status });
 }
 
-/** Crea solicitud + firma Bold para abrir el checkout. */
+/** Crea cuenta (si hace falta) + solicitud + firma Bold para abrir el checkout. */
 export async function POST(request) {
   try {
     if (supabaseMissingEnv) return bad("Supabase no configurado.", 503);
     if (!boldConfigured()) {
-      return bad("Bold no está configurado (llaves de pruebas).", 503);
+      return bad("Bold no está configurado (llaves de integración).", 503);
     }
 
     const body = await request.json();
@@ -31,6 +32,7 @@ export async function POST(request) {
       .toLowerCase();
     const telefono = String(body.telefono || "").trim();
     const ciudad = String(body.ciudad || "").trim() || null;
+    const password = String(body.password || "");
     const fechaNacimiento = parseFechaNacimiento(
       body.fecha_nacimiento || body.fechaNacimiento
     );
@@ -41,6 +43,51 @@ export async function POST(request) {
     if (!cedula) return bad("Escribe tu cédula.");
     if (!email || !email.includes("@")) return bad("Escribe un email válido.");
     if (!telefono) return bad("Escribe tu WhatsApp.");
+    if (!fechaNacimiento) {
+      return bad(
+        "Escribe una fecha de nacimiento válida (debes tener al menos 12 años)."
+      );
+    }
+
+    let cuenta = null;
+    const { data: miembroExistente } = await supabaseAdmin
+      .from("miembros")
+      .select("id, auth_user_id")
+      .ilike("email", email)
+      .maybeSingle();
+
+    if (miembroExistente?.auth_user_id && !password) {
+      // Ya tiene cuenta (sesión en el navegador): solo actualiza datos y sigue al pago
+      await supabaseAdmin
+        .from("miembros")
+        .update({
+          nombre,
+          telefono,
+          ciudad,
+          cedula,
+          fecha_nacimiento: fechaNacimiento,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", miembroExistente.id);
+      cuenta = { created: false, session: null, perfil: null };
+    } else {
+      try {
+        cuenta = await asegurarCuentaParaCheckout({
+          nombre,
+          email,
+          telefono,
+          ciudad,
+          cedula,
+          password,
+          fechaNacimiento,
+        });
+      } catch (err) {
+        return bad(
+          err.message || "No se pudo preparar tu cuenta.",
+          err.status || 400
+        );
+      }
+    }
 
     const orderId = crearOrderId(plan.id);
     const amount = String(plan.precio);
@@ -118,6 +165,9 @@ export async function POST(request) {
       ok: true,
       solicitudId: solicitud.id,
       checkout,
+      cuentaCreada: Boolean(cuenta?.created),
+      perfil: cuenta?.perfil || null,
+      session: cuenta?.session || null,
       plan: {
         id: plan.id,
         nombre: plan.nombre,

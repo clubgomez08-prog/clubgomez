@@ -11,7 +11,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "¿Cómo me uno al Club?",
-    a: "Elige tu plan (Élite, Selecto o Esencial), completa el registro y activa tu membresía. En minutos ya formas parte del Club.",
+    a: "Elige tu plan (Élite, Selecto o Esencial), completa tus datos y paga con Bold. Al aprobarse el pago activamos tu membresía y te enviamos las claves.",
   },
   {
     q: "¿Qué son las claves con oportunidades?",

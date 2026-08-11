@@ -4,11 +4,12 @@ import { useEffect, useMemo, useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { getPlanById } from "@/lib/club-gomez/planes";
 import {
-  getPlanById,
-} from "@/lib/club-gomez/planes";
-import { leerSesionLocal } from "@/lib/club-gomez/cuentas-miembro";
-import { rutaRegistroConNext } from "@/lib/club-gomez/flujo-suscripcion";
+  guardarSesion,
+  leerSesionLocal,
+} from "@/lib/club-gomez/cuentas-miembro";
+import { rutaLoginConNext } from "@/lib/club-gomez/flujo-suscripcion";
 import {
   trackAddPaymentInfo,
   trackInitiateCheckout,
@@ -22,6 +23,7 @@ function FormularioMembresia() {
     [searchParams]
   );
 
+  const [sesion, setSesion] = useState(null);
   const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -33,27 +35,25 @@ function FormularioMembresia() {
     telefono: "",
     ciudad: "",
     fecha_nacimiento: "",
+    password: "",
+    password2: "",
   });
 
   useEffect(() => {
-    const sesion = leerSesionLocal();
-    if (!sesion) {
-      const next = `/formulario?plan=${plan.id}`;
-      window.location.replace(rutaRegistroConNext(next));
-      return;
+    const s = leerSesionLocal();
+    setSesion(s);
+    if (s) {
+      setForm((prev) => ({
+        ...prev,
+        nombre: s.nombre || prev.nombre,
+        cedula: s.cedula || prev.cedula,
+        email: s.email || prev.email,
+        telefono: s.telefono || prev.telefono,
+        ciudad: s.ciudad || prev.ciudad,
+        fecha_nacimiento:
+          s.fechaNacimiento || s.fecha_nacimiento || prev.fecha_nacimiento,
+      }));
     }
-    setForm((prev) => ({
-      ...prev,
-      nombre: sesion.nombre || prev.nombre,
-      cedula: sesion.cedula || prev.cedula,
-      email: sesion.email || prev.email,
-      telefono: sesion.telefono || prev.telefono,
-      ciudad: sesion.ciudad || prev.ciudad,
-      fecha_nacimiento:
-        sesion.fechaNacimiento ||
-        sesion.fecha_nacimiento ||
-        prev.fecha_nacimiento,
-    }));
     setReady(true);
     trackInitiateCheckout(plan);
   }, [plan.id]);
@@ -65,10 +65,20 @@ function FormularioMembresia() {
   function validar() {
     if (!form.nombre.trim()) return "Escribe tu nombre completo";
     if (!form.cedula.trim()) return "Escribe tu cédula / documento";
-    if (!form.email.trim() || !form.email.includes("@")) return "Escribe un email válido";
+    if (!form.email.trim() || !form.email.includes("@")) {
+      return "Escribe un email válido";
+    }
     if (!form.telefono.trim()) return "Escribe tu WhatsApp";
     if (!form.ciudad.trim()) return "Escribe tu ciudad";
     if (!form.fecha_nacimiento) return "Indica tu fecha de nacimiento";
+    if (!sesion) {
+      if (!form.password || form.password.length < 6) {
+        return "La contraseña debe tener al menos 6 caracteres";
+      }
+      if (form.password !== form.password2) {
+        return "Las contraseñas no coinciden";
+      }
+    }
     return "";
   }
 
@@ -87,7 +97,9 @@ function FormularioMembresia() {
       );
       if (existing) {
         existing.addEventListener("load", () => resolve());
-        existing.addEventListener("error", () => reject(new Error("Bold script error")));
+        existing.addEventListener("error", () =>
+          reject(new Error("Bold script error"))
+        );
         return;
       }
       const js = document.createElement("script");
@@ -121,6 +133,7 @@ function FormularioMembresia() {
           telefono: form.telefono.trim(),
           ciudad: form.ciudad.trim(),
           fecha_nacimiento: form.fecha_nacimiento,
+          password: sesion ? undefined : form.password,
           baseUrl: window.location.origin,
         }),
       });
@@ -128,6 +141,11 @@ function FormularioMembresia() {
       if (!res.ok || !data.ok) {
         setError(data.error || "No se pudo preparar el pago con Bold.");
         return;
+      }
+
+      if (data.perfil) {
+        guardarSesion(data.perfil, data.session);
+        setSesion(data.perfil);
       }
 
       trackAddPaymentInfo(plan);
@@ -147,14 +165,12 @@ function FormularioMembresia() {
         integritySignature: c.integritySignature,
         description: c.description,
       };
-      // Bold exige string JSON (si mandas objeto → "[object Object]" → BTN-001)
       if (c.customerData) {
         config.customerData =
           typeof c.customerData === "string"
             ? c.customerData
             : JSON.stringify(c.customerData);
       }
-      // Solo si es https (Bold rechaza http://localhost → BTN-001)
       if (c.redirectionUrl && String(c.redirectionUrl).startsWith("https://")) {
         config.redirectionUrl = c.redirectionUrl;
       }
@@ -171,10 +187,12 @@ function FormularioMembresia() {
   if (!ready) {
     return (
       <main className={styles.page}>
-        <p className={styles.loading}>Verificando tu cuenta…</p>
+        <p className={styles.loading}>Cargando…</p>
       </main>
     );
   }
+
+  const loginHref = rutaLoginConNext(`/formulario?plan=${plan.id}`);
 
   return (
     <main className={styles.page}>
@@ -198,7 +216,7 @@ function FormularioMembresia() {
 
       <div className={styles.wrap}>
         <section className={styles.card}>
-          <p className={styles.eyebrow}>Resumen de tu membresía</p>
+          <p className={styles.eyebrow}>Activa tu membresía</p>
           <h1 className={styles.title}>
             Plan <span className={styles.titleAccent}>{plan.nombre}</span>
           </h1>
@@ -225,7 +243,7 @@ function FormularioMembresia() {
               <h2 className={styles.heading}>Pasarela Bold abierta</h2>
               <p>
                 Completa el pago del plan <strong>{plan.nombre}</strong> en Bold.
-                Al terminar volverás automáticamente y activamos tu membresía.
+                Al aprobarse activamos tu membresía y te enviamos las claves.
               </p>
               <button
                 type="button"
@@ -243,10 +261,10 @@ function FormularioMembresia() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} noValidate>
-              <h2 className={styles.heading}>Tus datos</h2>
+              <h2 className={styles.heading}>Tus datos y pago</h2>
               <p className={styles.hint}>
-                Confirma tus datos y paga con Bold. El pago queda registrado en el
-                panel del Club.
+                Completa el formulario y paga con Bold. Creamos tu acceso al
+                mismo tiempo; al aprobar el pago activamos el plan.
               </p>
 
               <label className={styles.field}>
@@ -276,13 +294,14 @@ function FormularioMembresia() {
               </label>
 
               <label className={styles.field}>
-                <span className={styles.fieldLabel}>Email (de tu cuenta)</span>
+                <span className={styles.fieldLabel}>Email</span>
                 <input
                   className={styles.input}
                   name="email"
                   type="email"
                   value={form.email}
-                  readOnly
+                  onChange={handleChange}
+                  readOnly={Boolean(sesion?.email)}
                   placeholder="tu@email.com"
                   autoComplete="email"
                   required
@@ -328,12 +347,58 @@ function FormularioMembresia() {
                 />
               </label>
 
+              {!sesion ? (
+                <>
+                  <label className={styles.field}>
+                    <span className={styles.fieldLabel}>Crea tu contraseña</span>
+                    <input
+                      className={styles.input}
+                      name="password"
+                      type="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      placeholder="Mínimo 6 caracteres"
+                      autoComplete="new-password"
+                      required
+                    />
+                  </label>
+
+                  <label className={styles.field}>
+                    <span className={styles.fieldLabel}>
+                      Confirmar contraseña
+                    </span>
+                    <input
+                      className={styles.input}
+                      name="password2"
+                      type="password"
+                      value={form.password2}
+                      onChange={handleChange}
+                      placeholder="Repite la contraseña"
+                      autoComplete="new-password"
+                      required
+                    />
+                  </label>
+                </>
+              ) : null}
+
               {error ? <p className={styles.error}>{error}</p> : null}
 
               <button type="submit" className={styles.cta} disabled={loading}>
-                {loading ? "Abriendo Bold…" : `Pagar $${plan.precioLabel} con Bold`}
+                {loading
+                  ? "Preparando pago…"
+                  : `Pagar $${plan.precioLabel} con Bold`}
               </button>
-              <p className={styles.foot}>Pago seguro con Bold · Solo membresía Club Gómez</p>
+              <p className={styles.foot}>
+                Pago seguro con Bold · Solo membresía Club Gómez
+              </p>
+              {!sesion ? (
+                <p className={styles.foot}>
+                  ¿Ya tienes cuenta?{" "}
+                  <Link href={loginHref} className={styles.link}>
+                    Inicia sesión
+                  </Link>
+                </p>
+              ) : null}
             </form>
           )}
         </section>

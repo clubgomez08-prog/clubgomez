@@ -9,7 +9,7 @@ export default function CtaButton({
   variant = "primary",
   className = "",
   animate = true,
-  /** Si true: sin sesión → registro; con sesión → onClick o href */
+  /** Si true: Suscribirme → formulario/planes (checkout unificado) */
   requireAuth = false,
   planId = null,
 }) {
