@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getAdminAuthHeaders } from "@/lib/auth";
 import { useToast } from "@/components/admin/Toast";
+import PeriodoPicker from "@/components/admin/PeriodoPicker";
 import { LOTERIA_INTERNA } from "@/lib/club-gomez/claves-whatsapp";
 import { periodoDe } from "@/lib/club-gomez/claves-pool";
 
@@ -145,22 +146,15 @@ export default function AdminBeneficiosPage() {
         Fechas de premio
       </h1>
       <p className="text-sm text-zinc-500 mb-6">
-        Cada premio va ligado a un día. El número de {LOTERIA_INTERNA} (4
-        dígitos) decide el ganador entre claves únicas del mes.
+        Estas fechas son las mismas que ve el público en la homepage. Cada
+        premio va ligado a un día: el número de {LOTERIA_INTERNA} (4 dígitos)
+        decide el ganador entre las claves del mes.
       </p>
 
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <label className="text-sm text-zinc-400">
-          Periodo{" "}
-          <input
-            type="month"
-            value={periodo}
-            onChange={(e) => setPeriodo(e.target.value)}
-            className="ml-2 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-sm"
-          />
-        </label>
+      <div className="flex flex-wrap items-end gap-3 mb-6">
+        <PeriodoPicker value={periodo} onChange={setPeriodo} />
         <span
-          className="text-xs font-semibold px-2 py-1 rounded"
+          className="text-xs font-semibold px-2.5 py-1.5 rounded-lg mb-0.5"
           style={{ background: "rgba(184,227,81,0.12)", color: LIME }}
         >
           {LOTERIA_INTERNA}
@@ -235,7 +229,8 @@ export default function AdminBeneficiosPage() {
         </div>
       ) : items.length === 0 ? (
         <p className="text-sm text-zinc-500 py-6">
-          No hay fechas de premio en este periodo.
+          No hay fechas de premio en este periodo. Usa el formulario de arriba o
+          cambia el periodo (ej. octubre 2026).
         </p>
       ) : (
         <div className="grid gap-4">
@@ -254,6 +249,8 @@ export default function AdminBeneficiosPage() {
                     </h3>
                     <p className="text-sm mt-1" style={{ color: LIME }}>
                       {b.fecha_sorteo}
+                      {b.slug ? ` · ${b.slug}` : ""}
+                      {b.destacado ? " · destacado" : ""}
                       {b.descripcion ? ` · ${b.descripcion}` : ""}
                     </p>
                   </div>

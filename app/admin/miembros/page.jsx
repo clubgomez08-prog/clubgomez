@@ -15,6 +15,26 @@ function formatFecha(dateStr) {
   });
 }
 
+/** fecha_nacimiento suele venir como YYYY-MM-DD (date) */
+function formatCumple(dateStr) {
+  if (!dateStr) return "—";
+  const raw = String(dateStr).slice(0, 10);
+  const [y, m, d] = raw.split("-");
+  if (!y || !m || !d) return raw;
+  return `${d}/${m}/${y}`;
+}
+
+function esCumpleHoy(dateStr) {
+  if (!dateStr) return false;
+  const raw = String(dateStr).slice(0, 10);
+  const [, m, d] = raw.split("-");
+  if (!m || !d) return false;
+  const now = new Date();
+  return (
+    Number(m) === now.getMonth() + 1 && Number(d) === now.getDate()
+  );
+}
+
 function badgeEstado(estado) {
   const map = {
     activo: "bg-green-500/20 text-green-400",
@@ -86,8 +106,8 @@ export default function AdminMiembrosPage() {
     <div className="py-6 max-w-6xl">
       <h1 className="text-2xl font-semibold text-white mb-1">Clientes</h1>
       <p className="text-sm text-zinc-500 mb-6">
-        Miembros del Club Gómez (tabla <code className="text-zinc-400">miembros</code>
-        ). Claves del periodo {periodo || "actual"}.
+        Datos de cada miembro: contacto, plan, cumpleaños y claves del periodo{" "}
+        {periodo || "actual"}. Clic en una fila para ver las claves.
       </p>
 
       <div className="flex flex-wrap gap-3 mb-5 items-end">
@@ -142,14 +162,14 @@ export default function AdminMiembrosPage() {
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl py-12 text-center text-zinc-500 text-sm">
           No hay clientes con estos filtros.
           <p className="mt-2 text-xs text-zinc-600">
-            Aparecen cuando se registran o cuando se activa una membresía (Bold /
-            manual).
+            Aparecen al completar el checkout (cuenta + pago Bold) o al activar
+            membresía manual.
           </p>
         </div>
       ) : (
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full" style={{ minWidth: 720 }}>
+            <table className="w-full" style={{ minWidth: 860 }}>
               <thead>
                 <tr className="border-b border-zinc-800">
                   <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">
@@ -157,6 +177,9 @@ export default function AdminMiembrosPage() {
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">
                     Contacto
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">
+                    Cumpleaños
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">
                     Plan
@@ -175,6 +198,7 @@ export default function AdminMiembrosPage() {
               <tbody>
                 {items.map((m) => {
                   const abierto = expandido === m.id;
+                  const cumpleHoy = esCumpleHoy(m.fecha_nacimiento);
                   return (
                     <Fragment key={m.id}>
                       <tr
@@ -190,14 +214,30 @@ export default function AdminMiembrosPage() {
                           <p className="text-xs text-zinc-500">
                             CC {m.cedula || "—"}
                             {m.ciudad ? ` · ${m.ciudad}` : ""}
-                            {m.fecha_nacimiento
-                              ? ` · Nac. ${m.fecha_nacimiento}`
-                              : ""}
                           </p>
                         </td>
                         <td className="px-4 py-3 text-sm text-zinc-300">
                           <p className="truncate max-w-[180px]">{m.email}</p>
                           <p className="text-xs text-zinc-500">{m.telefono}</p>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span
+                            className={`text-sm font-medium ${
+                              cumpleHoy ? "text-black px-2 py-1 rounded-md" : "text-zinc-200"
+                            }`}
+                            style={
+                              cumpleHoy
+                                ? { background: LIME }
+                                : undefined
+                            }
+                          >
+                            {formatCumple(m.fecha_nacimiento)}
+                          </span>
+                          {cumpleHoy ? (
+                            <p className="text-[10px] mt-1 font-semibold" style={{ color: LIME }}>
+                              Hoy
+                            </p>
+                          ) : null}
                         </td>
                         <td className="px-4 py-3 text-sm">
                           {m.plan ? (
@@ -226,9 +266,12 @@ export default function AdminMiembrosPage() {
                       </tr>
                       {abierto ? (
                         <tr className="border-b border-zinc-800 bg-zinc-950/60">
-                          <td colSpan={6} className="px-4 py-4">
+                          <td colSpan={7} className="px-4 py-4">
                             <p className="text-xs text-zinc-500 mb-2">
                               Claves del periodo {periodo}
+                              {m.fecha_nacimiento
+                                ? ` · Cumpleaños ${formatCumple(m.fecha_nacimiento)}`
+                                : ""}
                             </p>
                             {m.claves?.length ? (
                               <div className="flex flex-wrap gap-2">

@@ -1,34 +1,67 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Header from "./Header";
 import Footer from "./Footer";
 import CtaButton from "./CtaButton";
-import { BENEFICIOS_MES, DESTACADO_MES, beneficioSrc } from "@/lib/club-gomez/beneficios-data";
+import {
+  beneficioSrc,
+  beneficiosFallbackDesdeCatalogo,
+} from "@/lib/club-gomez/beneficios-catalog";
 
 const TAGS = ["Motos", "Hogar", "Tech", "Premios"];
 
-const PREMIOS = [
-  {
-    id: DESTACADO_MES.id,
-    nombre: DESTACADO_MES.titulo,
-    subtitulo: DESTACADO_MES.subtitulo,
-    fechas: DESTACADO_MES.fechas,
-    imagen: DESTACADO_MES.imagenPc,
-    destacado: true,
-  },
-  ...BENEFICIOS_MES.map((b) => ({
-    id: b.id,
-    nombre: b.nombre,
-    subtitulo: null,
-    fechas: b.fechas,
-    imagen: beneficioSrc(b.imagenKey),
-    destacado: false,
-  })),
-];
+function buildPremios(destacado, items) {
+  const list = [];
+  if (destacado) {
+    list.push({
+      id: destacado.id || "motos",
+      nombre: destacado.titulo,
+      subtitulo: destacado.subtitulo,
+      fechas: destacado.fechas || [],
+      imagen: destacado.imagenPc,
+      destacado: true,
+    });
+  }
+  for (const b of items || []) {
+    if (destacado?.slugs?.includes(b.slug)) continue;
+    list.push({
+      id: b.id || b.slug,
+      nombre: b.nombre,
+      subtitulo: null,
+      fechas: b.fechas || [],
+      imagen: b.imagenKey ? beneficioSrc(b.imagenKey) : "/club-gomez/logo-mark.jpg",
+      destacado: false,
+    });
+  }
+  return list;
+}
 
 export default function BeneficiosPageView() {
+  const fallback = beneficiosFallbackDesdeCatalogo("2026-10");
+  const [premios, setPremios] = useState(() =>
+    buildPremios(fallback.destacado, fallback.grid)
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/beneficios-publicos", { cache: "no-store" });
+        const data = await res.json();
+        if (!res.ok || !data.ok || cancelled) return;
+        setPremios(buildPremios(data.destacado, data.grid || data.items));
+      } catch {
+        /* keep fallback */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="cg-benef-page">
       <Header />
@@ -42,8 +75,8 @@ export default function BeneficiosPageView() {
               <span>MEMBRESÍA</span>
             </h1>
             <p className="cg-benef-hero__sub">
-              Motos, tech, hogar y más. Activa tu membresía: descuentos, premios del mes y claves
-              con oportunidades enviadas a tu correo.
+              Motos, tech, hogar y más. Activa tu membresía: descuentos, premios
+              del mes y claves con oportunidades enviadas a tu correo.
             </p>
             <div className="cg-benef-hero__actions">
               <CtaButton href="/#membresias" requireAuth>
@@ -68,7 +101,10 @@ export default function BeneficiosPageView() {
             </div>
             <ul className="cg-benef-hero__tags">
               {TAGS.map((t, i) => (
-                <li key={t} className={`cg-benef-hero__tag cg-benef-hero__tag--${i + 1}`}>
+                <li
+                  key={t}
+                  className={`cg-benef-hero__tag cg-benef-hero__tag--${i + 1}`}
+                >
                   {t}
                 </li>
               ))}
@@ -82,27 +118,29 @@ export default function BeneficiosPageView() {
               <h2>
                 Todos los <span>premios</span>
               </h2>
-              <p>Beneficios del mes disponibles para miembros activos</p>
+              <p>Fechas alineadas con el panel de Fechas de premio</p>
             </div>
 
             <div className="cg-benef-grid cg-benef-grid--premios">
-              {PREMIOS.map((p) => (
+              {premios.map((p) => (
                 <article
                   key={p.id}
                   className={`cg-premio-card${p.destacado ? " is-featured" : ""}`}
                 >
                   <div className="cg-premio-card__media">
                     <img src={p.imagen} alt={p.nombre} />
-                    {p.destacado && <span className="cg-premio-card__badge">Destacado</span>}
+                    {p.destacado && (
+                      <span className="cg-premio-card__badge">Destacado</span>
+                    )}
                   </div>
                   <div className="cg-premio-card__body">
                     <h3>{p.nombre}</h3>
-                    {p.subtitulo && <p className="cg-premio-card__sub">{p.subtitulo}</p>}
-                    <ul className="cg-premio-card__fechas">
-                      {p.fechas.map((f) => (
-                        <li key={f}>{f}</li>
-                      ))}
-                    </ul>
+                    {p.subtitulo && (
+                      <p className="cg-premio-card__sub">{p.subtitulo}</p>
+                    )}
+                    <p className="cg-premio-card__fechas">
+                      {(p.fechas || []).join(" · ")}
+                    </p>
                   </div>
                 </article>
               ))}

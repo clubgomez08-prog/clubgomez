@@ -80,6 +80,9 @@ export async function POST(request) {
     const premio = String(body.premio || "").trim();
     const fecha_sorteo = String(body.fecha_sorteo || "").trim();
     const descripcion = String(body.descripcion || "").trim() || null;
+    const slug = String(body.slug || "").trim() || null;
+    const imagen_key = String(body.imagen_key || body.imagenKey || "").trim() || null;
+    const destacado = Boolean(body.destacado);
 
     if (!premio || !fecha_sorteo) {
       return NextResponse.json(
@@ -92,16 +95,21 @@ export async function POST(request) {
       ? String(body.periodo).trim()
       : fecha_sorteo.slice(0, 7);
 
+    const insertPayload = {
+      periodo,
+      fecha_sorteo,
+      premio,
+      descripcion,
+      loteria: LOTERIA_INTERNA,
+      estado: "programado",
+    };
+    if (slug) insertPayload.slug = slug;
+    if (imagen_key) insertPayload.imagen_key = imagen_key;
+    if (destacado) insertPayload.destacado = true;
+
     const { data, error } = await supabaseAdmin
       .from("sorteos_beneficio")
-      .insert({
-        periodo,
-        fecha_sorteo,
-        premio,
-        descripcion,
-        loteria: LOTERIA_INTERNA,
-        estado: "programado",
-      })
+      .insert(insertPayload)
       .select("*")
       .single();
 

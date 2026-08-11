@@ -1,16 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CtaButton from "./CtaButton";
 import BeneficioMedia from "./BeneficioMedia";
-import { BENEFICIOS_MES, DESTACADO_MES } from "@/lib/club-gomez/beneficios-data";
+import {
+  beneficiosFallbackDesdeCatalogo,
+  labelPeriodoEs,
+} from "@/lib/club-gomez/beneficios-catalog";
 import { irASuscribir } from "@/lib/club-gomez/flujo-suscripcion";
 import { scrollToId, useReveal } from "./hooks";
 
 export default function BeneficiosDelMes() {
   const { ref, className } = useReveal();
   const [activo, setActivo] = useState(0);
-  const item = BENEFICIOS_MES[activo];
+  const [periodoLabel, setPeriodoLabel] = useState("octubre");
+  const [destacado, setDestacado] = useState(
+    () => beneficiosFallbackDesdeCatalogo("2026-10").destacado
+  );
+  const [grid, setGrid] = useState(
+    () => beneficiosFallbackDesdeCatalogo("2026-10").grid
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/beneficios-publicos", { cache: "no-store" });
+        const data = await res.json();
+        if (!res.ok || !data.ok || cancelled) return;
+        setPeriodoLabel(
+          data.periodoLabel || labelPeriodoEs(data.periodo) || "del mes"
+        );
+        if (data.destacado) setDestacado(data.destacado);
+        if (Array.isArray(data.grid) && data.grid.length) {
+          setGrid(data.grid);
+          setActivo(0);
+        }
+      } catch {
+        /* fallback ya cargado */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const item = grid[activo] || grid[0];
+  const mesCorto = String(periodoLabel || "")
+    .replace(/\s+de\s+\d{4}/i, "")
+    .trim() || "octubre";
 
   return (
     <section
@@ -18,7 +56,8 @@ export default function BeneficiosDelMes() {
       ref={ref}
       className={className}
       style={{
-        background: "linear-gradient(180deg, rgba(5,6,7,0.35) 0%, rgba(10,18,6,0.5) 45%, rgba(5,6,7,0.4) 100%)",
+        background:
+          "linear-gradient(180deg, rgba(5,6,7,0.35) 0%, rgba(10,18,6,0.5) 45%, rgba(5,6,7,0.4) 100%)",
         padding: "80px 20px",
         position: "relative",
         overflow: "hidden",
@@ -52,13 +91,15 @@ export default function BeneficiosDelMes() {
           </CtaButton>
         </div>
 
-        {/* Cápsula destacada PC / móvil */}
         <div className="cg-capsula-motos">
           <picture>
-            <source media="(max-width: 767px)" srcSet={DESTACADO_MES.imagenMovil} />
+            <source
+              media="(max-width: 767px)"
+              srcSet={destacado.imagenMovil}
+            />
             <img
-              src={DESTACADO_MES.imagenPc}
-              alt={DESTACADO_MES.titulo}
+              src={destacado.imagenPc}
+              alt={destacado.titulo}
               className="cg-capsula-motos__img"
             />
           </picture>
@@ -67,9 +108,11 @@ export default function BeneficiosDelMes() {
 
           <div className="cg-capsula-motos__copy">
             <span className="cg-capsula-motos__pill">DESTACADO DEL MES</span>
-            <p className="cg-capsula-motos__fecha">{DESTACADO_MES.fechas.join(" · ")}</p>
-            <h3 className="cg-capsula-motos__title">{DESTACADO_MES.titulo}</h3>
-            <p className="cg-capsula-motos__sub">{DESTACADO_MES.subtitulo}</p>
+            <p className="cg-capsula-motos__fecha">
+              {(destacado.fechas || []).join(" · ")}
+            </p>
+            <h3 className="cg-capsula-motos__title">{destacado.titulo}</h3>
+            <p className="cg-capsula-motos__sub">{destacado.subtitulo}</p>
             <button
               type="button"
               className="cg-capsula-motos__cta"
@@ -92,7 +135,7 @@ export default function BeneficiosDelMes() {
             color: "rgba(255,255,255,0.5)",
           }}
         >
-          Más beneficios de octubre
+          Más beneficios de {mesCorto}
         </p>
 
         <div
@@ -103,14 +146,17 @@ export default function BeneficiosDelMes() {
             marginBottom: 20,
           }}
         >
-          {BENEFICIOS_MES.map((b, i) => (
+          {grid.map((b, i) => (
             <button
-              key={b.id}
+              key={b.id || b.slug || i}
               type="button"
               onClick={() => setActivo(i)}
               style={{
                 textAlign: "left",
-                background: activo === i ? "rgba(184,227,81,0.1)" : "rgba(255,255,255,0.03)",
+                background:
+                  activo === i
+                    ? "rgba(184,227,81,0.1)"
+                    : "rgba(255,255,255,0.03)",
                 border:
                   activo === i
                     ? "1.5px solid rgba(184,227,81,0.55)"
@@ -129,7 +175,7 @@ export default function BeneficiosDelMes() {
             >
               <BeneficioMedia
                 imagenKey={b.imagenKey}
-                label={b.labelPlaceholder}
+                label={b.labelPlaceholder || b.nombre}
                 aspect="4/3"
                 rounded="12px"
               />
@@ -145,39 +191,55 @@ export default function BeneficiosDelMes() {
               >
                 {b.nombre}
               </p>
-              <p style={{ margin: 0, fontSize: 11, color: "#B8E351", lineHeight: 1.4 }}>
-                {b.fechas.join(" · ")}
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 11,
+                  color: "#B8E351",
+                  lineHeight: 1.4,
+                }}
+              >
+                {(b.fechas || []).join(" · ")}
               </p>
             </button>
           ))}
         </div>
 
-        <div
-          style={{
-            background: "rgba(184,227,81,0.06)",
-            border: "1px solid rgba(184,227,81,0.25)",
-            borderRadius: 16,
-            padding: "16px 18px",
-          }}
-        >
-          <p
+        {item ? (
+          <div
             style={{
-              margin: "0 0 4px",
-              fontSize: 12,
-              color: "rgba(255,255,255,0.45)",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
+              background: "rgba(184,227,81,0.06)",
+              border: "1px solid rgba(184,227,81,0.25)",
+              borderRadius: 16,
+              padding: "16px 18px",
             }}
           >
-            Seleccionado
-          </p>
-          <p style={{ margin: "0 0 6px", fontWeight: 700, color: "#fff", fontSize: 15 }}>
-            {item.nombre}
-          </p>
-          <p style={{ margin: 0, fontSize: 13, color: "#B8E351" }}>
-            Fechas: {item.fechas.join(" · ")}
-          </p>
-        </div>
+            <p
+              style={{
+                margin: "0 0 4px",
+                fontSize: 12,
+                color: "rgba(255,255,255,0.45)",
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+              }}
+            >
+              Seleccionado
+            </p>
+            <p
+              style={{
+                margin: "0 0 6px",
+                fontWeight: 700,
+                color: "#fff",
+                fontSize: 15,
+              }}
+            >
+              {item.nombre}
+            </p>
+            <p style={{ margin: 0, fontSize: 13, color: "#B8E351" }}>
+              Fechas: {(item.fechas || []).join(" · ")}
+            </p>
+          </div>
+        ) : null}
       </div>
     </section>
   );
