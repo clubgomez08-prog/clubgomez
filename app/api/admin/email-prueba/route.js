@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import {
-  generarHtmlEmailGanador,
   enviarTicketCompra,
+  enviarFelicitacionCumpleanos,
+  enviarBienvenidaRegistro,
   resendFromAddress,
-  getResendClient,
 } from "@/lib/email";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
 
 export const dynamic = "force-dynamic";
+
+const TIPOS = new Set(["claves", "cumpleanos", "bienvenida"]);
 
 export async function POST(request) {
   const user = await verificarSesionAdmin(request);
@@ -16,11 +18,26 @@ export async function POST(request) {
   }
 
   try {
-    const { emailDestino, nombreRifa, precioRifa, tipo } = await request.json();
+    const body = await request.json();
+    const emailDestino = String(body.emailDestino || body.email || "")
+      .trim()
+      .toLowerCase();
+    const tipo = String(body.tipo || "").trim().toLowerCase();
+    const nombre = String(body.nombre || "Miembro Prueba").trim();
 
     if (!emailDestino || !emailDestino.includes("@")) {
       return NextResponse.json(
         { error: "Email destino inválido" },
+        { status: 400 }
+      );
+    }
+
+    if (!TIPOS.has(tipo)) {
+      return NextResponse.json(
+        {
+          error:
+            "tipo inválido. Usa: claves | cumpleanos | bienvenida",
+        },
         { status: 400 }
       );
     }
@@ -32,86 +49,49 @@ export async function POST(request) {
       );
     }
 
-    const resend = getResendClient();
+    let data = null;
+    let label = "";
 
-    if (tipo === "comprador") {
-      const participanteCompradorPrueba = {
-        id: "00000000-0000-0000-0000-00000000d3d0",
-        nombre: "Juan Prueba",
+    if (tipo === "claves") {
+      label = "Confirmación + claves";
+      data = await enviarTicketCompra(
+        {
+          id: "00000000-0000-0000-0000-00000000d3d0",
+          nombre,
+          email: emailDestino,
+          cantidad_boletos: 3,
+          total_pagado: 30000,
+        },
+        { nombre: "Plan Esencial (PRUEBA)" },
+        ["0421", "1783", "9056"],
+        { useParticipantEmail: true }
+      );
+    } else if (tipo === "cumpleanos") {
+      label = "Felicitación de cumpleaños";
+      data = await enviarFelicitacionCumpleanos({
+        nombre,
         email: emailDestino,
-        cantidad_boletos: 5,
-        total_pagado: 1000,
-      };
-      const rifaCompradorPrueba = {
-        nombre: nombreRifa || "Sorteo de prueba",
-      };
-      const numerosCompradorPrueba = [
-        "1234-56",
-        "7890-12",
-        "3456-78",
-        "9012-34",
-        "5678-90",
-      ];
-
-      try {
-        const data = await enviarTicketCompra(
-          participanteCompradorPrueba,
-          rifaCompradorPrueba,
-          numerosCompradorPrueba,
-          { useParticipantEmail: true }
-        );
-        return NextResponse.json({
-          success: true,
-          message: `Email de prueba (comprador) enviado a ${emailDestino}`,
-          id: data?.id,
-        });
-      } catch (sendErr) {
-        return NextResponse.json(
-          { error: sendErr?.message || "Error al enviar email de comprador" },
-          { status: 500 }
-        );
-      }
-    }
-
-    const participanteSimulado = {
-      nombre: "Juan Pérez (PRUEBA)",
-      email: emailDestino,
-      telefono: "—",
-    };
-    const rifaSimulada = {
-      nombre: nombreRifa || "Sorteo de prueba",
-    };
-    const numeroBoletoSimulado = "0042";
-
-    const htmlEmail = generarHtmlEmailGanador(
-      participanteSimulado,
-      rifaSimulada,
-      numeroBoletoSimulado
-    );
-
-    const { data, error } = await resend.emails.send({
-      from: resendFromAddress(),
-      to: [emailDestino],
-      subject: `🏆 [PRUEBA] Club Gómez — Notificación: ${nombreRifa || "Beneficio de prueba"}`,
-      html: htmlEmail,
-    });
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      });
+    } else if (tipo === "bienvenida") {
+      label = "Bienvenida al registrarse";
+      data = await enviarBienvenidaRegistro({
+        nombre,
+        email: emailDestino,
+      });
     }
 
     return NextResponse.json({
+      ok: true,
       success: true,
-      message: `Email de prueba enviado a ${emailDestino}`,
-      id: data?.id,
+      message: `[PRUEBA] ${label} enviado a ${emailDestino}`,
+      from: resendFromAddress(),
+      id: data?.id || null,
+      tipo,
     });
   } catch (err) {
-    console.error(
-      "[email-prueba] Error:",
-      err?.message || "Error desconocido"
-    );
+    console.error("[email-prueba]", err?.message || err);
     return NextResponse.json(
-      { error: "Error al enviar email de prueba" },
+      { error: err?.message || "Error al enviar email de prueba" },
       { status: 500 }
     );
   }

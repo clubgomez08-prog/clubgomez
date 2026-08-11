@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 
@@ -24,12 +26,12 @@ export default function AdminLoginPage() {
     setLoading(false);
 
     if (authError) {
-      if (authError.message.includes('Invalid login')) {
-        setError('Credenciales incorrectas. Verifica tu email y contraseña.');
-      } else if (authError.message.includes('Email not confirmed')) {
-        setError('Email no confirmado. Revisa tu bandeja de entrada.');
+      if (authError.message.includes("Invalid login")) {
+        setError("Credenciales incorrectas. Verifica tu email y contraseña.");
+      } else if (authError.message.includes("Email not confirmed")) {
+        setError("Email no confirmado. Revisa tu bandeja de entrada.");
       } else {
-        setError('Error al iniciar sesión: ' + authError.message);
+        setError("Error al iniciar sesión: " + authError.message);
       }
       return;
     }
@@ -39,71 +41,181 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-zinc-950 p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 shadow-2xl">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-semibold text-white tracking-tight">
-              Panel de Administración
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20,
+        fontFamily: "var(--font-poppins), Poppins, sans-serif",
+        background:
+          "radial-gradient(ellipse 70% 50% at 50% -10%, rgba(184,227,81,0.18), transparent 55%), radial-gradient(ellipse 50% 40% at 100% 80%, rgba(35,67,12,0.35), transparent 50%), #050607",
+      }}
+    >
+      <div style={{ width: "100%", maxWidth: 420 }}>
+        <div
+          style={{
+            background: "#090909",
+            border: "1px solid rgba(184,227,81,0.22)",
+            borderRadius: 20,
+            padding: "32px 28px",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.45)",
+          }}
+        >
+          <div style={{ textAlign: "center", marginBottom: 28 }}>
+            <Image
+              src="/club-gomez/logo-full.png"
+              alt="Club Gómez"
+              width={160}
+              height={80}
+              priority
+              style={{
+                height: 64,
+                width: "auto",
+                objectFit: "contain",
+                margin: "0 auto 14px",
+              }}
+            />
+            <h1
+              style={{
+                margin: 0,
+                color: "#fff",
+                fontSize: "1.45rem",
+                fontWeight: 700,
+              }}
+            >
+              Panel Club Gómez
             </h1>
-            <p className="text-zinc-500 text-sm mt-2">
-              Ingresa tus credenciales para continuar
+            <p
+              style={{
+                margin: "8px 0 0",
+                color: "rgba(255,255,255,0.5)",
+                fontSize: 13,
+              }}
+            >
+              Solicitudes Bold, miembros y operaciones
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-zinc-300 mb-2"
+          <form onSubmit={handleSubmit} style={{ display: "grid", gap: 16 }}>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span
+                style={{
+                  color: "rgba(255,255,255,0.75)",
+                  fontSize: 13,
+                  fontWeight: 600,
+                }}
               >
                 Email
-              </label>
+              </span>
               <input
-                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                placeholder="admin@rifas.com"
+                placeholder="tu@email.com"
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  padding: "12px 14px",
+                  borderRadius: 12,
+                  border: "1.5px solid rgba(184,227,81,0.28)",
+                  background: "#0a0c08",
+                  color: "#fff",
+                  fontSize: 15,
+                  outline: "none",
+                }}
               />
-            </div>
+            </label>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-zinc-300 mb-2"
+            <label style={{ display: "grid", gap: 6 }}>
+              <span
+                style={{
+                  color: "rgba(255,255,255,0.75)",
+                  fontSize: 13,
+                  fontWeight: 600,
+                }}
               >
                 Contraseña
-              </label>
+              </span>
               <input
-                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-colors"
-                placeholder="••••••••"
+                placeholder="Tu contraseña"
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  padding: "12px 14px",
+                  borderRadius: 12,
+                  border: "1.5px solid rgba(184,227,81,0.28)",
+                  background: "#0a0c08",
+                  color: "#fff",
+                  fontSize: 15,
+                  outline: "none",
+                }}
               />
-            </div>
+            </label>
 
-            {error && (
-              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-                <p className="text-sm text-red-400">{error}</p>
-              </div>
-            )}
+            {error ? (
+              <p
+                style={{
+                  margin: 0,
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  background: "rgba(248,113,113,0.12)",
+                  border: "1px solid rgba(248,113,113,0.35)",
+                  color: "#fca5a5",
+                  fontSize: 13,
+                }}
+              >
+                {error}
+              </p>
+            ) : null}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                marginTop: 4,
+                padding: "14px 18px",
+                border: "none",
+                borderRadius: 12,
+                background: "linear-gradient(135deg, #d4f06a, #b8e351, #9bcf2e)",
+                color: "#050607",
+                fontWeight: 700,
+                fontSize: 15,
+                cursor: loading ? "wait" : "pointer",
+                opacity: loading ? 0.75 : 1,
+                fontFamily: "var(--font-oswald), sans-serif",
+                letterSpacing: "0.03em",
+              }}
             >
-              {loading ? "Verificando..." : "Iniciar sesión"}
+              {loading ? "Verificando…" : "Entrar al panel"}
             </button>
           </form>
+
+          <p
+            style={{
+              margin: "18px 0 0",
+              textAlign: "center",
+            }}
+          >
+            <Link
+              href="/"
+              style={{
+                color: "rgba(255,255,255,0.45)",
+                textDecoration: "none",
+                fontSize: 12,
+              }}
+            >
+              ← Volver al Club
+            </Link>
+          </p>
         </div>
       </div>
     </main>

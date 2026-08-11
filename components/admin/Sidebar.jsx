@@ -1,17 +1,16 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth";
 
 const navItems = [
-  { href: "/admin", label: "Dashboard", icon: "📊" },
-  { href: "/admin/solicitudes", label: "Solicitudes", icon: "✅" },
-  { href: "/admin/rifas", label: "Rifas", icon: "🎯" },
-  { href: "/admin/landing", label: "Landing", icon: "🖼️" },
-  { href: "/admin/participantes", label: "Participantes", icon: "👥" },
-  { href: "/admin/venta-fisica", label: "Venta física", icon: "🧾" },
-  { href: "/admin/sorteo", label: "Sorteo", icon: "🏆" },
+  { href: "/admin", label: "Dashboard", icon: "◆" },
+  { href: "/admin/solicitudes", label: "Solicitudes Bold", icon: "✓" },
+  { href: "/admin/beneficios", label: "Fechas de premio", icon: "★" },
+  { href: "/admin/miembros", label: "Clientes", icon: "○" },
+  { href: "/admin/correos", label: "Correos prueba", icon: "✉" },
 ];
 
 export default function Sidebar({ abierto, onClose, className = "" }) {
@@ -26,14 +25,35 @@ export default function Sidebar({ abierto, onClose, className = "" }) {
 
   return (
     <aside
-      className={`w-64 bg-zinc-900 border-r border-zinc-800 min-h-screen flex flex-col ${className}`}
+      className={`w-64 min-h-screen flex flex-col ${className}`}
+      style={{
+        background: "#090909",
+        borderRight: "1px solid rgba(184,227,81,0.18)",
+      }}
     >
-      <div className="p-6">
-        <h2 className="text-lg font-semibold text-white tracking-tight">
-          Panel Admin
-        </h2>
+      <div style={{ padding: "20px 18px 16px" }}>
+        <Image
+          src="/club-gomez/logo-header.png"
+          alt="Club Gómez"
+          width={120}
+          height={40}
+          style={{ height: 32, width: "auto", objectFit: "contain" }}
+        />
+        <p
+          style={{
+            margin: "10px 0 0",
+            fontSize: 11,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "rgba(184,227,81,0.7)",
+            fontWeight: 700,
+          }}
+        >
+          Panel admin
+        </p>
       </div>
-      <nav className="flex-1 px-4 space-y-1">
+
+      <nav style={{ flex: 1, padding: "8px 12px", display: "grid", gap: 4 }}>
         {navItems.map((link) => {
           const esActivo =
             pathname === link.href ||
@@ -46,19 +66,22 @@ export default function Sidebar({ abierto, onClose, className = "" }) {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "10px",
-                padding: "10px 12px",
-                borderRadius: "10px",
+                gap: 10,
+                padding: "11px 12px",
+                borderRadius: 10,
                 textDecoration: "none",
-                color: esActivo ? "#F2B233" : "rgba(248,250,252,0.7)",
-                backgroundColor: esActivo ? "rgba(242,178,51,0.1)" : "transparent",
-                fontWeight: esActivo ? "700" : "500",
-                fontSize: "14px",
-                fontFamily: "Poppins, sans-serif",
+                color: esActivo ? "#050607" : "rgba(248,250,252,0.72)",
+                background: esActivo
+                  ? "linear-gradient(135deg, #d4f06a, #b8e351)"
+                  : "transparent",
+                fontWeight: esActivo ? 700 : 500,
+                fontSize: 14,
+                fontFamily: "var(--font-poppins), Poppins, sans-serif",
+                border: esActivo ? "none" : "1px solid transparent",
                 transition: "all 0.2s ease",
               }}
             >
-              <span style={{ fontSize: "18px", width: "24px", textAlign: "center" }}>
+              <span style={{ width: 18, textAlign: "center", opacity: 0.9 }}>
                 {link.icon}
               </span>
               {link.label}
@@ -66,13 +89,30 @@ export default function Sidebar({ abierto, onClose, className = "" }) {
           );
         })}
       </nav>
-      <div className="p-4 border-t border-zinc-800">
+
+      <div
+        style={{
+          padding: 14,
+          borderTop: "1px solid rgba(184,227,81,0.14)",
+        }}
+      >
         <button
+          type="button"
           onClick={() => {
             onClose && onClose();
             handleSignOut();
           }}
-          className="w-full py-2.5 px-3 text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+          style={{
+            width: "100%",
+            padding: "11px 12px",
+            borderRadius: 10,
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "transparent",
+            color: "rgba(255,255,255,0.55)",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
         >
           Cerrar sesión
         </button>

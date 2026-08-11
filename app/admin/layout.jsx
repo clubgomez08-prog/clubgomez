@@ -34,7 +34,7 @@ export default function AdminLayout({ children }) {
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-950">
-        <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#B8E351] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -90,9 +90,9 @@ export default function AdminLayout({ children }) {
           left: "12px",
           zIndex: 200,
           backgroundColor: "#1a1a1a",
-          border: "1px solid rgba(242,178,51,0.3)",
+          border: "1px solid rgba(184,227,81,0.3)",
           borderRadius: "8px",
-          color: "#F2B233",
+          color: "#B8E351",
           fontSize: "20px",
           width: "40px",
           height: "40px",

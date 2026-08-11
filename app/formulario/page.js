@@ -6,14 +6,12 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   getPlanById,
-  construirUrlWhatsappMembresia,
 } from "@/lib/club-gomez/planes";
 import { leerSesionLocal } from "@/lib/club-gomez/cuentas-miembro";
 import { rutaRegistroConNext } from "@/lib/club-gomez/flujo-suscripcion";
 import {
   trackAddPaymentInfo,
   trackInitiateCheckout,
-  trackPurchase,
 } from "@/lib/club-gomez/meta-pixel";
 import styles from "./formulario.module.css";
 
@@ -34,6 +32,7 @@ function FormularioMembresia() {
     email: "",
     telefono: "",
     ciudad: "",
+    fecha_nacimiento: "",
   });
 
   useEffect(() => {
@@ -50,6 +49,10 @@ function FormularioMembresia() {
       email: sesion.email || prev.email,
       telefono: sesion.telefono || prev.telefono,
       ciudad: sesion.ciudad || prev.ciudad,
+      fecha_nacimiento:
+        sesion.fechaNacimiento ||
+        sesion.fecha_nacimiento ||
+        prev.fecha_nacimiento,
     }));
     setReady(true);
     trackInitiateCheckout(plan);
@@ -65,17 +68,34 @@ function FormularioMembresia() {
     if (!form.email.trim() || !form.email.includes("@")) return "Escribe un email válido";
     if (!form.telefono.trim()) return "Escribe tu WhatsApp";
     if (!form.ciudad.trim()) return "Escribe tu ciudad";
+    if (!form.fecha_nacimiento) return "Indica tu fecha de nacimiento";
     return "";
   }
 
-  function abrirWhatsapp() {
-    return construirUrlWhatsappMembresia({
-      plan,
-      nombre: form.nombre.trim(),
-      email: form.email.trim(),
-      cedula: form.cedula.trim(),
-      telefono: form.telefono.trim(),
-      ciudad: form.ciudad.trim(),
+  function loadBoldScript() {
+    return new Promise((resolve, reject) => {
+      if (typeof window === "undefined") {
+        reject(new Error("Solo en navegador"));
+        return;
+      }
+      if (window.BoldCheckout) {
+        resolve();
+        return;
+      }
+      const existing = document.querySelector(
+        'script[src="https://checkout.bold.co/library/boldPaymentButton.js"]'
+      );
+      if (existing) {
+        existing.addEventListener("load", () => resolve());
+        existing.addEventListener("error", () => reject(new Error("Bold script error")));
+        return;
+      }
+      const js = document.createElement("script");
+      js.src = "https://checkout.bold.co/library/boldPaymentButton.js";
+      js.async = true;
+      js.onload = () => resolve();
+      js.onerror = () => reject(new Error("No se pudo cargar Bold"));
+      document.head.appendChild(js);
     });
   }
 
@@ -90,7 +110,7 @@ function FormularioMembresia() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/solicitudes-membresia", {
+      const res = await fetch("/api/bold/crear-pago", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -100,20 +120,49 @@ function FormularioMembresia() {
           email: form.email.trim(),
           telefono: form.telefono.trim(),
           ciudad: form.ciudad.trim(),
+          fecha_nacimiento: form.fecha_nacimiento,
+          baseUrl: window.location.origin,
         }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
-        setError(data.error || "No se pudo guardar la solicitud. Intenta de nuevo.");
+        setError(data.error || "No se pudo preparar el pago con Bold.");
         return;
       }
 
       trackAddPaymentInfo(plan);
-      trackPurchase(plan, { orderId: data.id });
-      window.open(abrirWhatsapp(), "_blank", "noopener,noreferrer");
+      await loadBoldScript();
+
+      if (!window.BoldCheckout) {
+        setError("Bold no cargó. Recarga e intenta de nuevo.");
+        return;
+      }
+
+      const c = data.checkout;
+      const config = {
+        orderId: c.orderId,
+        currency: c.currency,
+        amount: String(c.amount),
+        apiKey: c.apiKey,
+        integritySignature: c.integritySignature,
+        description: c.description,
+      };
+      // Bold exige string JSON (si mandas objeto → "[object Object]" → BTN-001)
+      if (c.customerData) {
+        config.customerData =
+          typeof c.customerData === "string"
+            ? c.customerData
+            : JSON.stringify(c.customerData);
+      }
+      // Solo si es https (Bold rechaza http://localhost → BTN-001)
+      if (c.redirectionUrl && String(c.redirectionUrl).startsWith("https://")) {
+        config.redirectionUrl = c.redirectionUrl;
+      }
+      const checkout = new window.BoldCheckout(config);
+      checkout.open();
       setEnviado(true);
-    } catch {
-      setError("Error de conexión. Intenta de nuevo.");
+    } catch (err) {
+      setError(err?.message || "Error de conexión. Intenta de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -173,20 +222,20 @@ function FormularioMembresia() {
         <section className={styles.card}>
           {enviado ? (
             <div className={styles.done}>
-              <h2 className={styles.heading}>¡Ya casi!</h2>
+              <h2 className={styles.heading}>Pasarela Bold abierta</h2>
               <p>
-                Se abrió WhatsApp con tu solicitud del plan{" "}
-                <strong>{plan.nombre}</strong>. Completa el pago con el equipo
-                para activar tu membresía.
+                Completa el pago del plan <strong>{plan.nombre}</strong> en Bold.
+                Al terminar volverás automáticamente y activamos tu membresía.
               </p>
               <button
                 type="button"
                 className={styles.cta}
-                onClick={() =>
-                  window.open(abrirWhatsapp(), "_blank", "noopener,noreferrer")
-                }
+                onClick={() => {
+                  setEnviado(false);
+                  setError("");
+                }}
               >
-                Abrir WhatsApp de nuevo
+                Reintentar pago
               </button>
               <Link href="/#membresias" className={styles.link}>
                 Volver a membresías
@@ -196,8 +245,8 @@ function FormularioMembresia() {
             <form onSubmit={handleSubmit} noValidate>
               <h2 className={styles.heading}>Tus datos</h2>
               <p className={styles.hint}>
-                Completa el formulario y te contactamos por WhatsApp para
-                activar tu plan.
+                Confirma tus datos y paga con Bold. El pago queda registrado en el
+                panel del Club.
               </p>
 
               <label className={styles.field}>
@@ -247,7 +296,7 @@ function FormularioMembresia() {
                   name="telefono"
                   value={form.telefono}
                   onChange={handleChange}
-                  placeholder="Tu número de WhatsApp"
+                  placeholder="Tu número de contacto"
                   inputMode="tel"
                   autoComplete="tel"
                   required
@@ -267,14 +316,24 @@ function FormularioMembresia() {
                 />
               </label>
 
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Fecha de nacimiento</span>
+                <input
+                  className={styles.input}
+                  name="fecha_nacimiento"
+                  type="date"
+                  value={form.fecha_nacimiento}
+                  onChange={handleChange}
+                  required
+                />
+              </label>
+
               {error ? <p className={styles.error}>{error}</p> : null}
 
               <button type="submit" className={styles.cta} disabled={loading}>
-                {loading ? "Abriendo…" : "Continuar por WhatsApp"}
+                {loading ? "Abriendo Bold…" : `Pagar $${plan.precioLabel} con Bold`}
               </button>
-              <p className={styles.foot}>
-                Completa tu pago con el equipo por WhatsApp
-              </p>
+              <p className={styles.foot}>Pago seguro con Bold · Solo membresía Club Gómez</p>
             </form>
           )}
         </section>

@@ -28,4 +28,4 @@ Abre [http://localhost:3000](http://localhost:3000).
 | `/beneficios` | Catálogo de premios |
 | `/formulario?plan=` | Registro / membresía |
 | `/admin-mockup` | Dashboard demo |
-| `/admin` | Panel operativo (legacy, rebrand en curso) |
+| `/admin` | Panel Club Gómez (solicitudes, fechas Motilón, dashboard) |

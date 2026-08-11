@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAnonAuthClient, supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { cargarPerfilPorAuthUserId } from "@/lib/club-gomez/perfil-miembro";
+import { parseFechaNacimiento } from "@/lib/club-gomez/fecha-nacimiento";
 import { enviarBienvenidaRegistro } from "@/lib/email";
 
 function bad(msg, status = 400) {
@@ -32,10 +33,18 @@ export async function POST(request) {
     const ciudad = String(body.ciudad || "").trim() || null;
     const cedulaRaw = String(body.cedula || "").trim();
     const password = String(body.password || "");
+    const fechaNacimiento = parseFechaNacimiento(
+      body.fecha_nacimiento || body.fechaNacimiento
+    );
 
     if (!nombre) return bad("Escribe tu nombre completo.");
     if (!email || !email.includes("@")) return bad("Escribe un email válido.");
     if (!telefono) return bad("Escribe tu WhatsApp.");
+    if (!fechaNacimiento) {
+      return bad(
+        "Escribe una fecha de nacimiento válida (debes tener al menos 12 años)."
+      );
+    }
     if (!password || password.length < 6) {
       return bad("La contraseña debe tener al menos 6 caracteres.");
     }
@@ -65,7 +74,12 @@ export async function POST(request) {
         email,
         password,
         email_confirm: true,
-        user_metadata: { nombre, telefono, ciudad },
+        user_metadata: {
+          nombre,
+          telefono,
+          ciudad,
+          fecha_nacimiento: fechaNacimiento,
+        },
       });
 
     if (authError) {
@@ -88,6 +102,7 @@ export async function POST(request) {
         email,
         telefono,
         ciudad,
+        fecha_nacimiento: fechaNacimiento,
         estado: "pendiente",
         auth_user_id: userId,
       })
@@ -115,6 +130,7 @@ export async function POST(request) {
       nombre,
       telefono,
       ciudad: ciudad || "Colombia",
+      fechaNacimiento,
       estado: "pendiente",
       sinMembresia: true,
       claves: [],
