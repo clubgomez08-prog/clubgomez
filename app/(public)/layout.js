@@ -9,6 +9,14 @@ export const metadata = {
     description:
       "Únete a Club Gómez. Obtén descuentos exclusivos, beneficios sorpresa y sé parte del Club.",
     type: "website",
+    images: [
+      {
+        url: "/og-club-gomez.jpg",
+        width: 1254,
+        height: 1254,
+        alt: "Club Gómez",
+      },
+    ],
   },
 };
 

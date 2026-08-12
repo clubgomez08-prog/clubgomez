@@ -20,12 +20,45 @@ const oswald = Oswald({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://clubgomez.co";
+const OG_IMAGE = "/og-club-gomez.jpg";
+
 export const metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Club Gómez — Membresía exclusiva",
-  description: "Únete a Club Gómez. Descuentos exclusivos y beneficios del Club.",
+  description:
+    "Únete a Club Gómez. Obtén descuentos exclusivos, beneficios sorpresa y sé parte del Club.",
   icons: {
-    icon: [{ url: "/club-gomez/logo-mark.jpg", type: "image/jpeg" }],
+    icon: [
+      { url: "/icon.jpg", type: "image/jpeg" },
+      { url: "/club-gomez/logo-mark.jpg", type: "image/jpeg" },
+    ],
+    shortcut: "/icon.jpg",
     apple: "/club-gomez/logo-mark.jpg",
+  },
+  openGraph: {
+    title: "Club Gómez — Membresía exclusiva",
+    description:
+      "Únete a Club Gómez. Obtén descuentos exclusivos, beneficios sorpresa y sé parte del Club.",
+    url: SITE_URL,
+    siteName: "Club Gómez",
+    type: "website",
+    locale: "es_CO",
+    images: [
+      {
+        url: OG_IMAGE,
+        width: 1254,
+        height: 1254,
+        alt: "Club Gómez",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: "Club Gómez — Membresía exclusiva",
+    description:
+      "Únete a Club Gómez. Obtén descuentos exclusivos, beneficios sorpresa y sé parte del Club.",
+    images: [OG_IMAGE],
   },
 };
 
