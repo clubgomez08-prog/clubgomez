@@ -63,18 +63,24 @@ export default function MiembroPortalPage() {
     };
   }, [router]);
 
+  const [ahora] = useState(() => Date.now());
+
   const progreso = useMemo(() => {
-    if (!miembro?.inicio || !miembro?.fin) return { pct: 0, diasRestantes: 0 };
+    if (!miembro?.inicio || !miembro?.fin) {
+      return { pct: 0, diasRestantes: 0 };
+    }
     const start = new Date(miembro.inicio).getTime();
     const end = new Date(miembro.fin).getTime();
     if (Number.isNaN(start) || Number.isNaN(end)) return { pct: 0, diasRestantes: 0 };
-    const now = Date.now();
     const total = Math.max(end - start, 1);
-    const done = Math.min(Math.max(now - start, 0), total);
+    const done = Math.min(Math.max(ahora - start, 0), total);
     const pct = Math.round((done / total) * 100);
-    const diasRestantes = Math.max(0, Math.ceil((end - now) / (1000 * 60 * 60 * 24)));
+    const diasRestantes = Math.max(
+      0,
+      Math.ceil((end - ahora) / (1000 * 60 * 60 * 24))
+    );
     return { pct, diasRestantes };
-  }, [miembro]);
+  }, [miembro, ahora]);
 
   function cerrarSesion() {
     cerrarSesionLocal();

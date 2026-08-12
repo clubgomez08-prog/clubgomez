@@ -20,15 +20,6 @@
   --font-poppins: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-bebas), Impact, Haettenschweiler, sans-serif;
   --font-headline: var(--font-oswald), ui-sans-serif, system-ui, sans-serif;
-  /* RIFEX brand colors */
-  --color-brand-dark: #071521;
-  --color-brand-navy: #0B1F33;
-  --color-brand-navy2: #1E3A8A;
-  --color-brand-gold: #F2B233;
-  --color-brand-gold2: #FFD166;
-  --color-brand-green: #22C55E;
-  --color-brand-green2: #4ADE80;
-  --color-brand-light: #F8FAFC;
   /* Club Gómez */
   --color-cg-bg: var(--cg-bg);
   --color-cg-lime: var(--cg-lime);

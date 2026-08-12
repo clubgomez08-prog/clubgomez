@@ -47,7 +47,8 @@ function VideoCard({ item, active }) {
     const v = videoRef.current;
     if (!v || active) return;
     v.pause();
-    setPlaying(false);
+    const t = window.setTimeout(() => setPlaying(false), 0);
+    return () => window.clearTimeout(t);
   }, [active]);
 
   function togglePlay(e) {

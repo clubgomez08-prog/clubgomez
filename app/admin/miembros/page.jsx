@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { getAdminAuthHeaders } from "@/lib/auth";
 import { useToast } from "@/components/admin/Toast";
 
@@ -50,6 +51,43 @@ function badgeEstado(estado) {
     >
       {estado || "—"}
     </span>
+  );
+}
+
+function ClavesDetalle({ m, periodo }) {
+  return (
+    <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+      <p className="text-xs text-zinc-500 mb-2">
+        Claves del periodo {periodo}
+        {m.fecha_nacimiento
+          ? ` · Cumpleaños ${formatCumple(m.fecha_nacimiento)}`
+          : ""}
+      </p>
+      {m.claves?.length ? (
+        <div className="flex flex-wrap gap-2">
+          {m.claves.map((c) => (
+            <span
+              key={c}
+              className="px-2.5 py-1 rounded-md font-mono text-sm"
+              style={{
+                background: "rgba(184,227,81,0.12)",
+                color: LIME,
+                border: "1px solid rgba(184,227,81,0.35)",
+              }}
+            >
+              {c}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-zinc-500">Sin claves en este periodo.</p>
+      )}
+      {m.membresia?.vence_en ? (
+        <p className="text-xs text-zinc-500 mt-3">
+          Membresía hasta {formatFecha(m.membresia.vence_en)}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -103,12 +141,23 @@ export default function AdminMiembrosPage() {
   }
 
   return (
-    <div className="py-6 max-w-6xl">
-      <h1 className="text-2xl font-semibold text-white mb-1">Clientes</h1>
-      <p className="text-sm text-zinc-500 mb-6">
-        Datos de cada miembro: contacto, plan, cumpleaños y claves del periodo{" "}
-        {periodo || "actual"}. Clic en una fila para ver las claves.
-      </p>
+    <div className="max-w-6xl">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-white mb-1">Clientes</h1>
+          <p className="text-sm text-zinc-500">
+            Datos de cada miembro: contacto, plan, cumpleaños y claves del periodo{" "}
+            {periodo || "actual"}. Clic en una fila para ver las claves.
+          </p>
+        </div>
+        <Link
+          href="/admin/venta-fisica"
+          className="px-4 py-2 rounded-lg text-sm font-bold shrink-0"
+          style={{ background: LIME, color: "#050607" }}
+        >
+          + Venta física
+        </Link>
+      </div>
 
       <div className="flex flex-wrap gap-3 mb-5 items-end">
         <form onSubmit={aplicarBusqueda} className="flex gap-2 flex-wrap">
@@ -167,7 +216,8 @@ export default function AdminMiembrosPage() {
           </p>
         </div>
       ) : (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+        <>
+        <div className="admin-table-desktop bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full" style={{ minWidth: 860 }}>
               <thead>
@@ -267,39 +317,7 @@ export default function AdminMiembrosPage() {
                       {abierto ? (
                         <tr className="border-b border-zinc-800 bg-zinc-950/60">
                           <td colSpan={7} className="px-4 py-4">
-                            <p className="text-xs text-zinc-500 mb-2">
-                              Claves del periodo {periodo}
-                              {m.fecha_nacimiento
-                                ? ` · Cumpleaños ${formatCumple(m.fecha_nacimiento)}`
-                                : ""}
-                            </p>
-                            {m.claves?.length ? (
-                              <div className="flex flex-wrap gap-2">
-                                {m.claves.map((c) => (
-                                  <span
-                                    key={c}
-                                    className="px-2.5 py-1 rounded-md font-mono text-sm"
-                                    style={{
-                                      background: "rgba(184,227,81,0.12)",
-                                      color: LIME,
-                                      border: "1px solid rgba(184,227,81,0.35)",
-                                    }}
-                                  >
-                                    {c}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="text-sm text-zinc-500">
-                                Sin claves en este periodo.
-                              </p>
-                            )}
-                            {m.membresia?.vence_en ? (
-                              <p className="text-xs text-zinc-500 mt-3">
-                                Membresía hasta{" "}
-                                {formatFecha(m.membresia.vence_en)}
-                              </p>
-                            ) : null}
+                            <ClavesDetalle m={m} periodo={periodo} />
                           </td>
                         </tr>
                       ) : null}
@@ -310,6 +328,47 @@ export default function AdminMiembrosPage() {
             </table>
           </div>
         </div>
+          <div className="admin-cards-mobile">
+            {items.map((m) => {
+              const abierto = expandido === m.id;
+              const cumpleHoy = esCumpleHoy(m.fecha_nacimiento);
+              return (
+                <button
+                  type="button"
+                  key={m.id}
+                  className="admin-client-card text-left w-full"
+                  onClick={() => setExpandido(abierto ? null : m.id)}
+                >
+                  <div className="admin-client-card__top">
+                    <div>
+                      <div className="admin-client-card__name">
+                        {m.nombre || "—"}
+                      </div>
+                      <p className="text-xs text-zinc-500 mt-0.5">
+                        CC {m.cedula || "—"}
+                        {m.ciudad ? ` · ${m.ciudad}` : ""}
+                      </p>
+                    </div>
+                    {badgeEstado(m.estado)}
+                  </div>
+                  <div className="admin-client-card__meta">
+                    <span>{m.email || "—"}</span>
+                    <span>{m.telefono || "—"}</span>
+                    <span>
+                      {m.plan?.nombre || "Sin membresía"} · {m.clavesCount || 0}{" "}
+                      claves
+                    </span>
+                    <span>
+                      Cumple {formatCumple(m.fecha_nacimiento)}
+                      {cumpleHoy ? " · Hoy" : ""}
+                    </span>
+                  </div>
+                  {abierto ? <ClavesDetalle m={m} periodo={periodo} /> : null}
+                </button>
+              );
+            })}
+          </div>
+        </>
       )}
 
       {paginas > 1 ? (

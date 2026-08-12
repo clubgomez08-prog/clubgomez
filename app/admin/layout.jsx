@@ -1,18 +1,32 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import Sidebar from "@/components/admin/Sidebar";
+import Sidebar, { ADMIN_NAV } from "@/components/admin/Sidebar";
 import { ToastProvider } from "@/components/admin/Toast";
 import { getSession } from "@/lib/auth";
+import "./admin.css";
+
+const BOTTOM_NAV = [
+  ADMIN_NAV[0],
+  ADMIN_NAV[2],
+  ADMIN_NAV[4],
+];
 
 export default function AdminLayout({ children }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [session, setSession] = useState(null);
   const [checking, setChecking] = useState(true);
   const [sidebarAbierto, setSidebarAbierto] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
+  const [sidebarPath, setSidebarPath] = useState(pathname);
   const isLoginPage = pathname === "/admin/login";
+
+  if (pathname !== sidebarPath) {
+    setSidebarPath(pathname);
+    if (sidebarAbierto) setSidebarAbierto(false);
+  }
 
   useEffect(() => {
     async function checkAuth() {
@@ -40,95 +54,78 @@ export default function AdminLayout({ children }) {
   }
 
   if (!session && isLoginPage) {
-    return (
-      <ToastProvider>
-        {children}
-      </ToastProvider>
-    );
+    return <ToastProvider>{children}</ToastProvider>;
   }
 
   if (!session) {
     return null;
   }
 
+  const paginaActiva =
+    ADMIN_NAV.find(
+      (item) =>
+        pathname === item.href ||
+        (item.href !== "/admin" && pathname.startsWith(item.href))
+    )?.label || "Panel";
+
   return (
     <ToastProvider>
-    <div className="flex min-h-screen bg-zinc-950">
-      <style>{`
-        @media (max-width: 767px) {
-          .admin-hamburger {
-            display: flex !important;
-          }
-          .admin-overlay {
-            display: block !important;
-          }
-          .admin-sidebar {
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-            position: fixed !important;
-            top: 0;
-            left: 0;
-            height: 100vh;
-            z-index: 150;
-          }
-          .admin-sidebar.abierto {
-            transform: translateX(0);
-          }
-          .admin-main {
-            margin-left: 0 !important;
-            padding-top: 60px !important;
-          }
-        }
-      `}</style>
+      <div className="admin-shell">
+        <header className="admin-topbar">
+          <button
+            type="button"
+            className="admin-topbar__menu"
+            aria-label={sidebarAbierto ? "Cerrar menú" : "Abrir menú"}
+            onClick={() => setSidebarAbierto((v) => !v)}
+          >
+            {sidebarAbierto ? "✕" : "☰"}
+          </button>
+          <div className="admin-topbar__brand">
+            <span className="admin-topbar__title">{paginaActiva}</span>
+            <span className="admin-topbar__sub">Club Gómez</span>
+          </div>
+        </header>
 
-      <button
-        onClick={() => setSidebarAbierto(!sidebarAbierto)}
-        style={{
-          display: "none",
-          position: "fixed",
-          top: "12px",
-          left: "12px",
-          zIndex: 200,
-          backgroundColor: "#1a1a1a",
-          border: "1px solid rgba(184,227,81,0.3)",
-          borderRadius: "8px",
-          color: "#B8E351",
-          fontSize: "20px",
-          width: "40px",
-          height: "40px",
-          cursor: "pointer",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-        className="admin-hamburger"
-      >
-        {sidebarAbierto ? "✕" : "☰"}
-      </button>
+        {sidebarAbierto ? (
+          <div
+            className="admin-overlay is-open"
+            onClick={() => setSidebarAbierto(false)}
+          />
+        ) : null}
 
-      {sidebarAbierto && (
-        <div
-          onClick={() => setSidebarAbierto(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.7)",
-            zIndex: 149,
-            display: "none",
-          }}
-          className="admin-overlay"
+        <Sidebar
+          abierto={sidebarAbierto}
+          onClose={() => setSidebarAbierto(false)}
         />
-      )}
 
-      <Sidebar
-        abierto={sidebarAbierto}
-        onClose={() => setSidebarAbierto(false)}
-        className={sidebarAbierto ? "admin-sidebar abierto" : "admin-sidebar"}
-      />
-      <main className="flex-1 p-8 bg-zinc-900/50 admin-main">{children}</main>
-    </div>
+        <main className="admin-main">{children}</main>
+
+        <nav className="admin-bottom-nav" aria-label="Navegación rápida">
+          {BOTTOM_NAV.map((item) => {
+            const activo =
+              pathname === item.href ||
+              (item.href !== "/admin" && pathname.startsWith(item.href));
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`admin-bottom-nav__item${activo ? " is-active" : ""}`}
+              >
+                <span className="admin-bottom-nav__icon">{item.icon}</span>
+                {item.short}
+              </Link>
+            );
+          })}
+          <button
+            type="button"
+            className="admin-bottom-nav__item"
+            onClick={() => setSidebarAbierto(true)}
+          >
+            <span className="admin-bottom-nav__icon">☰</span>
+            Más
+          </button>
+        </nav>
+      </div>
     </ToastProvider>
   );
 }

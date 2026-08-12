@@ -11,16 +11,16 @@ function ResultadoPagoInner() {
   const orderId = searchParams.get("bold-order-id") || "";
   const txStatus = searchParams.get("bold-tx-status") || "";
 
-  const [estado, setEstado] = useState("loading");
-  const [mensaje, setMensaje] = useState("Confirmando tu pago con Bold…");
+  const [estado, setEstado] = useState(() => (orderId ? "loading" : "error"));
+  const [mensaje, setMensaje] = useState(() =>
+    orderId
+      ? "Confirmando tu pago con Bold…"
+      : "No llegó el identificador del pago."
+  );
   const [clavesCount, setClavesCount] = useState(0);
 
   useEffect(() => {
-    if (!orderId) {
-      setEstado("error");
-      setMensaje("No llegó el identificador del pago.");
-      return;
-    }
+    if (!orderId) return;
 
     let cancelled = false;
     let attempts = 0;

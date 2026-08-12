@@ -10,8 +10,8 @@ export function useReveal(threshold = 0.15) {
     const el = ref.current;
     if (!el) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setVisible(true);
-      return;
+      const t = window.setTimeout(() => setVisible(true), 0);
+      return () => window.clearTimeout(t);
     }
     const obs = new IntersectionObserver(
       ([entry]) => {

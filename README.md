@@ -8,8 +8,8 @@ Landing y sistema de membresías **Club Gómez**.
 
 - Next.js (App Router)
 - Supabase
+- Pasarela de pagos: Bold
 - Resend (emails)
-- Pasarela de pagos: por definir (Wompi / Bold / Mercado Pago)
 
 ## Desarrollo
 
@@ -27,5 +27,5 @@ Abre [http://localhost:3000](http://localhost:3000).
 | `/` | Homepage Club Gómez |
 | `/beneficios` | Catálogo de premios |
 | `/formulario?plan=` | Registro / membresía |
-| `/admin-mockup` | Dashboard demo |
 | `/admin` | Panel Club Gómez (solicitudes, fechas Motilón, dashboard) |
+| `/miembro` | Portal del miembro |

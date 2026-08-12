@@ -91,13 +91,14 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="py-6">
-      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 mb-4">
+    <div>
+      <div className="admin-dash__head">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
+          <p className="admin-dash__kicker">Club Gómez</p>
+          <h1 className="admin-dash__title">Dashboard</h1>
           {periodo ? (
-            <p className="text-xs text-zinc-500 mt-1">
-              Periodo de claves: {periodo} · Pool 0000–9999
+            <p className="admin-dash__meta">
+              Periodo {periodo} · Web 0000–6000 · Físico 6001–9999
             </p>
           ) : null}
         </div>
@@ -106,7 +107,7 @@ export default function AdminDashboardPage() {
             <button
               type="button"
               onClick={() => setFinanzasVisibles(false)}
-              className="px-3 py-2 rounded-lg text-sm font-medium bg-zinc-800 border border-zinc-600 text-zinc-200 hover:bg-zinc-700"
+              className="admin-btn admin-btn--ghost"
             >
               Ocultar finanzas
             </button>
@@ -118,7 +119,7 @@ export default function AdminDashboardPage() {
                 setPasswordFinanzas("");
                 setModalFinanzas(true);
               }}
-              className="px-3 py-2 rounded-lg text-sm font-medium bg-zinc-800 border border-[#B8E351]/40 text-[#B8E351] hover:bg-zinc-700"
+              className="admin-btn admin-btn--lime"
             >
               Ver finanzas
             </button>
@@ -136,9 +137,9 @@ export default function AdminDashboardPage() {
       ) : (
         <>
           <div
-            className="grid gap-3 mb-4"
+            className="grid gap-3 mb-6"
             style={{
-              gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+              gridTemplateColumns: "repeat(auto-fit, minmax(148px, 1fr))",
             }}
           >
             <StatsCard title="Miembros activos" value={stats.miembrosActivos} />
@@ -159,96 +160,72 @@ export default function AdminDashboardPage() {
               }
             />
             <StatsCard
-              title="Claves emitidas (mes)"
-              value={stats.clavesEmitidas}
+              title="Claves web (0000–6000)"
+              value={
+                stats.clavesWebLibres != null
+                  ? `${stats.clavesWebEmitidas || 0} / ${stats.clavesWebLibres} libres`
+                  : stats.clavesEmitidas
+              }
             />
-            <StatsCard title="Claves libres (mes)" value={stats.clavesLibres} />
+            <StatsCard
+              title="Claves físico (6001–9999)"
+              value={
+                stats.clavesFisicoLibres != null
+                  ? `${stats.clavesFisicoEmitidas || 0} / ${stats.clavesFisicoLibres} libres`
+                  : stats.clavesLibres
+              }
+            />
             <StatsCard
               title="Premios programados"
               value={stats.premiosProgramados}
             />
           </div>
 
-          <div className="mb-4">
-            <p
-              className="text-xs font-semibold tracking-wide mb-3"
-              style={{ color: "rgba(248,250,252,0.5)" }}
-            >
-              ÚLTIMOS MIEMBROS
-            </p>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+          <div className="mb-6">
+            <p className="admin-section-label">Últimos miembros</p>
+            <div className="admin-panel">
               {ultimosMiembros.length === 0 ? (
-                <div className="py-6 text-center text-zinc-400 text-sm">
-                  Sin registros recientes
-                </div>
+                <div className="admin-empty">Sin registros recientes</div>
               ) : (
-                <div
-                  className="overflow-x-auto"
-                  style={{ WebkitOverflowScrolling: "touch" }}
-                >
-                  <table className="w-full" style={{ minWidth: "420px" }}>
-                    <thead>
-                      <tr className="border-b border-zinc-800">
-                        <th className="px-3 py-3 text-left text-xs font-medium text-zinc-400 uppercase">
-                          Nombre
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-zinc-400 uppercase">
-                          Email
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-zinc-400 uppercase">
-                          Estado
-                        </th>
-                        <th className="px-3 py-3 text-left text-xs font-medium text-zinc-400 uppercase">
-                          Fecha
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ultimosMiembros.map((m) => (
-                        <tr
-                          key={m.id}
-                          className="border-b border-zinc-800 hover:bg-zinc-800/50"
-                        >
-                          <td className="px-3 py-3 text-white text-sm">
-                            {m.nombre || "—"}
-                          </td>
-                          <td className="px-3 py-3 text-zinc-300 text-sm max-w-[160px] truncate">
-                            {m.email || "—"}
-                          </td>
-                          <td className="px-3 py-3 text-zinc-300 text-sm">
-                            {m.estado || "—"}
-                          </td>
-                          <td className="px-3 py-3 text-zinc-400 text-xs whitespace-nowrap">
-                            {formatFecha(m.created_at)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                ultimosMiembros.map((m) => (
+                  <div key={m.id} className="admin-member-row">
+                    <div className="min-w-0">
+                      <div className="admin-member-row__name">
+                        {m.nombre || "—"}
+                      </div>
+                      <div className="admin-member-row__email">
+                        {m.email || "—"}
+                      </div>
+                    </div>
+                    <div className="admin-member-row__meta">
+                      <span className="admin-chip">{m.estado || "—"}</span>
+                      <div style={{ marginTop: 6 }}>
+                        {formatFecha(m.created_at)}
+                      </div>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </div>
         </>
       )}
 
-      <div className="py-6">
-        <p
-          className="text-xs font-semibold tracking-wide mb-3"
-          style={{ color: "rgba(248,250,252,0.5)" }}
-        >
-          ACCESOS RÁPIDOS
-        </p>
-        <div
-          className="grid gap-3"
-          style={{ gridTemplateColumns: "repeat(2, 1fr)" }}
-        >
+      <div className="py-2">
+        <p className="admin-section-label">Accesos rápidos</p>
+        <div className="admin-quick">
           {[
             {
               href: "/admin/solicitudes",
               icon: "✓",
               label: "Solicitudes Bold",
               color: LIME,
+            },
+            {
+              href: "/admin/venta-fisica",
+              icon: "▣",
+              label: "Venta física",
+              color: "#fbbf24",
             },
             {
               href: "/admin/beneficios",
@@ -269,46 +246,17 @@ export default function AdminDashboardPage() {
               color: "#fbbf24",
             },
           ].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              style={{
-                backgroundColor: "#1a1a1a",
-                border: `1px solid ${item.color}30`,
-                borderRadius: "14px",
-                padding: "16px",
-                textDecoration: "none",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
-                gap: "8px",
-              }}
-            >
+            <Link key={item.href} href={item.href} className="admin-quick__item">
               <span
+                className="admin-quick__icon"
                 style={{
-                  fontSize: "20px",
-                  backgroundColor: `${item.color}15`,
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "10px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  backgroundColor: `${item.color}18`,
                   color: item.color,
                 }}
               >
                 {item.icon}
               </span>
-              <span
-                style={{
-                  color: "#F8FAFC",
-                  fontSize: "13px",
-                  fontWeight: "600",
-                  fontFamily: "Poppins, sans-serif",
-                }}
-              >
-                {item.label}
-              </span>
+              <span className="admin-quick__label">{item.label}</span>
             </Link>
           ))}
         </div>

@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { STICKERS } from "@/lib/club-gomez/stickers";
 import { irASuscribir } from "@/lib/club-gomez/flujo-suscripcion";
+import { getPlanById } from "@/lib/club-gomez/planes";
+import { trackInitiateCheckout } from "@/lib/club-gomez/meta-pixel";
 import { useReveal } from "./hooks";
 
 const PLANES = [
@@ -134,7 +136,10 @@ export default function Membresias() {
               <button
                 type="button"
                 className="cg-plan-card__cta"
-                onClick={() => irASuscribir({ planId: p.id })}
+                onClick={() => {
+                  trackInitiateCheckout(getPlanById(p.id));
+                  irASuscribir({ planId: p.id });
+                }}
               >
                 ¡Suscribirme ya!
               </button>

@@ -1,5 +1,3 @@
-// Nota: assets legacy en /public se migran a Club Gómez
-// Los logos activos son: logo_principal.png y logo_hero.png
 import { Bebas_Neue, Oswald, Poppins } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";

@@ -141,7 +141,7 @@ export default function AdminBeneficiosPage() {
   }
 
   return (
-    <div className="py-6 max-w-4xl">
+    <div className="max-w-4xl">
       <h1 className="text-2xl font-semibold text-white mb-1">
         Fechas de premio
       </h1>

@@ -48,7 +48,7 @@ export default function Header() {
       scrollToId(id);
       return;
     }
-    window.location.href = `/#${id}`;
+    window.location.assign(`/#${id}`);
   }
 
   function handleNav(item) {

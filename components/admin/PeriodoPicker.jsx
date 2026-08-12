@@ -40,10 +40,6 @@ export default function PeriodoPicker({ value, onChange, label = "Periodo" }) {
   const rootRef = useRef(null);
 
   useEffect(() => {
-    if (open) setViewYear(parsePeriodo(value).year);
-  }, [open, value]);
-
-  useEffect(() => {
     function onDoc(e) {
       if (!rootRef.current?.contains(e.target)) setOpen(false);
     }
@@ -80,7 +76,13 @@ export default function PeriodoPicker({ value, onChange, label = "Periodo" }) {
 
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() =>
+          setOpen((v) => {
+            const next = !v;
+            if (next) setViewYear(parsePeriodo(value).year);
+            return next;
+          })
+        }
         aria-expanded={open}
         className="inline-flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left transition-colors"
         style={{

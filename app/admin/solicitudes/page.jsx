@@ -76,7 +76,7 @@ export default function AdminSolicitudesPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="max-w-5xl">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-white">Solicitudes / pagos Bold</h1>
         <p className="text-sm text-zinc-400 mt-1">

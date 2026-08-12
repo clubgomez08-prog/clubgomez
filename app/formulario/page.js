@@ -55,7 +55,6 @@ function FormularioMembresia() {
       }));
     }
     setReady(true);
-    trackInitiateCheckout(plan);
   }, [plan.id]);
 
   function handleChange(e) {
@@ -121,6 +120,7 @@ function FormularioMembresia() {
     }
 
     setLoading(true);
+    trackInitiateCheckout(plan);
     try {
       const res = await fetch("/api/bold/crear-pago", {
         method: "POST",

@@ -1,153 +1,84 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
-import { asignarNumerosParticipante } from "@/lib/numeros";
+import { getPlanById } from "@/lib/club-gomez/planes";
+import { activarMembresiaManual } from "@/lib/club-gomez/activar-membresia";
+import {
+  inventarioClavesPeriodo,
+  parseClavesInput,
+} from "@/lib/club-gomez/claves-pool";
 
 export const dynamic = "force-dynamic";
 
-function normalizarTexto(valor) {
-  if (valor == null) return "";
-  return String(valor).trim();
+function bad(msg, status = 400) {
+  return NextResponse.json({ ok: false, error: msg }, { status });
 }
 
-function normalizarEmail(email) {
-  const e = normalizarTexto(email).toLowerCase();
-  return e || "sin-email@rifex.app";
+export async function GET(request) {
+  try {
+    const user = await verificarSesionAdmin(request);
+    if (!user) return bad("No autorizado", 401);
+    if (supabaseMissingEnv) return bad("Supabase no configurado", 503);
+
+    const inventario = await inventarioClavesPeriodo(supabaseAdmin);
+    return NextResponse.json({ ok: true, inventario });
+  } catch (err) {
+    return bad(err.message || "Error al cargar inventario", 500);
+  }
 }
 
 export async function POST(request) {
-  let participanteCreadoId = null;
-  let numerosAsignados = false;
-
   try {
     const user = await verificarSesionAdmin(request);
-    if (!user) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-    }
+    if (!user) return bad("No autorizado", 401);
+    if (supabaseMissingEnv) return bad("Supabase no configurado", 503);
 
-    let body = {};
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
-    }
+    const body = await request.json().catch(() => ({}));
+    const nombre = String(body.nombre || "").trim();
+    const telefono = String(body.telefono || "").trim();
+    const email = String(body.email || "").trim();
+    const cedula = String(body.cedula || "").trim();
+    const ciudad = String(body.ciudad || "").trim();
+    const plan = getPlanById(body.planId || body.plan_id);
 
-    const rifaId = normalizarTexto(body.rifa_id);
-    const nombre = normalizarTexto(body.nombre);
-    const cedula = normalizarTexto(body.cedula);
-    const email = normalizarEmail(body.email);
-    const telefono = normalizarTexto(body.telefono) || null;
-    const ciudad = normalizarTexto(body.ciudad) || null;
-    const notas = normalizarTexto(body.notas) || null;
-    const cantidadBoletos = Number(body.cantidad_boletos);
+    if (!nombre) return bad("El nombre es obligatorio.");
+    if (!telefono) return bad("El WhatsApp / teléfono es obligatorio.");
 
-    if (!rifaId || !nombre || !cedula || !Number.isFinite(cantidadBoletos)) {
-      return NextResponse.json(
-        {
-          error:
-            "rifa_id, nombre, cedula y cantidad_boletos son obligatorios",
-        },
-        { status: 400 }
+    const clavesManuales = parseClavesInput(body.claves || body.clavesTexto || "");
+    if (!clavesManuales.length) {
+      return bad(
+        `Ingresa las ${plan.claves} claves impresas (6001–9999) que le entregaste.`
       );
     }
 
-    if (cantidadBoletos < 50) {
-      return NextResponse.json(
-        { error: "cantidad_boletos debe ser mayor o igual a 50" },
-        { status: 400 }
-      );
-    }
-
-    const { data: rifa, error: rifaError } = await supabaseAdmin
-      .from("rifas")
-      .select("id, precio_boleto")
-      .eq("id", rifaId)
-      .single();
-
-    if (rifaError || !rifa) {
-      return NextResponse.json({ error: "Rifa no encontrada" }, { status: 404 });
-    }
-
-    const precioBoleto = Number(rifa.precio_boleto);
-    if (!Number.isFinite(precioBoleto) || precioBoleto < 0) {
-      return NextResponse.json(
-        { error: "precio_boleto inválido en la rifa" },
-        { status: 400 }
-      );
-    }
-
-    const loteId = `FISICO-${Date.now()}`;
-    const totalPagado = Math.round(precioBoleto * cantidadBoletos);
-
-    const { data: participante, error: partError } = await supabaseAdmin
-      .from("participantes")
-      .insert({
-        rifa_id: rifa.id,
-        nombre,
-        cedula,
-        email,
-        telefono,
-        ciudad,
-        cantidad_boletos: cantidadBoletos,
-        total_pagado: totalPagado,
-        estado_pago: "aprobado",
-        canal_venta: "fisico",
-        mp_payment_id: loteId,
-        notas,
-      })
-      .select("id")
-      .single();
-
-    if (partError || !participante) {
-      return NextResponse.json(
-        { error: partError?.message || "Error al crear participante" },
-        { status: 500 }
-      );
-    }
-
-    participanteCreadoId = participante.id;
-
-    const numeros = await asignarNumerosParticipante(
-      rifa.id,
-      participante.id,
-      cantidadBoletos
-    );
-
-    numerosAsignados = true;
+    const resultado = await activarMembresiaManual(supabaseAdmin, {
+      planId: plan.id,
+      nombre,
+      cedula: cedula || null,
+      email: email || null,
+      telefono,
+      ciudad: ciudad || null,
+      fechaNacimiento: body.fecha_nacimiento || null,
+      origen: "manual",
+      montoCop: plan.precio,
+      clavesManuales,
+    });
 
     return NextResponse.json({
       ok: true,
-      participante_id: participante.id,
-      numeros: numeros || [],
-      lote_id: loteId,
-      total_pagado: totalPagado,
+      miembro: {
+        id: resultado.miembro?.id,
+        nombre: resultado.miembro?.nombre,
+        telefono: resultado.miembro?.telefono,
+        email: resultado.miembro?.email,
+      },
+      plan: { id: plan.id, nombre: plan.nombre, precio: plan.precio },
+      claves: resultado.claves || [],
+      emailOk: resultado.emailOk,
+      alreadyActive: Boolean(resultado.alreadyActive),
     });
   } catch (err) {
-    if (participanteCreadoId) {
-      try {
-        if (numerosAsignados) {
-          await supabaseAdmin
-            .from("boletos")
-            .delete()
-            .eq("participante_id", participanteCreadoId);
-        }
-
-        await supabaseAdmin
-          .from("participantes")
-          .delete()
-          .eq("id", participanteCreadoId);
-      } catch (rollbackErr) {
-        console.error(
-          "[admin/venta-fisica] Error en rollback:",
-          rollbackErr?.message || rollbackErr
-        );
-      }
-    }
-
-    console.error("[admin/venta-fisica]", err?.message || err);
-    return NextResponse.json(
-      { error: err?.message || "Error al registrar venta física" },
-      { status: 500 }
-    );
+    console.error("[admin/venta-fisica]", err);
+    return bad(err.message || "No se pudo registrar la venta física.", 500);
   }
 }
