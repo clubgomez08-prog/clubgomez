@@ -32,6 +32,7 @@ function FormularioMembresia() {
     nombre: "",
     cedula: "",
     email: "",
+    email2: "",
     telefono: "",
     ciudad: "",
     fecha_nacimiento: "",
@@ -66,6 +67,14 @@ function FormularioMembresia() {
     if (!form.cedula.trim()) return "Escribe tu cédula / documento";
     if (!form.email.trim() || !form.email.includes("@")) {
       return "Escribe un email válido";
+    }
+    if (!sesion?.email) {
+      if (!form.email2.trim()) return "Confirma tu email";
+      if (
+        form.email.trim().toLowerCase() !== form.email2.trim().toLowerCase()
+      ) {
+        return "Los emails no coinciden";
+      }
     }
     if (!form.telefono.trim()) return "Escribe tu WhatsApp";
     if (!form.ciudad.trim()) return "Escribe tu ciudad";
@@ -261,10 +270,13 @@ function FormularioMembresia() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} noValidate>
-              <h2 className={styles.heading}>Tus datos y pago</h2>
+              <h2 className={styles.heading}>
+                {sesion ? "Confirma tus datos y paga" : "Regístrate y completa el pago"}
+              </h2>
               <p className={styles.hint}>
-                Completa el formulario y paga con Bold. Creamos tu acceso al
-                mismo tiempo; al aprobar el pago activamos el plan.
+                {sesion
+                  ? "Revisa tus datos y paga con Bold. Al aprobar el pago activamos tu plan."
+                  : "Crea tu cuenta y paga con Bold en un solo paso. Al aprobar el pago activamos tu plan."}
               </p>
 
               <label className={styles.field}>
@@ -307,6 +319,22 @@ function FormularioMembresia() {
                   required
                 />
               </label>
+
+              {!sesion?.email ? (
+                <label className={styles.field}>
+                  <span className={styles.fieldLabel}>Confirma tu email</span>
+                  <input
+                    className={styles.input}
+                    name="email2"
+                    type="email"
+                    value={form.email2}
+                    onChange={handleChange}
+                    placeholder="Repite tu email"
+                    autoComplete="email"
+                    required
+                  />
+                </label>
+              ) : null}
 
               <label className={styles.field}>
                 <span className={styles.fieldLabel}>Teléfono / WhatsApp</span>
