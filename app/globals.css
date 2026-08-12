@@ -897,10 +897,25 @@ body {
 }
 .cg-plan-card__price {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+.cg-plan-card__before {
+  font-family: var(--font-oswald), sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(18, 20, 16, 0.42);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  letter-spacing: 0.02em;
+}
+.cg-plan-card__now {
+  display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   gap: 2px 4px;
-  margin-bottom: 4px;
 }
 .cg-plan-card__currency {
   font-family: var(--font-bebas), Impact, sans-serif;

@@ -12,6 +12,7 @@ const PLANES = [
     id: "elite",
     nombre: "Élite",
     precio: "90.000",
+    precioAntes: "120.000",
     tag: "Vives la mejor versión del Club",
     badge: "Recomendado por el Club",
     highlight: true,
@@ -25,6 +26,7 @@ const PLANES = [
     id: "selecto",
     nombre: "Selecto",
     precio: "60.000",
+    precioAntes: "100.000",
     tag: "Vas en serio con el Club",
     badge: null,
     highlight: false,
@@ -38,6 +40,7 @@ const PLANES = [
     id: "esencial",
     nombre: "Esencial",
     precio: "30.000",
+    precioAntes: "60.000",
     tag: "Arrancas con el Club",
     badge: null,
     highlight: false,
@@ -127,9 +130,16 @@ export default function Membresias() {
               </ul>
 
               <div className="cg-plan-card__price">
-                <span className="cg-plan-card__currency">$</span>
-                <span className="cg-plan-card__amount">{p.precio}</span>
-                <span className="cg-plan-card__per">/Mensuales</span>
+                {p.precioAntes ? (
+                  <span className="cg-plan-card__before">
+                    ${p.precioAntes}
+                  </span>
+                ) : null}
+                <span className="cg-plan-card__now">
+                  <span className="cg-plan-card__currency">$</span>
+                  <span className="cg-plan-card__amount">{p.precio}</span>
+                  <span className="cg-plan-card__per">/Mensuales</span>
+                </span>
               </div>
               <p className="cg-plan-card__equiv">{p.equiv}</p>
 
