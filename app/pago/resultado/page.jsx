@@ -48,7 +48,11 @@ function ResultadoPagoInner() {
                 : "Pago aprobado y membresía activa. Si no ves el correo, revisá spam."
           );
           trackPurchase(
-            { id: "membresia", nombre: "Membresía Club Gómez", precio: 0 },
+            {
+              id: data.planId || "esencial",
+              nombre: data.planNombre || "Membresía Club Gómez",
+              precio: Number(data.value) || 0,
+            },
             { orderId }
           );
           return;

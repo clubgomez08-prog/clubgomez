@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { consultarVoucherBold } from "@/lib/club-gomez/bold";
 import { activarMembresiaManual } from "@/lib/club-gomez/activar-membresia";
+import { getPlanById } from "@/lib/club-gomez/planes";
 
 function bad(msg, status = 400) {
   return NextResponse.json({ ok: false, error: msg }, { status });
@@ -46,10 +47,15 @@ export async function POST(request) {
     }
 
     if (solicitud.estado === "convertida") {
+      const planYa = getPlanById(solicitud.plan_id);
+      const metaYa = parseNotas(solicitud.notas);
       return NextResponse.json({
         ok: true,
         alreadyActive: true,
         status: "APPROVED",
+        planId: planYa.id,
+        planNombre: planYa.nombre,
+        value: Number(metaYa.amount) || planYa.precio || 0,
         mensaje: "Tu membresía ya estaba activa.",
       });
     }
@@ -105,12 +111,22 @@ export async function POST(request) {
       montoCop: voucher?.total || null,
     });
 
+    const plan = getPlanById(solicitud.plan_id);
+    const value =
+      Number(voucher?.total) ||
+      Number(parseNotas(solicitud.notas).amount) ||
+      plan.precio ||
+      0;
+
     return NextResponse.json({
       ok: true,
       status: "APPROVED",
       emailOk: resultado.emailOk,
       clavesCount: resultado.claves?.length || 0,
       alreadyActive: Boolean(resultado.alreadyActive),
+      planId: plan.id,
+      planNombre: plan.nombre,
+      value,
       mensaje: resultado.alreadyActive
         ? "Membresía ya activa."
         : "Pago aprobado. Membresía activada.",
