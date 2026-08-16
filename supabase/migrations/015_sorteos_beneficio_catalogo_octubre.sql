@@ -37,8 +37,8 @@ FROM (VALUES
   ('2026-10', '2026-10-21', 'TV KALLEY 50" 4K-UHD Smart TV', 'Homepage · tv', 'tv', 'beneficio-tv', false, 'Motilón Noche', 'programado'),
   ('2026-10', '2026-10-13', 'Portátil LENOVO IdeaPad Slim 3 15.3" i5 / 8GB / 512GB', 'Homepage · laptop', 'laptop', 'beneficio-laptop', false, 'Motilón Noche', 'programado'),
   ('2026-10', '2026-10-24', 'Portátil LENOVO IdeaPad Slim 3 15.3" i5 / 8GB / 512GB', 'Homepage · laptop', 'laptop', 'beneficio-laptop', false, 'Motilón Noche', 'programado'),
-  ('2026-10', '2026-10-17', 'Motocicleta AKT Special 110 X', 'Homepage · moto-110', 'moto-110', 'beneficio-moto-110', true, 'Motilón Noche', 'programado'),
-  ('2026-10', '2026-10-31', 'Motocicleta AKT NKD 125', 'Homepage · moto-125', 'moto-125', 'beneficio-moto-125', true, 'Motilón Noche', 'programado')
+  ('2026-10', '2026-10-17', 'Motocicleta Special 110 X', 'Homepage · moto-110', 'moto-110', 'beneficio-moto-110', true, 'Motilón Noche', 'programado'),
+  ('2026-10', '2026-10-31', 'Motocicleta DR 150', 'Homepage · moto-150', 'moto-150', 'beneficio-moto-150', true, 'Motilón Noche', 'programado')
 ) AS v(periodo, fecha_sorteo, premio, descripcion, slug, imagen_key, destacado, loteria, estado)
 WHERE NOT EXISTS (
   SELECT 1

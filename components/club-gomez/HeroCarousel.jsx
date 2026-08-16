@@ -142,7 +142,7 @@ export default function HeroCarousel() {
           <span className="cg-hero__badge-media">
             <img
               src="/club-gomez/badge-motos.png"
-              alt="Special 110 y NKD 125"
+              alt="Special 110 X y DR 150"
             />
           </span>
           <span className="cg-hero__badge-date">17 Y 31 DE OCTUBRE</span>

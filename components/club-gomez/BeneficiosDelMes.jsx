@@ -12,7 +12,6 @@ import { scrollToId, useReveal } from "./hooks";
 
 export default function BeneficiosDelMes() {
   const { ref, className } = useReveal();
-  const [activo, setActivo] = useState(0);
   const [periodoLabel, setPeriodoLabel] = useState("octubre");
   const [destacado, setDestacado] = useState(
     () => beneficiosFallbackDesdeCatalogo("2026-10").destacado
@@ -34,7 +33,6 @@ export default function BeneficiosDelMes() {
         if (data.destacado) setDestacado(data.destacado);
         if (Array.isArray(data.grid) && data.grid.length) {
           setGrid(data.grid);
-          setActivo(0);
         }
       } catch {
         /* fallback ya cargado */
@@ -45,7 +43,6 @@ export default function BeneficiosDelMes() {
     };
   }, []);
 
-  const item = grid[activo] || grid[0];
   const mesCorto = String(periodoLabel || "")
     .replace(/\s+de\s+\d{4}/i, "")
     .trim() || "octubre";
@@ -143,34 +140,18 @@ export default function BeneficiosDelMes() {
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
             gap: 14,
-            marginBottom: 20,
           }}
         >
           {grid.map((b, i) => (
-            <button
+            <article
               key={b.id || b.slug || i}
-              type="button"
-              onClick={() => setActivo(i)}
               style={{
                 textAlign: "left",
-                background:
-                  activo === i
-                    ? "rgba(184,227,81,0.1)"
-                    : "rgba(255,255,255,0.03)",
-                border:
-                  activo === i
-                    ? "1.5px solid rgba(184,227,81,0.55)"
-                    : "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.08)",
                 borderRadius: 18,
                 padding: 12,
-                cursor: "pointer",
                 transition: "transform 0.2s ease, border-color 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-3px)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
               }}
             >
               <BeneficioMedia
@@ -201,45 +182,9 @@ export default function BeneficiosDelMes() {
               >
                 {(b.fechas || []).join(" · ")}
               </p>
-            </button>
+            </article>
           ))}
         </div>
-
-        {item ? (
-          <div
-            style={{
-              background: "rgba(184,227,81,0.06)",
-              border: "1px solid rgba(184,227,81,0.25)",
-              borderRadius: 16,
-              padding: "16px 18px",
-            }}
-          >
-            <p
-              style={{
-                margin: "0 0 4px",
-                fontSize: 12,
-                color: "rgba(255,255,255,0.45)",
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-              }}
-            >
-              Seleccionado
-            </p>
-            <p
-              style={{
-                margin: "0 0 6px",
-                fontWeight: 700,
-                color: "#fff",
-                fontSize: 15,
-              }}
-            >
-              {item.nombre}
-            </p>
-            <p style={{ margin: 0, fontSize: 13, color: "#B8E351" }}>
-              Fechas: {(item.fechas || []).join(" · ")}
-            </p>
-          </div>
-        ) : null}
       </div>
     </section>
   );

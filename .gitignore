@@ -42,3 +42,12 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# raw / heavy assets (no subir a GitHub)
+*.MOV
+*.HEIC
+*.tgz
+heic-convert-*.tgz
+public/club-gomez/ChatGPT Image*
+public/ChatGPT Image*
+public/club-gomez/IMG_*

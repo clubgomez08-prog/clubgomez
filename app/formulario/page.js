@@ -13,6 +13,7 @@ import { rutaLoginConNext } from "@/lib/club-gomez/flujo-suscripcion";
 import {
   trackAddPaymentInfo,
   trackInitiateCheckout,
+  readMetaCookies,
 } from "@/lib/club-gomez/meta-pixel";
 import styles from "./formulario.module.css";
 
@@ -36,8 +37,6 @@ function FormularioMembresia() {
     telefono: "",
     ciudad: "",
     fecha_nacimiento: "",
-    password: "",
-    password2: "",
   });
 
   useEffect(() => {
@@ -79,14 +78,6 @@ function FormularioMembresia() {
     if (!form.telefono.trim()) return "Escribe tu WhatsApp";
     if (!form.ciudad.trim()) return "Escribe tu ciudad";
     if (!form.fecha_nacimiento) return "Indica tu fecha de nacimiento";
-    if (!sesion) {
-      if (!form.password || form.password.length < 6) {
-        return "La contraseña debe tener al menos 6 caracteres";
-      }
-      if (form.password !== form.password2) {
-        return "Las contraseñas no coinciden";
-      }
-    }
     return "";
   }
 
@@ -129,8 +120,16 @@ function FormularioMembresia() {
     }
 
     setLoading(true);
-    trackInitiateCheckout(plan);
+    const metaUser = {
+      nombre: form.nombre.trim(),
+      email: form.email.trim(),
+      telefono: form.telefono.trim(),
+      ciudad: form.ciudad.trim(),
+      fecha_nacimiento: form.fecha_nacimiento,
+    };
+    trackInitiateCheckout(plan, metaUser);
     try {
+      const cookies = readMetaCookies();
       const res = await fetch("/api/bold/crear-pago", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -142,8 +141,10 @@ function FormularioMembresia() {
           telefono: form.telefono.trim(),
           ciudad: form.ciudad.trim(),
           fecha_nacimiento: form.fecha_nacimiento,
-          password: sesion ? undefined : form.password,
+          password: undefined,
           baseUrl: window.location.origin,
+          fbp: cookies.fbp || undefined,
+          fbc: cookies.fbc || undefined,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -157,7 +158,7 @@ function FormularioMembresia() {
         setSesion(data.perfil);
       }
 
-      trackAddPaymentInfo(plan);
+      trackAddPaymentInfo(plan, metaUser);
       await loadBoldScript();
 
       if (!window.BoldCheckout) {
@@ -271,12 +272,12 @@ function FormularioMembresia() {
           ) : (
             <form onSubmit={handleSubmit} noValidate>
               <h2 className={styles.heading}>
-                {sesion ? "Confirma tus datos y paga" : "Regístrate y completa el pago"}
+                {sesion ? "Confirma tus datos y paga" : "Completa tus datos y paga"}
               </h2>
               <p className={styles.hint}>
                 {sesion
                   ? "Revisa tus datos y paga con Bold. Al aprobar el pago activamos tu plan."
-                  : "Crea tu cuenta y paga con Bold en un solo paso. Al aprobar el pago activamos tu plan."}
+                  : "Solo necesitamos tus datos para activar la membresía. Paga con Bold y te enviamos las claves al correo."}
               </p>
 
               <label className={styles.field}>
@@ -375,40 +376,6 @@ function FormularioMembresia() {
                 />
               </label>
 
-              {!sesion ? (
-                <>
-                  <label className={styles.field}>
-                    <span className={styles.fieldLabel}>Crea tu contraseña</span>
-                    <input
-                      className={styles.input}
-                      name="password"
-                      type="password"
-                      value={form.password}
-                      onChange={handleChange}
-                      placeholder="Mínimo 6 caracteres"
-                      autoComplete="new-password"
-                      required
-                    />
-                  </label>
-
-                  <label className={styles.field}>
-                    <span className={styles.fieldLabel}>
-                      Confirmar contraseña
-                    </span>
-                    <input
-                      className={styles.input}
-                      name="password2"
-                      type="password"
-                      value={form.password2}
-                      onChange={handleChange}
-                      placeholder="Repite la contraseña"
-                      autoComplete="new-password"
-                      required
-                    />
-                  </label>
-                </>
-              ) : null}
-
               {error ? <p className={styles.error}>{error}</p> : null}
 
               <button type="submit" className={styles.cta} disabled={loading}>
@@ -424,6 +391,10 @@ function FormularioMembresia() {
                   ¿Ya tienes cuenta?{" "}
                   <Link href={loginHref} className={styles.link}>
                     Inicia sesión
+                  </Link>
+                  {" · "}
+                  <Link href="/miembro/registro" className={styles.link}>
+                    Crear cuenta (opcional)
                   </Link>
                 </p>
               ) : null}

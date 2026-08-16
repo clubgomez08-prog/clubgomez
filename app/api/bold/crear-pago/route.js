@@ -50,27 +50,8 @@ export async function POST(request) {
     }
 
     let cuenta = null;
-    const { data: miembroExistente } = await supabaseAdmin
-      .from("miembros")
-      .select("id, auth_user_id")
-      .ilike("email", email)
-      .maybeSingle();
 
-    if (miembroExistente?.auth_user_id && !password) {
-      // Ya tiene cuenta (sesión en el navegador): solo actualiza datos y sigue al pago
-      await supabaseAdmin
-        .from("miembros")
-        .update({
-          nombre,
-          telefono,
-          ciudad,
-          cedula,
-          fecha_nacimiento: fechaNacimiento,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", miembroExistente.id);
-      cuenta = { created: false, session: null, perfil: null };
-    } else {
+    if (password) {
       try {
         cuenta = await asegurarCuentaParaCheckout({
           nombre,
@@ -87,7 +68,49 @@ export async function POST(request) {
           err.status || 400
         );
       }
+    } else {
+      // Checkout sin registro: solo guarda/actualiza miembro (sin Auth)
+      const { data: miembroExistente } = await supabaseAdmin
+        .from("miembros")
+        .select("id, auth_user_id")
+        .ilike("email", email)
+        .maybeSingle();
+
+      if (miembroExistente) {
+        await supabaseAdmin
+          .from("miembros")
+          .update({
+            nombre,
+            telefono,
+            ciudad,
+            cedula,
+            fecha_nacimiento: fechaNacimiento,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", miembroExistente.id);
+      } else {
+        const { error: miembroErr } = await supabaseAdmin.from("miembros").insert({
+          nombre,
+          email,
+          telefono,
+          ciudad,
+          cedula,
+          fecha_nacimiento: fechaNacimiento,
+          estado: "activo",
+        });
+        if (miembroErr) {
+          console.error("[bold/crear-pago] miembro guest:", miembroErr);
+          return bad(
+            miembroErr.message || "No se pudieron guardar tus datos.",
+            400
+          );
+        }
+      }
+      cuenta = { created: false, session: null, perfil: null };
     }
+
+    const fbp = String(body.fbp || "").trim().slice(0, 200);
+    const fbc = String(body.fbc || "").trim().slice(0, 512);
 
     const orderId = crearOrderId(plan.id);
     const amount = String(plan.precio);
@@ -114,6 +137,8 @@ export async function POST(request) {
           currency,
           canal: "bold",
           fecha_nacimiento: fechaNacimiento,
+          ...(fbp ? { fbp } : {}),
+          ...(fbc ? { fbc } : {}),
         }),
       })
       .select("id")

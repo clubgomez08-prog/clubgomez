@@ -87,7 +87,14 @@ function MiembroRegistroForm() {
         return;
       }
 
-      trackCompleteRegistration({ content_name: form.email });
+      trackCompleteRegistration({
+        content_name: form.email,
+        email: form.email,
+        telefono: form.telefono,
+        nombre: form.nombre,
+        ciudad: form.ciudad,
+        fecha_nacimiento: form.fecha_nacimiento,
+      });
       irDespuesDeAuth(next, "/miembro");
     } finally {
       setLoading(false);

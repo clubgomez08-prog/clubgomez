@@ -53,7 +53,16 @@ function ResultadoPagoInner() {
               nombre: data.planNombre || "Membresía Club Gómez",
               precio: Number(data.value) || 0,
             },
-            { orderId }
+            {
+              orderId,
+              user: {
+                email: data.email,
+                telefono: data.telefono,
+                nombre: data.nombre,
+                ciudad: data.ciudad,
+                fecha_nacimiento: data.fecha_nacimiento,
+              },
+            }
           );
           return;
         }

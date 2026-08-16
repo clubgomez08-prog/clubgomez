@@ -3,6 +3,7 @@ import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { consultarVoucherBold } from "@/lib/club-gomez/bold";
 import { activarMembresiaManual } from "@/lib/club-gomez/activar-membresia";
 import { getPlanById } from "@/lib/club-gomez/planes";
+import { sendPurchaseCapi } from "@/lib/club-gomez/meta-capi";
 
 function bad(msg, status = 400) {
   return NextResponse.json({ ok: false, error: msg }, { status });
@@ -13,6 +14,45 @@ function parseNotas(notas) {
     return notas ? JSON.parse(notas) : {};
   } catch {
     return {};
+  }
+}
+
+function clienteMetaDeSolicitud(solicitud, notas = {}) {
+  return {
+    email: solicitud.email,
+    telefono: solicitud.telefono,
+    nombre: solicitud.nombre,
+    ciudad: solicitud.ciudad,
+    fechaNacimiento: notas.fecha_nacimiento || null,
+    fbp: notas.fbp || null,
+    fbc: notas.fbc || null,
+  };
+}
+
+async function maybeCapiPurchase({
+  request,
+  orderId,
+  plan,
+  value,
+  solicitud,
+  notas,
+}) {
+  const forwarded = request.headers.get("x-forwarded-for") || "";
+  const ua = request.headers.get("user-agent") || "";
+  try {
+    await sendPurchaseCapi({
+      orderId,
+      value,
+      currency: "COP",
+      planId: plan.id,
+      planNombre: plan.nombre,
+      ...clienteMetaDeSolicitud(solicitud, notas),
+      clientIp: forwarded,
+      userAgent: ua,
+      eventSourceUrl: `${process.env.NEXT_PUBLIC_APP_URL || "https://clubgomez.co"}/pago/resultado`,
+    });
+  } catch (err) {
+    console.error("[bold/confirmar] capi:", err?.message || err);
   }
 }
 
@@ -49,13 +89,27 @@ export async function POST(request) {
     if (solicitud.estado === "convertida") {
       const planYa = getPlanById(solicitud.plan_id);
       const metaYa = parseNotas(solicitud.notas);
+      const valueYa = Number(metaYa.amount) || planYa.precio || 0;
+      await maybeCapiPurchase({
+        request,
+        orderId,
+        plan: planYa,
+        value: valueYa,
+        solicitud,
+        notas: metaYa,
+      });
       return NextResponse.json({
         ok: true,
         alreadyActive: true,
         status: "APPROVED",
         planId: planYa.id,
         planNombre: planYa.nombre,
-        value: Number(metaYa.amount) || planYa.precio || 0,
+        value: valueYa,
+        email: solicitud.email,
+        telefono: solicitud.telefono,
+        nombre: solicitud.nombre,
+        ciudad: solicitud.ciudad,
+        fecha_nacimiento: metaYa.fecha_nacimiento || null,
         mensaje: "Tu membresía ya estaba activa.",
       });
     }
@@ -66,7 +120,6 @@ export async function POST(request) {
     } catch (err) {
       console.error("[bold/confirmar] voucher:", err?.message || err);
       if (txStatusHint === "approved") {
-        // En pruebas a veces el voucher tarda; confiamos en el hint + reintento
         return NextResponse.json({
           ok: false,
           pending: true,
@@ -79,7 +132,11 @@ export async function POST(request) {
 
     const paymentStatus = String(voucher?.payment_status || "").toUpperCase();
 
-    if (paymentStatus === "NO_TRANSACTION_FOUND" || paymentStatus === "PROCESSING" || paymentStatus === "PENDING") {
+    if (
+      paymentStatus === "NO_TRANSACTION_FOUND" ||
+      paymentStatus === "PROCESSING" ||
+      paymentStatus === "PENDING"
+    ) {
       return NextResponse.json({
         ok: false,
         pending: true,
@@ -96,6 +153,7 @@ export async function POST(request) {
       });
     }
 
+    const notas = parseNotas(solicitud.notas);
     const resultado = await activarMembresiaManual(supabaseAdmin, {
       planId: solicitud.plan_id,
       nombre: solicitud.nombre,
@@ -103,7 +161,7 @@ export async function POST(request) {
       email: solicitud.email,
       telefono: solicitud.telefono,
       ciudad: solicitud.ciudad,
-      fechaNacimiento: parseNotas(solicitud.notas).fecha_nacimiento || null,
+      fechaNacimiento: notas.fecha_nacimiento || null,
       origen: "bold",
       solicitudId: solicitud.id,
       boldOrderId: orderId,
@@ -113,10 +171,16 @@ export async function POST(request) {
 
     const plan = getPlanById(solicitud.plan_id);
     const value =
-      Number(voucher?.total) ||
-      Number(parseNotas(solicitud.notas).amount) ||
-      plan.precio ||
-      0;
+      Number(voucher?.total) || Number(notas.amount) || plan.precio || 0;
+
+    await maybeCapiPurchase({
+      request,
+      orderId,
+      plan,
+      value,
+      solicitud,
+      notas,
+    });
 
     return NextResponse.json({
       ok: true,
@@ -127,6 +191,11 @@ export async function POST(request) {
       planId: plan.id,
       planNombre: plan.nombre,
       value,
+      email: solicitud.email,
+      telefono: solicitud.telefono,
+      nombre: solicitud.nombre,
+      ciudad: solicitud.ciudad,
+      fecha_nacimiento: notas.fecha_nacimiento || null,
       mensaje: resultado.alreadyActive
         ? "Membresía ya activa."
         : "Pago aprobado. Membresía activada.",

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarFirmaWebhookBold } from "@/lib/club-gomez/bold";
 import { activarMembresiaManual } from "@/lib/club-gomez/activar-membresia";
+import { getPlanById } from "@/lib/club-gomez/planes";
+import { sendPurchaseCapi } from "@/lib/club-gomez/meta-capi";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +19,6 @@ export async function POST(request) {
   const rawBody = await request.text();
   const signature = request.headers.get("x-bold-signature") || "";
 
-  // Responder rápido: validar y procesar
   try {
     if (supabaseMissingEnv) {
       return NextResponse.json({ ok: false }, { status: 503 });
@@ -65,6 +66,7 @@ export async function POST(request) {
       return NextResponse.json({ ok: true, already: true });
     }
 
+    const notas = parseNotas(solicitud.notas);
     await activarMembresiaManual(supabaseAdmin, {
       planId: solicitud.plan_id,
       nombre: solicitud.nombre,
@@ -72,7 +74,7 @@ export async function POST(request) {
       email: solicitud.email,
       telefono: solicitud.telefono,
       ciudad: solicitud.ciudad,
-      fechaNacimiento: parseNotas(solicitud.notas).fecha_nacimiento || null,
+      fechaNacimiento: notas.fecha_nacimiento || null,
       origen: "bold",
       solicitudId: solicitud.id,
       boldOrderId: reference,
@@ -80,10 +82,35 @@ export async function POST(request) {
       montoCop: event?.data?.amount?.total || null,
     });
 
+    try {
+      const plan = getPlanById(solicitud.plan_id);
+      const value =
+        Number(event?.data?.amount?.total) ||
+        Number(notas.amount) ||
+        plan.precio ||
+        0;
+      await sendPurchaseCapi({
+        orderId: reference,
+        value,
+        currency: "COP",
+        planId: plan.id,
+        planNombre: plan.nombre,
+        email: solicitud.email,
+        telefono: solicitud.telefono,
+        nombre: solicitud.nombre,
+        ciudad: solicitud.ciudad,
+        fechaNacimiento: notas.fecha_nacimiento || null,
+        fbp: notas.fbp || null,
+        fbc: notas.fbc || null,
+        eventSourceUrl: `${process.env.NEXT_PUBLIC_APP_URL || "https://clubgomez.co"}/pago/resultado`,
+      });
+    } catch (capiErr) {
+      console.error("[webhooks/bold] capi:", capiErr?.message || capiErr);
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[webhooks/bold]", err);
-    // Igual 200 para evitar tormenta de reintentos por bugs internos; loguear
     return NextResponse.json({ ok: false, error: "internal" }, { status: 200 });
   }
 }
