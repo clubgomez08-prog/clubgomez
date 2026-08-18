@@ -11,6 +11,7 @@ import {
   sanitizarNext,
 } from "@/lib/club-gomez/flujo-suscripcion";
 import { trackCompleteRegistration } from "@/lib/club-gomez/meta-pixel";
+import DateOfBirthSelect from "@/components/club-gomez/DateOfBirthSelect";
 
 const fieldStyle = {
   width: "100%",
@@ -213,13 +214,12 @@ function MiembroRegistroForm() {
 
             <label style={labelStyle}>
               <span style={labelText}>Fecha de nacimiento</span>
-              <input
+              <DateOfBirthSelect
                 name="fecha_nacimiento"
-                type="date"
                 value={form.fecha_nacimiento}
                 onChange={handleChange}
                 required
-                style={fieldStyle}
+                selectStyle={fieldStyle}
               />
               <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>
                 El Club te felicita en tu cumpleaños

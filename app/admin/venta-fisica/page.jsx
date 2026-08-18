@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getAdminAuthHeaders } from "@/lib/auth";
 import { useToast } from "@/components/admin/Toast";
 import { PLANES_MEMBRESIA } from "@/lib/club-gomez/planes";
+import DateOfBirthSelect from "@/components/club-gomez/DateOfBirthSelect";
 
 const LIME = "#B8E351";
 const PLANES = Object.values(PLANES_MEMBRESIA);
@@ -217,14 +218,21 @@ export default function VentaFisicaPage() {
             />
           </label>
 
-          <label className="grid gap-1 text-sm text-zinc-400">
+          <label className="grid gap-1 text-sm text-zinc-400 sm:col-span-2">
             Cumpleaños (opcional)
-            <input
+            <DateOfBirthSelect
               name="fecha_nacimiento"
-              type="date"
               value={form.fecha_nacimiento}
               onChange={onChange}
-              className="px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-700 text-white"
+              selectStyle={{
+                minHeight: 42,
+                backgroundColor: "#09090b",
+                border: "1px solid #3f3f46",
+                borderRadius: 8,
+                color: "#fff",
+                fontSize: 14,
+                padding: "10px 8px",
+              }}
             />
           </label>
 

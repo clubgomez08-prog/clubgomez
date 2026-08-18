@@ -15,6 +15,7 @@ import {
   trackInitiateCheckout,
   readMetaCookies,
 } from "@/lib/club-gomez/meta-pixel";
+import DateOfBirthSelect from "@/components/club-gomez/DateOfBirthSelect";
 import styles from "./formulario.module.css";
 
 function FormularioMembresia() {
@@ -366,10 +367,8 @@ function FormularioMembresia() {
 
               <label className={styles.field}>
                 <span className={styles.fieldLabel}>Fecha de nacimiento</span>
-                <input
-                  className={styles.input}
+                <DateOfBirthSelect
                   name="fecha_nacimiento"
-                  type="date"
                   value={form.fecha_nacimiento}
                   onChange={handleChange}
                   required
