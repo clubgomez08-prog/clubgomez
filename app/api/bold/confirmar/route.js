@@ -110,6 +110,7 @@ export async function POST(request) {
         nombre: solicitud.nombre,
         ciudad: solicitud.ciudad,
         fecha_nacimiento: metaYa.fecha_nacimiento || null,
+        clavesCount: 0,
         mensaje: "Tu membresía ya estaba activa.",
       });
     }

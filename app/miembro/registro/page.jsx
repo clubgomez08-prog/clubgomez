@@ -89,7 +89,7 @@ function MiembroRegistroForm() {
       }
 
       trackCompleteRegistration({
-        content_name: form.email,
+        content_name: "Registro miembro",
         email: form.email,
         telefono: form.telefono,
         nombre: form.nombre,
@@ -163,7 +163,11 @@ function MiembroRegistroForm() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: "grid", gap: 14 }}>
+          <form
+            onSubmit={handleSubmit}
+            noValidate
+            style={{ display: "grid", gap: 14 }}
+          >
             <label style={labelStyle}>
               <span style={labelText}>Nombre completo</span>
               <input

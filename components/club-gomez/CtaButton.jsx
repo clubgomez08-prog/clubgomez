@@ -2,7 +2,7 @@
 
 import { irASuscribir } from "@/lib/club-gomez/flujo-suscripcion";
 import { getPlanById } from "@/lib/club-gomez/planes";
-import { trackInitiateCheckout } from "@/lib/club-gomez/meta-pixel";
+import { trackInitiateCheckoutThenGo } from "@/lib/club-gomez/meta-pixel";
 
 export default function CtaButton({
   children,
@@ -61,14 +61,14 @@ export default function CtaButton({
   function handleClick(e) {
     if (requireAuth) {
       if (planId) {
-        trackInitiateCheckout(getPlanById(planId));
+        e.preventDefault();
+        trackInitiateCheckoutThenGo(getPlanById(planId), () => {
+          irASuscribir({ planId });
+        });
+        return;
       }
       const ok = irASuscribir({ planId });
       if (!ok) {
-        e.preventDefault();
-        return;
-      }
-      if (planId) {
         e.preventDefault();
         return;
       }

@@ -7,15 +7,15 @@ import { useReveal } from "./hooks";
 const FAQ_ITEMS = [
   {
     q: "¿Qué es Club Gómez?",
-    a: "Es una membresía exclusiva: un mes de beneficios con descuentos en negocios aliados, premios del Club y claves con oportunidades según tu plan.",
+    a: "Es una membresía exclusiva: un mes de beneficios con descuentos en negocios aliados, premios del Club y oportunidades según tu plan.",
   },
   {
     q: "¿Cómo me uno al Club?",
-    a: "Elige tu plan (Élite, Selecto o Esencial), completa tus datos y paga con Bold. Al aprobarse el pago activamos tu membresía y te enviamos las claves.",
+    a: "Elige tu plan (Élite, Selecto o Esencial), completa tus datos y paga con Bold. Al aprobarse el pago activamos tu membresía y te enviamos tus oportunidades.",
   },
   {
-    q: "¿Qué son las claves con oportunidades?",
-    a: "Con tu membresía recibes claves (3, 7 o 10 según el plan). Te las enviamos por correo con la información para participar en los beneficios del mes. También puedes compartirlas por WhatsApp desde el mismo correo.",
+    q: "¿Qué son las oportunidades?",
+    a: "Con tu membresía recibes oportunidades (3, 7 o 10 según el plan). Te las enviamos por correo con la información para participar en los beneficios del mes. También puedes compartirlas por WhatsApp desde el mismo correo.",
   },
   {
     q: "¿Puedo participar desde otra ciudad?",

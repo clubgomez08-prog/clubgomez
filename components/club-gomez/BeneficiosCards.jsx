@@ -9,7 +9,7 @@ const TEXTO_BANDA = [
   "Descuentos exclusivos",
   "Membresía Club Gómez",
   "Beneficios del mes",
-  "Claves con oportunidades",
+  "Oportunidades del Club",
   "Premios del Club",
   "Desde cualquier ciudad",
   "Marcas aliadas",

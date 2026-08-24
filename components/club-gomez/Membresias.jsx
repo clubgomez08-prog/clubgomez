@@ -4,7 +4,7 @@ import Image from "next/image";
 import { STICKERS } from "@/lib/club-gomez/stickers";
 import { irASuscribir } from "@/lib/club-gomez/flujo-suscripcion";
 import { getPlanById } from "@/lib/club-gomez/planes";
-import { trackInitiateCheckout } from "@/lib/club-gomez/meta-pixel";
+import { trackInitiateCheckoutThenGo } from "@/lib/club-gomez/meta-pixel";
 import { useReveal } from "./hooks";
 
 const PLANES = [
@@ -119,11 +119,11 @@ export default function Membresias() {
 
               <ul className="cg-plan-card__list">
                 <li>
-                  <strong>{p.claves} claves</strong> con oportunidades
+                  <strong>{p.claves} oportunidades</strong>
                 </li>
                 <li>Un mes de beneficios: descuentos en marcas aliadas.</li>
                 <li>Participas de los premios y entregas del mes.</li>
-                <li>Recibes tus claves por correo al activar.</li>
+                <li>Recibes tus oportunidades por correo al activar.</li>
                 {p.extras.map((ex) => (
                   <li key={ex}>{ex}</li>
                 ))}
@@ -147,8 +147,9 @@ export default function Membresias() {
                 type="button"
                 className="cg-plan-card__cta"
                 onClick={() => {
-                  trackInitiateCheckout(getPlanById(p.id));
-                  irASuscribir({ planId: p.id });
+                  trackInitiateCheckoutThenGo(getPlanById(p.id), () =>
+                    irASuscribir({ planId: p.id })
+                  );
                 }}
               >
                 ¡Suscribirme ya!

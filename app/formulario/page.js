@@ -12,7 +12,8 @@ import {
 import { rutaLoginConNext } from "@/lib/club-gomez/flujo-suscripcion";
 import {
   trackAddPaymentInfo,
-  trackInitiateCheckout,
+  trackCompleteRegistration,
+  trackInitiateCheckoutOnce,
   readMetaCookies,
 } from "@/lib/club-gomez/meta-pixel";
 import DateOfBirthSelect from "@/components/club-gomez/DateOfBirthSelect";
@@ -56,6 +57,8 @@ function FormularioMembresia() {
       }));
     }
     setReady(true);
+    // Si llegó por URL directa (sin clic en plan), igual dispara IC una vez
+    trackInitiateCheckoutOnce(plan);
   }, [plan.id]);
 
   function handleChange(e) {
@@ -88,25 +91,58 @@ function FormularioMembresia() {
         reject(new Error("Solo en navegador"));
         return;
       }
-      if (window.BoldCheckout) {
+
+      let settled = false;
+      let poll = null;
+      let timeout = null;
+
+      const cleanup = () => {
+        if (poll != null) window.clearInterval(poll);
+        if (timeout != null) window.clearTimeout(timeout);
+      };
+
+      const ok = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
         resolve();
+      };
+      const fail = (err) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(err);
+      };
+
+      if (window.BoldCheckout) {
+        ok();
         return;
       }
-      const existing = document.querySelector(
-        'script[src="https://checkout.bold.co/library/boldPaymentButton.js"]'
-      );
+
+      const src = "https://checkout.bold.co/library/boldPaymentButton.js";
+      const existing = document.querySelector(`script[src="${src}"]`);
+
+      timeout = window.setTimeout(() => {
+        fail(new Error("Bold no cargó. Recarga e intenta de nuevo."));
+      }, 12000);
+
+      poll = window.setInterval(() => {
+        if (window.BoldCheckout) ok();
+      }, 50);
+
       if (existing) {
-        existing.addEventListener("load", () => resolve());
+        existing.addEventListener("load", ok);
         existing.addEventListener("error", () =>
-          reject(new Error("Bold script error"))
+          fail(new Error("Bold script error"))
         );
         return;
       }
+
       const js = document.createElement("script");
-      js.src = "https://checkout.bold.co/library/boldPaymentButton.js";
+      js.src = src;
       js.async = true;
-      js.onload = () => resolve();
-      js.onerror = () => reject(new Error("No se pudo cargar Bold"));
+      js.onload = () => ok();
+      js.onerror = () => fail(new Error("No se pudo cargar Bold"));
       document.head.appendChild(js);
     });
   }
@@ -128,7 +164,7 @@ function FormularioMembresia() {
       ciudad: form.ciudad.trim(),
       fecha_nacimiento: form.fecha_nacimiento,
     };
-    trackInitiateCheckout(plan, metaUser);
+    // InitiateCheckout ya se dispara al elegir plan (home). Aquí no se repite.
     try {
       const cookies = readMetaCookies();
       const res = await fetch("/api/bold/crear-pago", {
@@ -157,6 +193,24 @@ function FormularioMembresia() {
       if (data.perfil) {
         guardarSesion(data.perfil, data.session);
         setSesion(data.perfil);
+      }
+
+      // CompleteRegistration: datos de membresía listos (también en checkout invitado).
+      // Antes solo salía en /miembro/registro; por eso Meta lo marcaba sin actividad.
+      try {
+        const regKey = `cg_meta_reg_${metaUser.email.toLowerCase()}_${plan.id}`;
+        if (sessionStorage.getItem(regKey) !== "1") {
+          sessionStorage.setItem(regKey, "1");
+          trackCompleteRegistration({
+            content_name: `Plan ${plan.nombre}`,
+            ...metaUser,
+          });
+        }
+      } catch {
+        trackCompleteRegistration({
+          content_name: `Plan ${plan.nombre}`,
+          ...metaUser,
+        });
       }
 
       trackAddPaymentInfo(plan, metaUser);
@@ -234,10 +288,8 @@ function FormularioMembresia() {
           <p className={styles.tag}>{plan.tag}</p>
           <ul className={styles.facts}>
             <li>
-              <span className={styles.factLabel}>Claves</span>
-              <strong className={styles.factValue}>
-                {plan.claves} con oportunidades
-              </strong>
+              <span className={styles.factLabel}>Oportunidades</span>
+              <strong className={styles.factValue}>{plan.claves}</strong>
             </li>
             <li>
               <span className={styles.factLabel}>Precio</span>
@@ -254,7 +306,7 @@ function FormularioMembresia() {
               <h2 className={styles.heading}>Pasarela Bold abierta</h2>
               <p>
                 Completa el pago del plan <strong>{plan.nombre}</strong> en Bold.
-                Al aprobarse activamos tu membresía y te enviamos las claves.
+                Al aprobarse activamos tu membresía y te enviamos tus oportunidades.
               </p>
               <button
                 type="button"
@@ -278,7 +330,7 @@ function FormularioMembresia() {
               <p className={styles.hint}>
                 {sesion
                   ? "Revisa tus datos y paga con Bold. Al aprobar el pago activamos tu plan."
-                  : "Solo necesitamos tus datos para activar la membresía. Paga con Bold y te enviamos las claves al correo."}
+                  : "Solo necesitamos tus datos para activar la membresía. Paga con Bold y te enviamos tus oportunidades al correo."}
               </p>
 
               <label className={styles.field}>

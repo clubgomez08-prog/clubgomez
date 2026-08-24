@@ -24,6 +24,7 @@ function ResultadoPagoInner() {
 
     let cancelled = false;
     let attempts = 0;
+    let timer = null;
 
     async function confirmar() {
       attempts += 1;
@@ -44,7 +45,7 @@ function ResultadoPagoInner() {
             data.alreadyActive
               ? "Tu membresía ya estaba activa."
               : data.emailOk
-                ? "Pago aprobado. Revisá tu correo: ahí están tus claves."
+                ? "Pago aprobado. Revisá tu correo: ahí están tus oportunidades."
                 : "Pago aprobado y membresía activa. Si no ves el correo, revisá spam."
           );
           trackPurchase(
@@ -69,7 +70,7 @@ function ResultadoPagoInner() {
 
         if (data.pending && attempts < 6) {
           setMensaje("Bold aún procesa el pago… reintentando.");
-          setTimeout(confirmar, 2500);
+          timer = window.setTimeout(confirmar, 2500);
           return;
         }
 
@@ -78,7 +79,7 @@ function ResultadoPagoInner() {
       } catch {
         if (cancelled) return;
         if (attempts < 4) {
-          setTimeout(confirmar, 2500);
+          timer = window.setTimeout(confirmar, 2500);
           return;
         }
         setEstado("error");
@@ -89,6 +90,7 @@ function ResultadoPagoInner() {
     confirmar();
     return () => {
       cancelled = true;
+      if (timer) window.clearTimeout(timer);
     };
   }, [orderId, txStatus]);
 
@@ -135,7 +137,7 @@ function ResultadoPagoInner() {
           {mensaje}
         </p>
         {estado === "ok" && clavesCount > 0 ? (
-          <p style={{ color: "#B8E351", fontWeight: 700 }}>{clavesCount} claves asignadas</p>
+          <p style={{ color: "#B8E351", fontWeight: 700 }}>{clavesCount} oportunidades asignadas</p>
         ) : null}
         {orderId ? (
           <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>
