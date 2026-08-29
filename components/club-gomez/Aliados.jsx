@@ -1,123 +1,114 @@
 "use client";
 
+import Image from "next/image";
 import CtaButton from "./CtaButton";
-import PlaceholderMedia from "./PlaceholderMedia";
 import { scrollToId, useReveal } from "./hooks";
 
 const ALIADOS = [
-  "Aliado 1 (pendiente)",
-  "Aliado 2 (pendiente)",
-  "Aliado 3 (confirmado)",
-  "Aliado 4 (confirmado)",
-  "Aliado 5 (confirmado)",
-  "Aliado 6 (pendiente)",
-  "Aliado 7 (pendiente)",
+  {
+    id: "caobos",
+    nombre: "Veterinaria Caobos",
+    logo: "/club-gomez/aliado-caobos.png",
+    logoAlt: "Logo Veterinaria Caobos",
+    logoBg: "#10160e",
+    logoTall: true,
+    ofertas: [
+      { pct: "30%", texto: "Servicios · atención a cachorros" },
+      { pct: "20%", texto: "Alimento y medicinas" },
+    ],
+    servicios: [
+      "Consulta médica y diagnóstico",
+      "Cirugía y hospitalización",
+      "Estética y bienestar",
+      "Farmacia y tienda",
+      "Transporte a domicilio",
+    ],
+    nota: "Presenta tu membresía Club Gómez al canjear.",
+  },
+  {
+    id: "pochos",
+    nombre: "Plásticos Los Pochos",
+    logo: "/club-gomez/aliado-plasticos-pochos.jpg",
+    logoAlt: "Plásticos Los Pochos",
+    logoBg: "#0a2a6b",
+    logoFit: "cover",
+    ofertas: [{ pct: "5%", texto: "En todo lo relacionado en plásticos" }],
+    servicios: [
+      "Bolsas, vasos, pitillos e icopor",
+      "Variedad y buenos precios",
+      "Cenabastos · Galpón Azul, Cúcuta",
+    ],
+    nota: "Descuento exclusivo para miembros del Club.",
+  },
 ];
 
 export default function Aliados() {
   const { ref, className } = useReveal();
 
   return (
-    <section
-      id="aliados"
-      ref={ref}
-      className={className}
-      style={{
-        background: "#090909",
-        padding: "72px 20px",
-        borderTop: "1px solid rgba(184,227,81,0.08)",
-      }}
-    >
-      <div style={{ maxWidth: 1100, margin: "0 auto", textAlign: "center" }}>
-        <h2
-          style={{
-            fontSize: "clamp(1.6rem, 5vw, 2.4rem)",
-            fontWeight: 900,
-            color: "#fff",
-            margin: "0 0 10px",
-            fontFamily: "Poppins, sans-serif",
-          }}
-        >
-          Descuentos con nuestras{" "}
-          <span style={{ color: "#B8E351" }}>marcas aliadas</span>
-        </h2>
-        <p style={{ color: "rgba(255,255,255,0.6)", margin: "0 0 28px", fontSize: 15 }}>
-          Tu membresía te da acceso directo a beneficios en estos comercios
-        </p>
+    <section id="aliados" ref={ref} className={`cg-aliados ${className}`}>
+      <div className="cg-aliados__inner">
+        <header className="cg-aliados__head">
+          <h2>
+            Aliados <span>comerciales</span>
+          </h2>
+          <p>
+            Descuentos reales en negocios aliados. Con tu membresía activa,
+            presentas tu comprobante y listo.
+          </p>
+        </header>
 
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            background: "rgba(184,227,81,0.1)",
-            border: "1px solid rgba(184,227,81,0.35)",
-            borderRadius: 999,
-            padding: "8px 16px",
-            marginBottom: 32,
-          }}
-        >
-          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>
-            Código de descuento
-          </span>
-          <span
-            style={{
-              fontSize: 16,
-              fontWeight: 900,
-              color: "#B8E351",
-              letterSpacing: "0.12em",
-              fontFamily: "Poppins, sans-serif",
-            }}
-          >
-            TALA
-          </span>
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-            gap: 14,
-            marginBottom: 36,
-          }}
-        >
-          {ALIADOS.map((name, i) => (
-            <div
-              key={name}
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 16,
-                padding: 12,
-                transition: "transform 0.25s ease, border-color 0.25s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-4px)";
-                e.currentTarget.style.borderColor = "rgba(184,227,81,0.4)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
-              }}
-            >
-              <PlaceholderMedia label={`Logo aliado ${i + 1}`} aspect="1" rounded="12px" />
-              <p
-                style={{
-                  margin: "10px 0 0",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: "rgba(255,255,255,0.75)",
-                }}
+        <div className="cg-aliados__grid">
+          {ALIADOS.map((a) => (
+            <article key={a.id} className="cg-aliados__card">
+              <div
+                className={`cg-aliados__logo-wrap${
+                  a.logoTall ? " is-tall" : ""
+                }`}
+                style={{ background: a.logoBg }}
               >
-                {name}
-              </p>
-            </div>
+                <Image
+                  src={a.logo}
+                  alt={a.logoAlt}
+                  fill
+                  sizes="(max-width: 860px) 90vw, 420px"
+                  className={`cg-aliados__logo${
+                    a.logoFit === "cover" ? " is-cover" : ""
+                  }`}
+                />
+              </div>
+
+              <div className="cg-aliados__body">
+                <h3>{a.nombre}</h3>
+
+                <div className="cg-aliados__offers">
+                  {a.ofertas.map((o) => (
+                    <div key={o.pct + o.texto} className="cg-aliados__offer">
+                      <strong>{o.pct}</strong>
+                      <span>{o.texto}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <ul className="cg-aliados__list">
+                  {a.servicios.map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ul>
+
+                <p className="cg-aliados__nota">{a.nota}</p>
+              </div>
+            </article>
           ))}
         </div>
 
-        <CtaButton requireAuth onClick={() => scrollToId("membresias")}>
-          ¡Quiero mi membresía!
-        </CtaButton>
+        <p className="cg-aliados__more">Pronto sumamos más marcas al Club.</p>
+
+        <div className="cg-aliados__cta">
+          <CtaButton requireAuth onClick={() => scrollToId("membresias")}>
+            ¡Quiero mi membresía!
+          </CtaButton>
+        </div>
       </div>
     </section>
   );

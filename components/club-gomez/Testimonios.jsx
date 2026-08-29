@@ -5,8 +5,7 @@ import Image from "next/image";
 import CtaButton from "./CtaButton";
 import { scrollToId, useReveal } from "./hooks";
 
-/** Fotos reales de beneficiados (intercaladas cada 3s) */
-const FOTOS = [
+const FOTOS_ARRIBA = [
   {
     id: "abrazo",
     src: "/club-gomez/testimonio-foto-abrazo.jpg",
@@ -21,6 +20,49 @@ const FOTOS = [
     id: "moto",
     src: "/club-gomez/testimonio-foto-moto.jpg",
     alt: "Beneficiada con moto Suzuki",
+  },
+  {
+    id: "pasillo",
+    src: "/club-gomez/testimonio-foto-pasillo.jpg",
+    alt: "Beneficiados del Club Gómez",
+  },
+  {
+    id: "noche",
+    src: "/club-gomez/testimonio-foto-noche.jpg",
+    alt: "Beneficiados del Club de noche",
+  },
+];
+
+const FOTOS_ABAJO = [
+  {
+    id: "t2",
+    src: "/club-gomez/testimonio-2.jpg",
+    alt: "Testimonio Club Gómez",
+  },
+  {
+    id: "t4",
+    src: "/club-gomez/testimonio-4.jpg",
+    alt: "Beneficiado Club Gómez",
+  },
+  {
+    id: "t4b",
+    src: "/club-gomez/testimonio-4b.jpg",
+    alt: "Momento del Club Gómez",
+  },
+  {
+    id: "t5",
+    src: "/club-gomez/testimonio-5.jpg",
+    alt: "Beneficiados con su premio",
+  },
+  {
+    id: "t5b",
+    src: "/club-gomez/testimonio-5b.jpg",
+    alt: "Entrega Club Gómez",
+  },
+  {
+    id: "pasillo-b",
+    src: "/club-gomez/testimonio-foto-pasillo.jpg",
+    alt: "Beneficiados del Club Gómez",
   },
 ];
 
@@ -39,84 +81,104 @@ const VIDEOS = [
   },
 ];
 
-function VideoCard({ item, active }) {
+function fillLane(items, min = 8) {
+  if (!items.length) return [];
+  const out = [];
+  let i = 0;
+  while (out.length < min) {
+    const item = items[i % items.length];
+    out.push({ ...item, laneKey: `${item.id}-${out.length}` });
+    i += 1;
+  }
+  return out;
+}
+
+function MarqueeRow({ direction = "left", paused = false, label, items, renderItem }) {
+  return (
+    <div
+      className={`cg-testimonios__row cg-testimonios__row--${direction}${
+        paused ? " is-paused" : ""
+      }`}
+      aria-label={label}
+    >
+      <div className="cg-testimonios__track">
+        <div className="cg-testimonios__group">
+          {items.map((item) => renderItem(item, ""))}
+        </div>
+        <div className="cg-testimonios__group" aria-hidden="true">
+          {items.map((item) => renderItem(item, "-dup"))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PhotoCard({ foto }) {
+  return (
+    <figure className="cg-testimonios__shot">
+      <Image
+        src={foto.src}
+        alt={foto.alt}
+        fill
+        sizes="(max-width: 860px) 42vw, 220px"
+        className="cg-testimonios__shot-img"
+      />
+    </figure>
+  );
+}
+
+function VideoTile({ item, playingId, onToggle }) {
   const videoRef = useRef(null);
-  const [playing, setPlaying] = useState(false);
+  const playing = playingId === item.laneKey;
 
   useEffect(() => {
     const v = videoRef.current;
-    if (!v || active) return;
-    v.pause();
-    const t = window.setTimeout(() => setPlaying(false), 0);
-    return () => window.clearTimeout(t);
-  }, [active]);
-
-  function togglePlay(e) {
-    e.stopPropagation();
-    const v = videoRef.current;
     if (!v) return;
-    if (v.paused) {
-      v.play().catch(() => {});
-      setPlaying(true);
-    } else {
+    if (!playing) {
       v.pause();
-      setPlaying(false);
+      return;
     }
+    v.play().catch(() => onToggle(null));
+  }, [playing, onToggle]);
+
+  function handleClick() {
+    onToggle(playing ? null : item.laneKey);
   }
 
   return (
-    <div className={`cg-testimonios__phone${active ? " is-active" : ""}`}>
-      <span className="cg-testimonios__phone-notch" aria-hidden="true" />
-      <button
-        type="button"
-        className={`cg-testimonios__player${playing ? " is-playing" : ""}`}
-        onClick={togglePlay}
-        aria-label={playing ? `Pausar ${item.alt}` : `Reproducir ${item.alt}`}
-      >
-        <video
-          ref={videoRef}
-          className="cg-testimonios__video"
-          src={item.src}
-          poster={item.poster}
-          playsInline
-          preload="metadata"
-          onPlay={() => setPlaying(true)}
-          onPause={() => setPlaying(false)}
-          onEnded={() => setPlaying(false)}
-        />
-        {!playing && (
-          <span className="cg-testimonios__play" aria-hidden="true">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </span>
-        )}
-      </button>
-      <span className="cg-testimonios__phone-bar" aria-hidden="true" />
-    </div>
+    <button
+      type="button"
+      className={`cg-testimonios__vid${playing ? " is-playing" : ""}`}
+      onClick={handleClick}
+      aria-label={playing ? `Pausar ${item.alt}` : `Reproducir ${item.alt}`}
+    >
+      <video
+        ref={videoRef}
+        className="cg-testimonios__vid-media"
+        src={item.src}
+        poster={item.poster}
+        playsInline
+        preload="metadata"
+        onEnded={() => onToggle(null)}
+      />
+      {!playing && (
+        <span className="cg-testimonios__play" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </span>
+      )}
+    </button>
   );
 }
 
 export default function Testimonios() {
   const { ref, className } = useReveal();
-  const [fotoIndex, setFotoIndex] = useState(0);
-  const [videoIndex, setVideoIndex] = useState(0);
+  const [playingId, setPlayingId] = useState(null);
 
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const t = setInterval(() => {
-      setFotoIndex((i) => (i + 1) % FOTOS.length);
-    }, 3000);
-    return () => clearInterval(t);
-  }, []);
-
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const t = setInterval(() => {
-      setVideoIndex((i) => (i + 1) % VIDEOS.length);
-    }, 4500);
-    return () => clearInterval(t);
-  }, []);
+  const fotosTop = fillLane(FOTOS_ARRIBA, 8);
+  const fotosBottom = fillLane(FOTOS_ABAJO, 8);
+  const videosLane = fillLane(VIDEOS, 6);
 
   return (
     <section id="testimonios" ref={ref} className={`cg-testimonios ${className}`}>
@@ -128,62 +190,53 @@ export default function Testimonios() {
             <span>uno de nuestros beneficiados!</span>
           </h2>
           <p className="cg-testimonios__sub">Momentos reales del Club</p>
-          <div className="cg-testimonios__cta">
-            <CtaButton requireAuth onClick={() => scrollToId("membresias")}>
-              ¡Suscribirme ya!
-            </CtaButton>
-          </div>
         </div>
+      </div>
 
-        <div className="cg-testimonios__media">
-          <div className="cg-testimonios__stack" aria-label="Fotos de beneficiados">
-            {FOTOS.map((foto, i) => {
-              const isFront = i === fotoIndex;
-              const isBack = i === (fotoIndex + 1) % FOTOS.length;
-              if (!isFront && !isBack) return null;
-              return (
-                <figure
-                  key={foto.id}
-                  className={`cg-testimonios__photo${
-                    isFront ? " is-front" : " is-back"
-                  }`}
-                >
-                  <Image
-                    src={foto.src}
-                    alt={foto.alt}
-                    fill
-                    sizes="(max-width: 860px) 52vw, 240px"
-                    className="cg-testimonios__photo-img"
-                    priority={isFront}
-                  />
-                </figure>
-              );
-            })}
-          </div>
+      <div className="cg-testimonios__lanes">
+        <MarqueeRow
+          direction="left"
+          label="Fotos de beneficiados"
+          items={fotosTop}
+          renderItem={(foto, suffix) => (
+            <PhotoCard key={`${foto.laneKey}${suffix}`} foto={foto} />
+          )}
+        />
 
-          <div className="cg-testimonios__videos" aria-label="Videos de testimonios">
-            <div
-              className="cg-testimonios__videos-track"
-              style={{ transform: `translateX(-${videoIndex * 100}%)` }}
-            >
-              {VIDEOS.map((item, i) => (
-                <div key={item.id} className="cg-testimonios__videos-slide">
-                  <VideoCard item={item} active={i === videoIndex} />
-                </div>
-              ))}
-            </div>
-            <div className="cg-testimonios__videos-dots">
-              {VIDEOS.map((item, i) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={i === videoIndex ? "is-active" : ""}
-                  aria-label={`Video ${i + 1}`}
-                  onClick={() => setVideoIndex(i)}
-                />
-              ))}
-            </div>
-          </div>
+        <MarqueeRow
+          direction="right"
+          paused={Boolean(playingId)}
+          label="Videos de testimonios"
+          items={videosLane}
+          renderItem={(item, suffix) => (
+            <VideoTile
+              key={`${item.laneKey}${suffix}`}
+              item={
+                suffix
+                  ? { ...item, laneKey: `${item.laneKey}${suffix}` }
+                  : item
+              }
+              playingId={playingId}
+              onToggle={setPlayingId}
+            />
+          )}
+        />
+
+        <MarqueeRow
+          direction="left"
+          label="Más fotos de beneficiados"
+          items={fotosBottom}
+          renderItem={(foto, suffix) => (
+            <PhotoCard key={`${foto.laneKey}${suffix}`} foto={foto} />
+          )}
+        />
+      </div>
+
+      <div className="cg-testimonios__inner cg-testimonios__inner--cta">
+        <div className="cg-testimonios__cta">
+          <CtaButton requireAuth onClick={() => scrollToId("membresias")}>
+            ¡Suscribirme ya!
+          </CtaButton>
         </div>
       </div>
     </section>

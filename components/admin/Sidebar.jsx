@@ -11,7 +11,7 @@ export const ADMIN_NAV = [
   { href: "/admin/venta-fisica", label: "Venta física", short: "Venta", icon: "▣" },
   { href: "/admin/beneficios", label: "Fechas de premio", short: "Premios", icon: "★" },
   { href: "/admin/miembros", label: "Clientes", short: "Clientes", icon: "○" },
-  { href: "/admin/correos", label: "Correos prueba", short: "Correos", icon: "✉" },
+  { href: "/admin/correos", label: "Correos", short: "Correos", icon: "✉" },
 ];
 
 export default function Sidebar({ abierto, onClose, className = "" }) {

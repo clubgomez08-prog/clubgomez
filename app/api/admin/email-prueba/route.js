@@ -53,7 +53,7 @@ export async function POST(request) {
     let label = "";
 
     if (tipo === "claves") {
-      label = "Confirmación + claves";
+      label = "Confirmación + oportunidades";
       data = await enviarTicketCompra(
         {
           id: "00000000-0000-0000-0000-00000000d3d0",

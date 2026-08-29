@@ -2,11 +2,56 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
 import { PLANES_MEMBRESIA } from "@/lib/club-gomez/planes";
-import { periodoDe } from "@/lib/club-gomez/claves-pool";
+import { padClave, periodoDe } from "@/lib/club-gomez/claves-pool";
 
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 20;
+
+/** 1–4 dígitos → búsqueda por clave vendida (ej. 3021, 0421). */
+function esBusquedaClave(raw) {
+  const t = String(raw || "")
+    .trim()
+    .replace(/\s/g, "");
+  return /^\d{1,4}$/.test(t);
+}
+
+async function miembroIdsPorClave(buscar) {
+  const t = String(buscar || "")
+    .trim()
+    .replace(/\s/g, "");
+  const padded = padClave(t);
+  const numeros = [...new Set([padded, t])];
+
+  const { data: clavesRows, error } = await supabaseAdmin
+    .from("claves")
+    .select("membresia_id, numero, periodo")
+    .in("numero", numeros);
+
+  if (error) throw new Error(error.message);
+  if (!clavesRows?.length) {
+    return { miembroIds: [], matched: [] };
+  }
+
+  const memIds = [
+    ...new Set(clavesRows.map((c) => c.membresia_id).filter(Boolean)),
+  ];
+  if (!memIds.length) {
+    return { miembroIds: [], matched: clavesRows };
+  }
+
+  const { data: mems, error: memErr } = await supabaseAdmin
+    .from("membresias")
+    .select("id, miembro_id")
+    .in("id", memIds);
+
+  if (memErr) throw new Error(memErr.message);
+
+  const miembroIds = [
+    ...new Set((mems || []).map((m) => m.miembro_id).filter(Boolean)),
+  ];
+  return { miembroIds, matched: clavesRows };
+}
 
 export async function GET(request) {
   try {
@@ -24,6 +69,8 @@ export async function GET(request) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
+    const periodo = periodoDe();
+    const porClave = esBusquedaClave(buscar);
 
     let query = supabaseAdmin
       .from("miembros")
@@ -35,7 +82,21 @@ export async function GET(request) {
       query = query.eq("estado", estado);
     }
 
-    if (buscar) {
+    if (porClave) {
+      const { miembroIds } = await miembroIdsPorClave(buscar);
+      if (!miembroIds.length) {
+        return NextResponse.json({
+          ok: true,
+          miembros: [],
+          total: 0,
+          paginas: 1,
+          page: 1,
+          periodo,
+          busquedaClave: padClave(buscar),
+        });
+      }
+      query = query.in("id", miembroIds);
+    } else if (buscar) {
       const q = `%${buscar}%`;
       query = query.or(
         `nombre.ilike.${q},email.ilike.${q},telefono.ilike.${q},cedula.ilike.${q}`
@@ -66,7 +127,6 @@ export async function GET(request) {
 
       const memIds = Object.values(membresiasByMiembro).map((m) => m.id);
       if (memIds.length > 0) {
-        const periodo = periodoDe();
         const { data: claves } = await supabaseAdmin
           .from("claves")
           .select("id, membresia_id, numero, periodo")
@@ -78,6 +138,24 @@ export async function GET(request) {
             clavesByMembresia[c.membresia_id] = [];
           }
           clavesByMembresia[c.membresia_id].push(c.numero);
+        }
+
+        // Si buscaron por clave de otro periodo, igual mostrar esa clave encontrada
+        if (porClave) {
+          const padded = padClave(buscar);
+          const { data: extra } = await supabaseAdmin
+            .from("claves")
+            .select("membresia_id, numero, periodo")
+            .in("membresia_id", memIds)
+            .eq("numero", padded);
+          for (const c of extra || []) {
+            if (!clavesByMembresia[c.membresia_id]) {
+              clavesByMembresia[c.membresia_id] = [];
+            }
+            if (!clavesByMembresia[c.membresia_id].includes(c.numero)) {
+              clavesByMembresia[c.membresia_id].push(c.numero);
+            }
+          }
         }
       }
     }
@@ -104,7 +182,8 @@ export async function GET(request) {
       total,
       paginas: Math.max(1, Math.ceil(total / PAGE_SIZE)),
       page,
-      periodo: periodoDe(),
+      periodo,
+      busquedaClave: porClave ? padClave(buscar) : null,
     });
   } catch (err) {
     console.error("[admin/miembros GET]", err);

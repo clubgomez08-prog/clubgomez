@@ -54,7 +54,7 @@ function badgeEstado(estado) {
   );
 }
 
-function ClavesDetalle({ m, periodo }) {
+function ClavesDetalle({ m, periodo, destacarClave }) {
   return (
     <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
       <p className="text-xs text-zinc-500 mb-2">
@@ -65,19 +65,29 @@ function ClavesDetalle({ m, periodo }) {
       </p>
       {m.claves?.length ? (
         <div className="flex flex-wrap gap-2">
-          {m.claves.map((c) => (
-            <span
-              key={c}
-              className="px-2.5 py-1 rounded-md font-mono text-sm"
-              style={{
-                background: "rgba(184,227,81,0.12)",
-                color: LIME,
-                border: "1px solid rgba(184,227,81,0.35)",
-              }}
-            >
-              {c}
-            </span>
-          ))}
+          {m.claves.map((c) => {
+            const hit =
+              destacarClave &&
+              String(c).padStart(4, "0") === String(destacarClave).padStart(4, "0");
+            return (
+              <span
+                key={c}
+                className="px-2.5 py-1 rounded-md font-mono text-sm"
+                style={{
+                  background: hit
+                    ? "rgba(184,227,81,0.28)"
+                    : "rgba(184,227,81,0.12)",
+                  color: LIME,
+                  border: hit
+                    ? "1.5px solid #B8E351"
+                    : "1px solid rgba(184,227,81,0.35)",
+                  fontWeight: hit ? 800 : 500,
+                }}
+              >
+                {c}
+              </span>
+            );
+          })}
         </div>
       ) : (
         <p className="text-sm text-zinc-500">Sin claves en este periodo.</p>
@@ -97,6 +107,7 @@ export default function AdminMiembrosPage() {
   const [total, setTotal] = useState(0);
   const [paginas, setPaginas] = useState(1);
   const [periodo, setPeriodo] = useState("");
+  const [busquedaClave, setBusquedaClave] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expandido, setExpandido] = useState(null);
   const [filtros, setFiltros] = useState({
@@ -118,14 +129,20 @@ export default function AdminMiembrosPage() {
       const res = await fetch(`/api/admin/miembros?${params}`, { headers });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al cargar");
-      setItems(data.miembros || []);
+      const lista = data.miembros || [];
+      setItems(lista);
       setTotal(data.total ?? 0);
       setPaginas(data.paginas ?? 1);
       setPeriodo(data.periodo || "");
+      setBusquedaClave(data.busquedaClave || null);
+      if (lista.length === 1) {
+        setExpandido(lista[0].id);
+      }
     } catch (err) {
       addToast(err.message || "Error al cargar clientes", "error");
       setItems([]);
       setTotal(0);
+      setBusquedaClave(null);
     } finally {
       setLoading(false);
     }
@@ -147,7 +164,8 @@ export default function AdminMiembrosPage() {
           <h1 className="text-2xl font-semibold text-white mb-1">Clientes</h1>
           <p className="text-sm text-zinc-500">
             Datos de cada miembro: contacto, plan, cumpleaños y claves del periodo{" "}
-            {periodo || "actual"}. Clic en una fila para ver las claves.
+            {periodo || "actual"}. Buscá por nombre, email, cédula o número de clave.
+            Clic en una fila para ver las claves.
           </p>
         </div>
         <Link
@@ -164,8 +182,8 @@ export default function AdminMiembrosPage() {
           <input
             value={buscarDraft}
             onChange={(e) => setBuscarDraft(e.target.value)}
-            placeholder="Buscar nombre, email, cédula…"
-            className="px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-sm min-w-[220px]"
+            placeholder="Nombre, email, cédula o clave…"
+            className="px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-sm min-w-[240px]"
           />
           <button
             type="submit"
@@ -175,6 +193,11 @@ export default function AdminMiembrosPage() {
             Buscar
           </button>
         </form>
+        {busquedaClave ? (
+          <span className="text-xs font-mono" style={{ color: LIME }}>
+            Clave {busquedaClave}
+          </span>
+        ) : null}
         <select
           value={filtros.estado}
           onChange={(e) =>
@@ -317,7 +340,11 @@ export default function AdminMiembrosPage() {
                       {abierto ? (
                         <tr className="border-b border-zinc-800 bg-zinc-950/60">
                           <td colSpan={7} className="px-4 py-4">
-                            <ClavesDetalle m={m} periodo={periodo} />
+                            <ClavesDetalle
+                              m={m}
+                              periodo={periodo}
+                              destacarClave={busquedaClave}
+                            />
                           </td>
                         </tr>
                       ) : null}
@@ -363,7 +390,13 @@ export default function AdminMiembrosPage() {
                       {cumpleHoy ? " · Hoy" : ""}
                     </span>
                   </div>
-                  {abierto ? <ClavesDetalle m={m} periodo={periodo} /> : null}
+                  {abierto ? (
+                    <ClavesDetalle
+                      m={m}
+                      periodo={periodo}
+                      destacarClave={busquedaClave}
+                    />
+                  ) : null}
                 </button>
               );
             })}

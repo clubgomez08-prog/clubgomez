@@ -9,7 +9,7 @@ import CtaButton from "./CtaButton";
 
 const NAV = [
   { id: "inicio", label: "Inicio", href: "/" },
-  { id: "beneficios", label: "Beneficios", href: "/beneficios" },
+  { id: "beneficios-mes", label: "Beneficios", href: "/#beneficios-mes" },
   { id: "como-funciona", label: "¿Cómo funciona?", href: "/#como-funciona" },
   { id: "membresias", label: "Membresías", href: "/#membresias" },
 ];
@@ -20,7 +20,7 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const onHome = pathname === "/";
-  const onBeneficios = pathname?.startsWith("/beneficios");
+  const onBeneficiosPage = pathname?.startsWith("/beneficios");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -53,7 +53,6 @@ export default function Header() {
 
   function handleNav(item) {
     setMenuOpen(false);
-    if (item.href === "/beneficios") return;
     if (item.id === "inicio") {
       if (onHome) scrollToId("inicio");
       return;
@@ -74,10 +73,10 @@ export default function Header() {
           zIndex: 100,
           padding: scrolled ? "12px 16px" : "18px 16px",
           transition: "padding 0.25s ease, background 0.25s ease, border-color 0.25s ease",
-          background: scrolled || onBeneficios ? "rgba(5,6,7,0.92)" : "transparent",
-          backdropFilter: scrolled || onBeneficios ? "blur(12px)" : "none",
+          background: scrolled || onBeneficiosPage ? "rgba(5,6,7,0.92)" : "transparent",
+          backdropFilter: scrolled || onBeneficiosPage ? "blur(12px)" : "none",
           borderBottom:
-            scrolled || onBeneficios
+            scrolled || onBeneficiosPage
               ? "1px solid rgba(184,227,81,0.12)"
               : "1px solid transparent",
         }}
@@ -122,9 +121,7 @@ export default function Header() {
           {isDesktop && (
             <nav style={{ display: "flex", alignItems: "center", gap: 4 }}>
               {NAV.map((item) => {
-                const active =
-                  (item.href === "/beneficios" && onBeneficios) ||
-                  (item.id === "inicio" && onHome && !onBeneficios);
+                const active = item.id === "inicio" && onHome && !onBeneficiosPage;
                 const commonStyle = {
                   background: "none",
                   border: "none",
@@ -140,7 +137,7 @@ export default function Header() {
                   textDecorationColor: "#B8E351",
                 };
 
-                if (item.href === "/beneficios" || item.href === "/") {
+                if (item.href === "/") {
                   return (
                     <Link
                       key={item.id}
@@ -287,7 +284,7 @@ export default function Header() {
               </button>
             </div>
             {NAV.map((item) => {
-              if (item.href === "/beneficios" || item.href === "/") {
+              if (item.href === "/") {
                 return (
                   <Link
                     key={item.id}
