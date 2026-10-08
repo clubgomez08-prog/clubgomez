@@ -59,11 +59,11 @@ export async function POST(request) {
           id: "00000000-0000-0000-0000-00000000d3d0",
           nombre,
           email: emailDestino,
-          cantidad_boletos: 3,
-          total_pagado: 30000,
+          cantidad_boletos: 1,
+          total_pagado: 20000,
         },
         { nombre: "Plan Esencial (PRUEBA)" },
-        ["0421", "1783", "9056"],
+        ["845"],
         { useParticipantEmail: true }
       );
     } else if (tipo === "cumpleanos") {

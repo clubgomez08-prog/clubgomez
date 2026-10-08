@@ -10,7 +10,7 @@ const PLANTILLAS = [
   {
     id: "claves",
     titulo: "Confirmación + oportunidades",
-    desc: "Al activar membresía: mes, beneficios con fechas, aliados comerciales y oportunidades.",
+    desc: "Al activar membresía: Crypton 0 km más $1.000.000, Boyacá y tus oportunidades.",
   },
   {
     id: "bienvenida",

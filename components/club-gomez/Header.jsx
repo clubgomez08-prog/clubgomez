@@ -6,10 +6,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { scrollToId } from "./hooks";
 import CtaButton from "./CtaButton";
+import { SHOW_BENEFICIOS_DEL_MES } from "./BeneficiosDelMes";
 
 const NAV = [
   { id: "inicio", label: "Inicio", href: "/" },
-  { id: "beneficios-mes", label: "Beneficios", href: "/#beneficios-mes" },
+  SHOW_BENEFICIOS_DEL_MES
+    ? { id: "beneficios-mes", label: "Beneficios", href: "/#beneficios-mes" }
+    : { id: "destacado-club", label: "Beneficios", href: "/#destacado-club" },
   { id: "como-funciona", label: "¿Cómo funciona?", href: "/#como-funciona" },
   { id: "membresias", label: "Membresías", href: "/#membresias" },
 ];
@@ -71,14 +74,13 @@ export default function Header() {
           left: 0,
           right: 0,
           zIndex: 100,
-          padding: scrolled ? "12px 16px" : "18px 16px",
-          transition: "padding 0.25s ease, background 0.25s ease, border-color 0.25s ease",
-          background: scrolled || onBeneficiosPage ? "rgba(5,6,7,0.92)" : "transparent",
-          backdropFilter: scrolled || onBeneficiosPage ? "blur(12px)" : "none",
-          borderBottom:
-            scrolled || onBeneficiosPage
-              ? "1px solid rgba(184,227,81,0.12)"
-              : "1px solid transparent",
+          padding: scrolled ? "8px 16px" : "10px 16px",
+          transition: "padding 0.25s ease, background 0.25s ease",
+          background: scrolled
+            ? "rgba(5,6,7,0.42)"
+            : "linear-gradient(180deg, rgba(5,6,7,0.45) 0%, rgba(5,6,7,0.12) 70%, transparent 100%)",
+          backdropFilter: scrolled ? "blur(10px)" : "blur(6px)",
+          borderBottom: "1px solid transparent",
         }}
       >
         <div
@@ -110,7 +112,7 @@ export default function Header() {
               width={220}
               height={80}
               style={{
-                height: "clamp(52px, 7vw, 72px)",
+                height: "clamp(40px, 5.2vw, 52px)",
                 width: "auto",
                 objectFit: "contain",
               }}
@@ -125,16 +127,17 @@ export default function Header() {
                 const commonStyle = {
                   background: "none",
                   border: "none",
-                  color: active ? "#B8E351" : "rgba(255,255,255,0.75)",
-                  fontSize: 13,
+                  color: active ? "#B8E351" : "rgba(255,255,255,0.92)",
+                  fontSize: 12,
                   fontWeight: 600,
-                  padding: "8px 12px",
+                  padding: "6px 10px",
                   cursor: "pointer",
                   fontFamily: "Poppins, sans-serif",
                   borderRadius: 8,
                   textDecoration: active ? "underline" : "none",
                   textUnderlineOffset: 6,
                   textDecorationColor: "#B8E351",
+                  textShadow: "0 1px 10px rgba(0,0,0,0.65)",
                 };
 
                 if (item.href === "/") {
@@ -172,10 +175,10 @@ export default function Header() {
                   style={{
                     display: "inline-flex",
                     color: "#fff",
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: 600,
                     textDecoration: "none",
-                    padding: "8px 14px",
+                    padding: "6px 12px",
                     borderRadius: 999,
                     border: "1px solid rgba(255,255,255,0.2)",
                     fontFamily: "Poppins, sans-serif",
@@ -188,10 +191,10 @@ export default function Header() {
                   style={{
                     display: "inline-flex",
                     color: "#050607",
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: 700,
                     textDecoration: "none",
-                    padding: "8px 16px",
+                    padding: "6px 14px",
                     borderRadius: 999,
                     background: "#B8E351",
                     fontFamily: "Poppins, sans-serif",
@@ -207,8 +210,8 @@ export default function Header() {
                 onClick={() => setMenuOpen(true)}
                 aria-label="Abrir menú"
                 style={{
-                  width: 42,
-                  height: 42,
+                  width: 36,
+                  height: 36,
                   borderRadius: 10,
                   border: "1px solid rgba(184,227,81,0.35)",
                   background: "rgba(9,9,9,0.8)",

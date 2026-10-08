@@ -7,7 +7,7 @@ import { useReveal } from "./hooks";
 const FAQ_ITEMS = [
   {
     q: "¿Qué es Club Gómez?",
-    a: "Es una membresía exclusiva: un mes de beneficios con descuentos en negocios aliados, premios del Club y oportunidades según tu plan.",
+    a: "Es una membresía exclusiva: oportunidades según tu plan y participación en los premios del mes, ahora la Yamaha Crypton 0 km más $1.000.000.",
   },
   {
     q: "¿Cómo me uno al Club?",
@@ -15,7 +15,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "¿Qué son las oportunidades?",
-    a: "Con tu membresía recibes oportunidades (3, 7 o 10 según el plan). Te las enviamos por correo con la información para participar en los beneficios del mes. También puedes compartirlas por WhatsApp desde el mismo correo.",
+    a: "Son 1, 3 o 6 números de 3 dígitos, según tu plan. El 17 de octubre se toman los últimos 3 de la Lotería de Boyacá. Te las enviamos por correo al activar.",
   },
   {
     q: "¿Puedo participar desde otra ciudad?",

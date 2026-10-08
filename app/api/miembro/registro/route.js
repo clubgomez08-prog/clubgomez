@@ -40,11 +40,6 @@ export async function POST(request) {
     if (!nombre) return bad("Escribe tu nombre completo.");
     if (!email || !email.includes("@")) return bad("Escribe un email válido.");
     if (!telefono) return bad("Escribe tu WhatsApp.");
-    if (!fechaNacimiento) {
-      return bad(
-        "Escribe una fecha de nacimiento válida (debes tener al menos 12 años)."
-      );
-    }
     if (!password || password.length < 6) {
       return bad("La contraseña debe tener al menos 6 caracteres.");
     }
@@ -78,7 +73,7 @@ export async function POST(request) {
           nombre,
           telefono,
           ciudad,
-          fecha_nacimiento: fechaNacimiento,
+          ...(fechaNacimiento ? { fecha_nacimiento: fechaNacimiento } : {}),
         },
       });
 
@@ -102,7 +97,7 @@ export async function POST(request) {
         email,
         telefono,
         ciudad,
-        fecha_nacimiento: fechaNacimiento,
+        ...(fechaNacimiento ? { fecha_nacimiento: fechaNacimiento } : {}),
         estado: "pendiente",
         auth_user_id: userId,
       })

@@ -147,8 +147,8 @@ export default function AdminBeneficiosPage() {
       </h1>
       <p className="text-sm text-zinc-500 mb-6">
         Estas fechas son las mismas que ve el público en la homepage. Cada
-        premio va ligado a un día: el número de {LOTERIA_INTERNA} (4 dígitos)
-        decide el ganador entre las claves del mes.
+        premio va ligado a un día: los últimos 3 dígitos de {LOTERIA_INTERNA}
+        deciden el ganador entre las claves del mes.
       </p>
 
       <div className="flex flex-wrap items-end gap-3 mb-6">
@@ -264,7 +264,7 @@ export default function AdminBeneficiosPage() {
 
                 {b.resultado ? (
                   <p className="text-sm text-zinc-300 mt-3 font-mono">
-                    Resultado Motilón:{" "}
+                    Resultado (últimos 3):{" "}
                     <strong style={{ color: LIME }}>{b.resultado}</strong>
                     {b.ganador ? (
                       <>
@@ -280,17 +280,17 @@ export default function AdminBeneficiosPage() {
                 {b.estado === "programado" ? (
                   <div className="mt-4 flex flex-wrap items-end gap-2">
                     <label className="grid gap-1 text-xs text-zinc-400">
-                      Resultado (4 dígitos)
+                      Resultado lotería (últimos 3)
                       <input
                         value={resultadoDraft[b.id] || ""}
                         onChange={(e) =>
                           setResultadoDraft((d) => ({
                             ...d,
-                            [b.id]: e.target.value.replace(/\D/g, "").slice(0, 4),
+                            [b.id]: e.target.value.replace(/\D/g, "").slice(0, 5),
                           }))
                         }
-                        placeholder="0000"
-                        maxLength={4}
+                        placeholder="1234"
+                        maxLength={5}
                         className="px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-700 text-white font-mono w-28"
                       />
                     </label>

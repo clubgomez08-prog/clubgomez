@@ -68,7 +68,8 @@ function ClavesDetalle({ m, periodo, destacarClave }) {
           {m.claves.map((c) => {
             const hit =
               destacarClave &&
-              String(c).padStart(4, "0") === String(destacarClave).padStart(4, "0");
+              String(c).replace(/\D/g, "").slice(-3).padStart(3, "0") ===
+              String(destacarClave).replace(/\D/g, "").slice(-3).padStart(3, "0");
             return (
               <span
                 key={c}

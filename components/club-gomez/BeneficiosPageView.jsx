@@ -75,8 +75,8 @@ export default function BeneficiosPageView() {
               <span>MEMBRESÍA</span>
             </h1>
             <p className="cg-benef-hero__sub">
-              Motos, tech, hogar y más. Activa tu membresía: descuentos, premios
-              del mes y oportunidades enviadas a tu correo.
+              Yamaha Crypton 0 km más $1.000.000. 17 de octubre, Lotería de
+              Boyacá. Activa tu membresía y recibe tus oportunidades por correo.
             </p>
             <div className="cg-benef-hero__actions">
               <CtaButton href="/#membresias" requireAuth>

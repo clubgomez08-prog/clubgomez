@@ -16,7 +16,6 @@ import {
   trackInitiateCheckoutOnce,
   readMetaCookies,
 } from "@/lib/club-gomez/meta-pixel";
-import DateOfBirthSelect from "@/components/club-gomez/DateOfBirthSelect";
 import styles from "./formulario.module.css";
 
 function FormularioMembresia() {
@@ -38,7 +37,6 @@ function FormularioMembresia() {
     email2: "",
     telefono: "",
     ciudad: "",
-    fecha_nacimiento: "",
   });
 
   useEffect(() => {
@@ -52,8 +50,6 @@ function FormularioMembresia() {
         email: s.email || prev.email,
         telefono: s.telefono || prev.telefono,
         ciudad: s.ciudad || prev.ciudad,
-        fecha_nacimiento:
-          s.fechaNacimiento || s.fecha_nacimiento || prev.fecha_nacimiento,
       }));
     }
     setReady(true);
@@ -81,7 +77,6 @@ function FormularioMembresia() {
     }
     if (!form.telefono.trim()) return "Escribe tu WhatsApp";
     if (!form.ciudad.trim()) return "Escribe tu ciudad";
-    if (!form.fecha_nacimiento) return "Indica tu fecha de nacimiento";
     return "";
   }
 
@@ -162,7 +157,6 @@ function FormularioMembresia() {
       email: form.email.trim(),
       telefono: form.telefono.trim(),
       ciudad: form.ciudad.trim(),
-      fecha_nacimiento: form.fecha_nacimiento,
     };
     // InitiateCheckout ya se dispara al elegir plan (home). Aquí no se repite.
     try {
@@ -177,7 +171,6 @@ function FormularioMembresia() {
           email: form.email.trim(),
           telefono: form.telefono.trim(),
           ciudad: form.ciudad.trim(),
-          fecha_nacimiento: form.fecha_nacimiento,
           password: undefined,
           baseUrl: window.location.origin,
           fbp: cookies.fbp || undefined,
@@ -329,8 +322,8 @@ function FormularioMembresia() {
               </h2>
               <p className={styles.hint}>
                 {sesion
-                  ? "Revisa tus datos y paga con Bold. Al aprobar el pago activamos tu plan."
-                  : "Solo necesitamos tus datos para activar la membresía. Paga con Bold y te enviamos tus oportunidades al correo."}
+                  ? "Revisa tus datos. Al confirmar el pago activamos tu plan y te enviamos tus oportunidades al correo."
+                  : "Solo necesitamos tus datos para activar la membresía. Te enviamos tus oportunidades al correo."}
               </p>
 
               <label className={styles.field}>
@@ -413,16 +406,6 @@ function FormularioMembresia() {
                   onChange={handleChange}
                   placeholder="Tu ciudad"
                   autoComplete="address-level2"
-                  required
-                />
-              </label>
-
-              <label className={styles.field}>
-                <span className={styles.fieldLabel}>Fecha de nacimiento</span>
-                <DateOfBirthSelect
-                  name="fecha_nacimiento"
-                  value={form.fecha_nacimiento}
-                  onChange={handleChange}
                   required
                 />
               </label>

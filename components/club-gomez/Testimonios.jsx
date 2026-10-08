@@ -7,19 +7,43 @@ import { scrollToId, useReveal } from "./hooks";
 
 const FOTOS_ARRIBA = [
   {
-    id: "abrazo",
-    src: "/club-gomez/testimonio-foto-abrazo.jpg",
-    alt: "Beneficiados celebrando con su televisor",
+    id: "n3187",
+    src: "/club-gomez/testimonio-3187.jpg",
+    alt: "Entrega de moto Club Gómez",
   },
   {
     id: "tv",
-    src: "/club-gomez/testimonio-foto-tv-pie.jpg",
+    src: "/club-gomez/testimonio-5.jpg",
     alt: "Beneficiados con televisor",
+  },
+  {
+    id: "n3186",
+    src: "/club-gomez/testimonio-3186.jpg",
+    alt: "Beneficiado con moto Club Gómez",
+  },
+  {
+    id: "noche",
+    src: "/club-gomez/testimonio-foto-noche.jpg",
+    alt: "Beneficiados del Club de noche",
   },
   {
     id: "moto",
     src: "/club-gomez/testimonio-foto-moto.jpg",
     alt: "Beneficiada con moto Suzuki",
+  },
+];
+
+const FOTOS_ABAJO = [
+  {
+    id: "n2186",
+    src: "/club-gomez/testimonio-2186.jpg",
+    alt: "Entrega de beneficios Club Gómez",
+    objectPosition: "center 22%",
+  },
+  {
+    id: "abrazo",
+    src: "/club-gomez/testimonio-2.jpg",
+    alt: "Beneficiados celebrando",
   },
   {
     id: "pasillo",
@@ -27,42 +51,9 @@ const FOTOS_ARRIBA = [
     alt: "Beneficiados del Club Gómez",
   },
   {
-    id: "noche",
-    src: "/club-gomez/testimonio-foto-noche.jpg",
-    alt: "Beneficiados del Club de noche",
-  },
-];
-
-const FOTOS_ABAJO = [
-  {
-    id: "t2",
-    src: "/club-gomez/testimonio-2.jpg",
-    alt: "Testimonio Club Gómez",
-  },
-  {
-    id: "t4",
-    src: "/club-gomez/testimonio-4.jpg",
-    alt: "Beneficiado Club Gómez",
-  },
-  {
-    id: "t4b",
-    src: "/club-gomez/testimonio-4b.jpg",
-    alt: "Momento del Club Gómez",
-  },
-  {
-    id: "t5",
-    src: "/club-gomez/testimonio-5.jpg",
-    alt: "Beneficiados con su premio",
-  },
-  {
-    id: "t5b",
-    src: "/club-gomez/testimonio-5b.jpg",
-    alt: "Entrega Club Gómez",
-  },
-  {
-    id: "pasillo-b",
-    src: "/club-gomez/testimonio-foto-pasillo.jpg",
-    alt: "Beneficiados del Club Gómez",
+    id: "abrazo-foto",
+    src: "/club-gomez/testimonio-foto-abrazo.jpg",
+    alt: "Celebración Club Gómez",
   },
 ];
 
@@ -83,12 +74,25 @@ const VIDEOS = [
 
 function fillLane(items, min = 8) {
   if (!items.length) return [];
+  const unique = [];
+  const seen = new Set();
+  for (const item of items) {
+    if (seen.has(item.src)) continue;
+    seen.add(item.src);
+    unique.push(item);
+  }
   const out = [];
   let i = 0;
-  while (out.length < min) {
-    const item = items[i % items.length];
+  while (out.length < Math.max(min, unique.length)) {
+    const item = unique[i % unique.length];
+    const prev = out[out.length - 1];
+    if (prev?.src === item.src && unique.length > 1) {
+      i += 1;
+      continue;
+    }
     out.push({ ...item, laneKey: `${item.id}-${out.length}` });
     i += 1;
+    if (i > unique.length * 24) break;
   }
   return out;
 }
@@ -122,6 +126,7 @@ function PhotoCard({ foto }) {
         fill
         sizes="(max-width: 860px) 42vw, 220px"
         className="cg-testimonios__shot-img"
+        style={foto.objectPosition ? { objectPosition: foto.objectPosition } : undefined}
       />
     </figure>
   );

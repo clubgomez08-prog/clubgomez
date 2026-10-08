@@ -54,7 +54,7 @@ export default function VentaFisicaPage() {
       return;
     }
     if (!form.clavesTexto.trim()) {
-      addToast("Ingresa las claves impresas que le entregaste (6001–9999).", "error");
+      addToast("Ingresa las claves impresas que le entregaste (000–700).", "error");
       return;
     }
     setSubmitting(true);
@@ -114,9 +114,9 @@ export default function VentaFisicaPage() {
     <div className="max-w-3xl">
       <h1 className="text-2xl font-semibold text-white mb-1">Venta física</h1>
       <p className="text-sm text-zinc-500 mb-6">
-        Daniel imprime las claves <strong className="text-zinc-300">6001–9999</strong>{" "}
-        y las entrega en persona. Aquí registras al cliente e <strong className="text-zinc-300">ingresas esas claves</strong>.
-        Obligatorio: nombre, teléfono y las claves. La web solo usa 0000–6000.
+        Daniel vende en físico el <strong className="text-zinc-300">000–700</strong>.
+        Aquí registras al cliente e <strong className="text-zinc-300">ingresas esas claves</strong>.
+        Obligatorio: nombre, teléfono y las claves. La web solo reparte el <strong className="text-zinc-300">701–999</strong>.
       </p>
 
       {fisico ? (
@@ -237,20 +237,16 @@ export default function VentaFisicaPage() {
           </label>
 
           <label className="grid gap-1 text-sm text-zinc-400 sm:col-span-2">
-            Claves impresas * ({plan.claves} del plan {plan.nombre}, rango 6001–9999)
+            Claves impresas * ({plan.claves} del plan {plan.nombre}, rango 000–700)
             <textarea
               required
               name="clavesTexto"
               value={form.clavesTexto}
               onChange={onChange}
               rows={3}
-              placeholder={
-                plan.claves === 3
-                  ? "Ej: 6001 6002 6003"
-                  : plan.claves === 7
-                    ? "Ej: 6101, 6102, 6103, 6104, 6105, 6106, 6107"
-                    : "Escribe las claves separadas por espacio o coma"
-              }
+              placeholder={`Ej: ${Array.from({ length: plan.claves }, (_, i) =>
+                String(i + 1).padStart(3, "0")
+              ).join(" ")}`}
               className="px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-700 text-white font-mono"
             />
             <span className="text-xs text-zinc-600">

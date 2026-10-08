@@ -96,7 +96,7 @@ export default function MiembroPortalPage() {
         planNombre: miembro.planNombre,
         claves: miembro.claves,
       },
-      { incluirMotilon: false }
+        { incluirMotilon: true }
     );
     window.open(url, "_blank", "noopener,noreferrer");
   }
@@ -152,8 +152,8 @@ export default function MiembroPortalPage() {
             <div className={styles.pendingBox}>
               <p className={styles.pendingTitle}>Aún no tienes membresía activa</p>
               <p className={styles.pendingText}>
-                Ya puedes usar tu cuenta. Cuando quieras, elige un plan y activa tus claves y
-                beneficios del mes.
+                Ya puedes usar tu cuenta. Cuando quieras, elige un plan y entra a la
+                Crypton 0 km más $1.000.000.
               </p>
               <Link href="/#membresias" className={styles.cta}>
                 Ver planes y suscribirme
@@ -163,15 +163,11 @@ export default function MiembroPortalPage() {
             <div className={styles.stats}>
               <div className={styles.stat}>
                 <span className={styles.statVal}>{miembro.clavesCount}</span>
-                <span className={styles.statLbl}>Claves</span>
+                <span className={styles.statLbl}>Oportunidades</span>
               </div>
               <div className={styles.stat}>
                 <span className={styles.statVal}>{progreso.diasRestantes}</span>
                 <span className={styles.statLbl}>Días resto</span>
-              </div>
-              <div className={styles.stat}>
-                <span className={styles.statVal}>{miembro.descuentosUsados}</span>
-                <span className={styles.statLbl}>Descuentos</span>
               </div>
             </div>
           )}
@@ -208,9 +204,9 @@ export default function MiembroPortalPage() {
             <section className={styles.section}>
               <div className={styles.sectionHead}>
                 <div>
-                  <h2 className={styles.sectionTitle}>Tus claves</h2>
+                  <h2 className={styles.sectionTitle}>Tus oportunidades</h2>
                   <p className={styles.sectionHint}>
-                    También las tienes en el correo. Compártelas cuando quieras.
+                    3 últimos de la Lotería de Boyacá. También las tienes en el correo.
                   </p>
                 </div>
               </div>
@@ -226,16 +222,16 @@ export default function MiembroPortalPage() {
                 ))}
               </div>
               <button type="button" className={styles.cta} onClick={enviarWhatsApp}>
-                Enviar mis claves por WhatsApp
+                Enviar mis oportunidades por WhatsApp
               </button>
             </section>
 
             <section className={styles.section}>
               <div className={styles.sectionHead}>
                 <div>
-                  <h2 className={styles.sectionTitle}>Beneficios del mes</h2>
+                  <h2 className={styles.sectionTitle}>Este mes</h2>
                   <p className={styles.sectionHint}>
-                    Premios y entregas mientras tu plan esté activo.
+                    Premio destacado mientras tu plan esté activo.
                   </p>
                 </div>
               </div>
@@ -272,7 +268,7 @@ export default function MiembroPortalPage() {
             <ul className={styles.nextList}>
               <li>Elige Élite, Selecto o Esencial</li>
               <li>Completa el pago o contacto por WhatsApp</li>
-              <li>Recibe tus claves por correo</li>
+              <li>Recibe tus oportunidades por correo</li>
             </ul>
             <Link href="/formulario?plan=esencial" className={styles.cta}>
               Empezar con plan Esencial

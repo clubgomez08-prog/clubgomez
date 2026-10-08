@@ -47,7 +47,7 @@ export async function POST(request) {
     const clavesManuales = parseClavesInput(body.claves || body.clavesTexto || "");
     if (!clavesManuales.length) {
       return bad(
-        `Ingresa las ${plan.claves} claves impresas (6001–9999) que le entregaste.`
+        `Ingresa las ${plan.claves} claves impresas (000–700) que le entregaste.`
       );
     }
 

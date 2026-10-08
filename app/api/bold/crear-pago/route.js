@@ -43,11 +43,6 @@ export async function POST(request) {
     if (!cedula) return bad("Escribe tu cédula.");
     if (!email || !email.includes("@")) return bad("Escribe un email válido.");
     if (!telefono) return bad("Escribe tu WhatsApp.");
-    if (!fechaNacimiento) {
-      return bad(
-        "Escribe una fecha de nacimiento válida (debes tener al menos 12 años)."
-      );
-    }
 
     let cuenta = null;
 
@@ -84,7 +79,7 @@ export async function POST(request) {
             telefono,
             ciudad,
             cedula,
-            fecha_nacimiento: fechaNacimiento,
+            ...(fechaNacimiento ? { fecha_nacimiento: fechaNacimiento } : {}),
             updated_at: new Date().toISOString(),
           })
           .eq("id", miembroExistente.id);
@@ -95,7 +90,7 @@ export async function POST(request) {
           telefono,
           ciudad,
           cedula,
-          fecha_nacimiento: fechaNacimiento,
+          ...(fechaNacimiento ? { fecha_nacimiento: fechaNacimiento } : {}),
           estado: "activo",
         });
         if (miembroErr) {

@@ -3,11 +3,11 @@ import { Suspense } from "react";
 export const metadata = {
   title: "Club Gómez — Membresía exclusiva",
   description:
-    "Únete a Club Gómez. Obtén descuentos exclusivos, beneficios sorpresa y sé parte del Club.",
+    "Club Gómez: Yamaha Crypton 0 km más $1.000.000. 17 de octubre, Lotería de Boyacá. Membresía Élite, Selecto o Esencial.",
   openGraph: {
     title: "Club Gómez — Membresía exclusiva",
     description:
-      "Únete a Club Gómez. Obtén descuentos exclusivos, beneficios sorpresa y sé parte del Club.",
+      "Club Gómez: Yamaha Crypton 0 km más $1.000.000. 17 de octubre, Lotería de Boyacá. Membresía Élite, Selecto o Esencial.",
     type: "website",
     images: [
       {

@@ -6,14 +6,14 @@ import { BENEFICIO_CARDS } from "@/lib/club-gomez/stickers";
 import { scrollToId, useReveal } from "./hooks";
 
 const TEXTO_BANDA = [
-  "Descuentos exclusivos",
+  "Crypton 0 km más $1.000.000",
   "Membresía Club Gómez",
-  "Beneficios del mes",
+  "17 de octubre",
+  "Lotería de Boyacá",
   "Oportunidades del Club",
-  "Premios del Club",
+  "Premios del mes",
   "Desde cualquier ciudad",
-  "Marcas aliadas",
-  "Un mes de beneficios",
+  "3 últimos números",
 ];
 
 export default function BeneficiosCards() {

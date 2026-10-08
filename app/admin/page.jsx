@@ -22,7 +22,7 @@ export default function AdminDashboardPage() {
     solicitudesNuevas: 0,
     ingresos: 0,
     clavesEmitidas: 0,
-    clavesLibres: 10000,
+    clavesLibres: 1000,
     premiosProgramados: 0,
   });
   const [periodo, setPeriodo] = useState("");
@@ -52,7 +52,7 @@ export default function AdminDashboardPage() {
           solicitudesNuevas: 0,
           ingresos: 0,
           clavesEmitidas: 0,
-          clavesLibres: 10000,
+          clavesLibres: 1000,
           premiosProgramados: 0,
         });
         setUltimosMiembros([]);
@@ -98,7 +98,7 @@ export default function AdminDashboardPage() {
           <h1 className="admin-dash__title">Dashboard</h1>
           {periodo ? (
             <p className="admin-dash__meta">
-              Periodo {periodo} · Web 0000–6000 · Físico 6001–9999
+              Periodo {periodo} · Web 701–999 · Físico 000–700
             </p>
           ) : null}
         </div>
@@ -160,7 +160,7 @@ export default function AdminDashboardPage() {
               }
             />
             <StatsCard
-              title="Claves web (0000–6000)"
+              title="Claves web (701–999)"
               value={
                 stats.clavesWebLibres != null
                   ? `${stats.clavesWebEmitidas || 0} / ${stats.clavesWebLibres} libres`
@@ -168,7 +168,7 @@ export default function AdminDashboardPage() {
               }
             />
             <StatsCard
-              title="Claves físico (6001–9999)"
+              title="Claves físico (000–700)"
               value={
                 stats.clavesFisicoLibres != null
                   ? `${stats.clavesFisicoEmitidas || 0} / ${stats.clavesFisicoLibres} libres`

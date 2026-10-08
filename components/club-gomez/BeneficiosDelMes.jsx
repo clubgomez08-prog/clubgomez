@@ -10,7 +10,12 @@ import {
 import { irASuscribir } from "@/lib/club-gomez/flujo-suscripcion";
 import { scrollToId, useReveal } from "./hooks";
 
+/** Poné true para volver a mostrar el bloque en la home. */
+export const SHOW_BENEFICIOS_DEL_MES = false;
+
 export default function BeneficiosDelMes() {
+  if (!SHOW_BENEFICIOS_DEL_MES) return null;
+
   const { ref, className } = useReveal();
   const [periodoLabel, setPeriodoLabel] = useState("octubre");
   const [destacado, setDestacado] = useState(

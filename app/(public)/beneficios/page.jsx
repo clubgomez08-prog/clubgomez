@@ -8,7 +8,7 @@ import { useEffect } from "react";
  */
 export default function BeneficiosRedirectPage() {
   useEffect(() => {
-    window.location.replace("/#beneficios-mes");
+    window.location.replace("/#destacado-club");
   }, []);
 
   return (

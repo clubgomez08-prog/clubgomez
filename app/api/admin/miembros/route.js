@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 20;
 
-/** 1–4 dígitos → búsqueda por clave vendida (ej. 3021, 0421). */
+/** 1–4 dígitos → búsqueda por clave vendida (ej. 845, 0845). */
 function esBusquedaClave(raw) {
   const t = String(raw || "")
     .trim()
@@ -21,7 +21,7 @@ async function miembroIdsPorClave(buscar) {
     .trim()
     .replace(/\s/g, "");
   const padded = padClave(t);
-  const numeros = [...new Set([padded, t])];
+  const numeros = [...new Set([padded, t, `0${padded}`])];
 
   const { data: clavesRows, error } = await supabaseAdmin
     .from("claves")

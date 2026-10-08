@@ -11,7 +11,6 @@ import {
   sanitizarNext,
 } from "@/lib/club-gomez/flujo-suscripcion";
 import { trackCompleteRegistration } from "@/lib/club-gomez/meta-pixel";
-import DateOfBirthSelect from "@/components/club-gomez/DateOfBirthSelect";
 
 const fieldStyle = {
   width: "100%",
@@ -46,7 +45,6 @@ function MiembroRegistroForm() {
     email: "",
     telefono: "",
     ciudad: "",
-    fecha_nacimiento: "",
     password: "",
     password2: "",
   });
@@ -61,11 +59,6 @@ function MiembroRegistroForm() {
     e.preventDefault();
     setError("");
 
-    if (!form.fecha_nacimiento) {
-      setError("Indica tu fecha de nacimiento.");
-      return;
-    }
-
     if (form.password !== form.password2) {
       setError("Las contraseñas no coinciden.");
       return;
@@ -79,7 +72,6 @@ function MiembroRegistroForm() {
         email: form.email,
         telefono: form.telefono,
         ciudad: form.ciudad,
-        fecha_nacimiento: form.fecha_nacimiento,
         password: form.password,
       });
 
@@ -94,7 +86,6 @@ function MiembroRegistroForm() {
         telefono: form.telefono,
         nombre: form.nombre,
         ciudad: form.ciudad,
-        fecha_nacimiento: form.fecha_nacimiento,
       });
       irDespuesDeAuth(next, "/miembro");
     } finally {
@@ -214,20 +205,6 @@ function MiembroRegistroForm() {
                 placeholder="3001234567"
                 style={fieldStyle}
               />
-            </label>
-
-            <label style={labelStyle}>
-              <span style={labelText}>Fecha de nacimiento</span>
-              <DateOfBirthSelect
-                name="fecha_nacimiento"
-                value={form.fecha_nacimiento}
-                onChange={handleChange}
-                required
-                selectStyle={fieldStyle}
-              />
-              <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11 }}>
-                El Club te felicita en tu cumpleaños
-              </span>
             </label>
 
             <label style={labelStyle}>

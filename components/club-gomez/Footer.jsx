@@ -37,7 +37,7 @@ export default function Footer() {
             lineHeight: 1.4,
           }}
         >
-          Membresía exclusiva · Descuentos · Beneficios del Club
+          Membresía exclusiva · Crypton 0 km más $1.000.000 · Premios del Club
         </p>
         <p
           style={{

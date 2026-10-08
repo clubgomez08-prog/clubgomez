@@ -48,8 +48,8 @@ export async function GET(request) {
       inventarioClavesPeriodo(supabaseAdmin, periodo).catch(() => ({
         periodo,
         emitidas: 0,
-        libres: 10000,
-        total: 10000,
+        libres: 1000,
+        total: 1000,
       })),
       supabaseAdmin
         .from("sorteos_beneficio")

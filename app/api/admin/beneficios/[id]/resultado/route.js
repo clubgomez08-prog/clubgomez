@@ -7,7 +7,8 @@ import { enviarEmailGanador } from "@/lib/email";
 export const dynamic = "force-dynamic";
 
 /**
- * Registra resultado Motilón y cruza con claves del periodo.
+ * Registra resultado de lotería y cruza con claves del periodo
+ * (últimos 3 dígitos, 000–999).
  */
 export async function POST(request, { params }) {
   try {
@@ -21,14 +22,14 @@ export async function POST(request, { params }) {
 
     const { id } = await params;
     const body = await request.json();
-    const resultado = padClave(body.resultado);
-
-    if (!/^\d{4}$/.test(resultado)) {
+    const digits = String(body.resultado ?? "").replace(/\D/g, "");
+    if (digits.length < 3) {
       return NextResponse.json(
-        { error: "El resultado debe ser 4 dígitos (0000–9999)" },
+        { error: "Ingresa el número de la lotería (se usan los últimos 3 dígitos)" },
         { status: 400 }
       );
     }
+    const resultado = padClave(digits);
 
     const { data: beneficio, error: benErr } = await supabaseAdmin
       .from("sorteos_beneficio")
@@ -47,12 +48,14 @@ export async function POST(request, { params }) {
       );
     }
 
-    const { data: clave } = await supabaseAdmin
+    const { data: clavesPeriodo } = await supabaseAdmin
       .from("claves")
       .select("id, numero, periodo, membresia_id")
-      .eq("periodo", beneficio.periodo)
-      .eq("numero", resultado)
-      .maybeSingle();
+      .eq("periodo", beneficio.periodo);
+
+    const clave = (clavesPeriodo || []).find(
+      (c) => padClave(c.numero) === resultado
+    );
 
     const ahora = new Date().toISOString();
     let update = {

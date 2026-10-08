@@ -3,49 +3,38 @@
 import Image from "next/image";
 import { STICKERS } from "@/lib/club-gomez/stickers";
 import { irASuscribir } from "@/lib/club-gomez/flujo-suscripcion";
-import { getPlanById } from "@/lib/club-gomez/planes";
+import {
+  getPlanById,
+  PLANES_MEMBRESIA,
+  labelOportunidades,
+} from "@/lib/club-gomez/planes";
 import { trackInitiateCheckoutThenGo } from "@/lib/club-gomez/meta-pixel";
 import { useReveal } from "./hooks";
 
 const PLANES = [
   {
-    id: "elite",
-    nombre: "Élite",
-    precio: "90.000",
-    precioAntes: "120.000",
-    tag: "Vives la mejor versión del Club",
+    ...PLANES_MEMBRESIA.elite,
+    precio: PLANES_MEMBRESIA.elite.precioLabel,
     badge: "Recomendado por el Club",
     highlight: true,
-    equiv: "La experiencia completa del Club",
-    claves: 10,
     extras: ["Te conviertes en miembro VIP"],
     avatar: "/club-gomez/plan-elite.png",
     sticker: STICKERS.corona,
   },
   {
-    id: "selecto",
-    nombre: "Selecto",
-    precio: "60.000",
-    precioAntes: "100.000",
-    tag: "Vas en serio con el Club",
+    ...PLANES_MEMBRESIA.selecto,
+    precio: PLANES_MEMBRESIA.selecto.precioLabel,
     badge: null,
     highlight: false,
-    equiv: "El equilibrio ideal",
-    claves: 7,
     extras: [],
     avatar: "/club-gomez/plan-selecto.png",
     sticker: STICKERS.cadena,
   },
   {
-    id: "esencial",
-    nombre: "Esencial",
-    precio: "30.000",
-    precioAntes: "60.000",
-    tag: "Arrancas con el Club",
+    ...PLANES_MEMBRESIA.esencial,
+    precio: PLANES_MEMBRESIA.esencial.precioLabel,
     badge: null,
     highlight: false,
-    equiv: "O sea, entras mes a mes",
-    claves: 3,
     extras: [],
     avatar: "/club-gomez/plan-esencial.png",
     sticker: STICKERS.llave,
@@ -83,7 +72,10 @@ export default function Membresias() {
           <h2>
             Elige tu <span>membresía</span>
           </h2>
-          <p>Elige tu plan y empieza a vivir el Club en serio.</p>
+          <p>
+            Entras a la Yamaha Crypton 0 km más $1.000.000. 17 de octubre,
+            Lotería de Boyacá.
+          </p>
         </div>
 
         <div className="cg-planes__grid">
@@ -119,9 +111,12 @@ export default function Membresias() {
 
               <ul className="cg-plan-card__list">
                 <li>
-                  <strong>{p.claves} oportunidades</strong>
+                  <strong>{labelOportunidades(p.claves)}</strong> (últimos 3 de
+                  Boyacá)
                 </li>
-                <li>Un mes de beneficios: descuentos en marcas aliadas.</li>
+                <li>
+                  Participas por la Crypton 0 km más $1.000.000 en efectivo.
+                </li>
                 <li>Participas de los premios y entregas del mes.</li>
                 <li>Recibes tus oportunidades por correo al activar.</li>
                 {p.extras.map((ex) => (
