@@ -10,6 +10,10 @@ import {
 } from "@/lib/club-gomez/bold";
 import { parseFechaNacimiento } from "@/lib/club-gomez/fecha-nacimiento";
 import { asegurarCuentaParaCheckout } from "@/lib/club-gomez/cuenta-checkout";
+import {
+  mensajeErrorMiembro,
+  upsertMiembroParaPago,
+} from "@/lib/club-gomez/miembro-identidad";
 
 function bad(msg, status = 400) {
   return NextResponse.json({ ok: false, error: msg }, { status });
@@ -64,42 +68,18 @@ export async function POST(request) {
         );
       }
     } else {
-      // Checkout sin registro: solo guarda/actualiza miembro (sin Auth)
-      const { data: miembroExistente } = await supabaseAdmin
-        .from("miembros")
-        .select("id, auth_user_id")
-        .ilike("email", email)
-        .maybeSingle();
-
-      if (miembroExistente) {
-        await supabaseAdmin
-          .from("miembros")
-          .update({
-            nombre,
-            telefono,
-            ciudad,
-            cedula,
-            ...(fechaNacimiento ? { fecha_nacimiento: fechaNacimiento } : {}),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", miembroExistente.id);
-      } else {
-        const { error: miembroErr } = await supabaseAdmin.from("miembros").insert({
+      try {
+        await upsertMiembroParaPago(supabaseAdmin, {
           nombre,
           email,
           telefono,
           ciudad,
           cedula,
-          ...(fechaNacimiento ? { fecha_nacimiento: fechaNacimiento } : {}),
-          estado: "activo",
+          fechaNacimiento,
         });
-        if (miembroErr) {
-          console.error("[bold/crear-pago] miembro guest:", miembroErr);
-          return bad(
-            miembroErr.message || "No se pudieron guardar tus datos.",
-            400
-          );
-        }
+      } catch (miembroErr) {
+        console.error("[bold/crear-pago] miembro guest:", miembroErr);
+        return bad(mensajeErrorMiembro(miembroErr), 400);
       }
       cuenta = { created: false, session: null, perfil: null };
     }
