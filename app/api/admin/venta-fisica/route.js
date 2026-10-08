@@ -79,6 +79,11 @@ export async function POST(request) {
     });
   } catch (err) {
     console.error("[admin/venta-fisica]", err);
-    return bad(err.message || "No se pudo registrar la venta física.", 500);
+    return bad(
+      String(err?.message || "").includes("idx_") || err?.code === "23505"
+        ? "Esa cédula, email o clave ya está registrada este mes."
+        : err.message || "No se pudo registrar la venta física.",
+      500
+    );
   }
 }

@@ -121,7 +121,7 @@ export async function POST(request) {
 
     if (error) {
       console.error("[bold/crear-pago]", error);
-      return bad(error.message || "No se pudo crear la solicitud.", 400);
+      return bad(mensajeErrorMiembro(error), 400);
     }
 
     if (fechaNacimiento) {

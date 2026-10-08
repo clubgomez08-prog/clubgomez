@@ -4,6 +4,8 @@ import { consultarVoucherBold } from "@/lib/club-gomez/bold";
 import { activarMembresiaManual } from "@/lib/club-gomez/activar-membresia";
 import { getPlanById } from "@/lib/club-gomez/planes";
 import { sendPurchaseCapi } from "@/lib/club-gomez/meta-capi";
+import { buscarSolicitudPorBoldOrder } from "@/lib/club-gomez/solicitudes-bold";
+import { mensajeErrorMiembro } from "@/lib/club-gomez/miembro-identidad";
 
 function bad(msg, status = 400) {
   return NextResponse.json({ ok: false, error: msg }, { status });
@@ -69,18 +71,7 @@ export async function POST(request) {
 
     if (!orderId) return bad("Falta bold-order-id.");
 
-    const { data: solicitudes, error: solErr } = await supabaseAdmin
-      .from("solicitudes_membresia")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(40);
-
-    if (solErr) return bad(solErr.message, 400);
-
-    const solicitud = (solicitudes || []).find((s) => {
-      const n = parseNotas(s.notas);
-      return n.bold_order_id === orderId;
-    });
+    const solicitud = await buscarSolicitudPorBoldOrder(supabaseAdmin, orderId);
 
     if (!solicitud) {
       return bad("No encontramos la solicitud de este pago.", 404);
@@ -203,6 +194,9 @@ export async function POST(request) {
     });
   } catch (err) {
     console.error("[bold/confirmar]", err);
-    return bad(err.message || "Error al confirmar el pago.", 500);
+    return bad(
+      mensajeErrorMiembro(err) || "Error al confirmar el pago.",
+      500
+    );
   }
 }

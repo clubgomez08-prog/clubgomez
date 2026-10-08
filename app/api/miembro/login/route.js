@@ -5,6 +5,7 @@ import {
   DEMO_MIEMBRO_CREDS,
   crearDemoMiembro,
 } from "@/lib/club-gomez/demo-miembro";
+import { buscarMiembroPorIdentidad } from "@/lib/club-gomez/miembro-identidad";
 
 function bad(msg, status = 400) {
   return NextResponse.json({ ok: false, error: msg }, { status });
@@ -53,23 +54,56 @@ export async function POST(request) {
     // Si Auth existe pero falta fila en miembros (edge), crearla mínima
     if (!perfil) {
       const meta = data.user.user_metadata || {};
-      const { data: created, error: createErr } = await supabaseAdmin
-        .from("miembros")
-        .insert({
-          nombre: meta.nombre || email.split("@")[0],
-          cedula: `sin-${data.user.id.slice(0, 8)}`,
-          email,
-          telefono: meta.telefono || "0000000000",
-          ciudad: meta.ciudad || null,
-          estado: "pendiente",
-          auth_user_id: data.user.id,
-        })
-        .select("*")
-        .single();
-
-      if (createErr) {
-        console.error("[miembro/login] backfill:", createErr);
-        return bad("Cuenta Auth ok, pero falta perfil de miembro. Contacta soporte.", 500);
+      const existente = await buscarMiembroPorIdentidad(supabaseAdmin, {
+        email,
+        cedula: meta.cedula,
+        telefono: meta.telefono,
+      });
+      let created = null;
+      if (existente) {
+        await supabaseAdmin
+          .from("miembros")
+          .update({
+            auth_user_id: existente.auth_user_id || data.user.id,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existente.id);
+      } else {
+        const insertRes = await supabaseAdmin
+          .from("miembros")
+          .insert({
+            nombre: meta.nombre || email.split("@")[0],
+            cedula: `sin-${data.user.id.slice(0, 8)}`,
+            email,
+            telefono: meta.telefono || "0000000000",
+            ciudad: meta.ciudad || null,
+            estado: "pendiente",
+            auth_user_id: data.user.id,
+          })
+          .select("*")
+          .single();
+        created = insertRes.data;
+        if (insertRes.error) {
+          console.error("[miembro/login] backfill:", insertRes.error);
+          const otraVez = await buscarMiembroPorIdentidad(supabaseAdmin, {
+            email,
+            telefono: meta.telefono,
+          });
+          if (otraVez) {
+            await supabaseAdmin
+              .from("miembros")
+              .update({
+                auth_user_id: otraVez.auth_user_id || data.user.id,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", otraVez.id);
+          } else {
+            return bad(
+              "Cuenta Auth ok, pero falta perfil de miembro. Contacta soporte.",
+              500
+            );
+          }
+        }
       }
 
       perfil = await cargarPerfilPorAuthUserId(supabaseAdmin, data.user.id);
