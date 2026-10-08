@@ -91,7 +91,7 @@ function ClavesDetalle({ m, periodo, destacarClave }) {
           })}
         </div>
       ) : (
-        <p className="text-sm text-zinc-500">Sin claves en este periodo.</p>
+        <p className="text-sm text-zinc-500">Sin oportunidades en este periodo.</p>
       )}
       {m.membresia?.vence_en ? (
         <p className="text-xs text-zinc-500 mt-3">
@@ -164,9 +164,9 @@ export default function AdminMiembrosPage() {
         <div>
           <h1 className="text-2xl font-semibold text-white mb-1">Clientes</h1>
           <p className="text-sm text-zinc-500">
-            Datos de cada miembro: contacto, plan, cumpleaños y claves del periodo{" "}
-            {periodo || "actual"}. Buscá por nombre, email, cédula o número de clave.
-            Clic en una fila para ver las claves.
+            Campaña Crypton · 3 dígitos (web 701–999). Contacto, plan y
+            oportunidades del periodo {periodo || "actual"}. Busca por nombre,
+            email, cédula o número. Clic en la fila para ver las oportunidades.
           </p>
         </div>
         <Link
@@ -183,7 +183,7 @@ export default function AdminMiembrosPage() {
           <input
             value={buscarDraft}
             onChange={(e) => setBuscarDraft(e.target.value)}
-            placeholder="Nombre, email, cédula o clave…"
+            placeholder="Nombre, email, cédula u oportunidad…"
             className="px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-sm min-w-[240px]"
           />
           <button
@@ -196,7 +196,7 @@ export default function AdminMiembrosPage() {
         </form>
         {busquedaClave ? (
           <span className="text-xs font-mono" style={{ color: LIME }}>
-            Clave {busquedaClave}
+            Oport. {busquedaClave}
           </span>
         ) : null}
         <select
@@ -262,7 +262,7 @@ export default function AdminMiembrosPage() {
                     Estado
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">
-                    Claves
+                    Oport.
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">
                     Alta
@@ -384,7 +384,7 @@ export default function AdminMiembrosPage() {
                     <span>{m.telefono || "—"}</span>
                     <span>
                       {m.plan?.nombre || "Sin membresía"} · {m.clavesCount || 0}{" "}
-                      claves
+                      oport.
                     </span>
                     <span>
                       Cumple {formatCumple(m.fecha_nacimiento)}
@@ -437,7 +437,7 @@ export default function AdminMiembrosPage() {
       ) : null}
 
       <p className="text-xs text-zinc-600 mt-4">
-        ~{PAGE_SIZE_HINT} por página. Clic en una fila para ver las claves.
+        ~{PAGE_SIZE_HINT} por página. Clic en una fila para ver las oportunidades.
       </p>
     </div>
   );

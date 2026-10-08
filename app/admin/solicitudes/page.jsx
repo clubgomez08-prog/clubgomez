@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getAdminAuthHeaders } from "@/lib/auth";
 import { useToast } from "@/components/admin/Toast";
+import { getPlanById, labelOportunidades } from "@/lib/club-gomez/planes";
 
 function parseNotas(notas) {
   try {
@@ -63,8 +64,8 @@ export default function AdminSolicitudesPage() {
       if (!res.ok) throw new Error(data.error || "No se pudo aprobar");
       addToast(
         data.emailOk
-          ? `Activada. Claves enviadas (${data.claves?.length || 0}).`
-          : `Activada con ${data.claves?.length || 0} claves (revisa Resend).`,
+          ? `Venta activada. ${data.claves?.length || 0} oportunidades + correo.`
+          : `Venta activada (${data.claves?.length || 0} oportunidades). Revisa el correo.`,
         "success"
       );
       await cargar();
@@ -78,17 +79,23 @@ export default function AdminSolicitudesPage() {
   return (
     <div className="max-w-5xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-white">Solicitudes / pagos Bold</h1>
+        <h1 className="text-2xl font-semibold text-white">Pagos web</h1>
         <p className="text-sm text-zinc-400 mt-1">
-          Cada intento de pago Bold queda aquí. Si el pago se aprueba, la membresía
-          se activa sola; el botón manual es solo respaldo.
+          Campaña Crypton 0 km más $1.000.000 · planes $20.000 / $50.000 / $100.000.
+          Aquí ves quién <strong className="text-zinc-200">abrió Bold</strong>, no
+          quién ya pagó. La venta real está en{" "}
+          <strong className="text-zinc-200">Pagadas</strong>.
+        </p>
+        <p className="text-xs text-zinc-500 mt-2">
+          “Sin confirmar” = recargó, canceló o Bold aún no avisó. No pulses Activar
+          a menos que el dinero ya esté en Bold.
         </p>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-5">
         {[
-          { id: "nueva", label: "Nuevas / pendientes" },
-          { id: "convertida", label: "Convertidas (pagadas)" },
+          { id: "nueva", label: "Sin confirmar" },
+          { id: "convertida", label: "Pagadas" },
           { id: "todas", label: "Todas" },
         ].map((f) => (
           <button
@@ -116,12 +123,16 @@ export default function AdminSolicitudesPage() {
       {loading ? (
         <p className="text-zinc-500 py-10 text-center">Cargando…</p>
       ) : items.length === 0 ? (
-        <p className="text-zinc-500 py-10 text-center">No hay solicitudes en este filtro.</p>
+        <p className="text-zinc-500 py-10 text-center">
+          No hay registros en este filtro.
+        </p>
       ) : (
         <div className="space-y-3">
           {items.map((s) => {
             const meta = parseNotas(s.notas);
-            const esBold = meta.canal === "bold" || Boolean(meta.bold_order_id);
+            const plan = getPlanById(s.plan_id);
+            const monto = Number(meta.amount) || plan.precio;
+            const pagada = s.estado === "convertida";
             return (
               <article
                 key={s.id}
@@ -131,14 +142,18 @@ export default function AdminSolicitudesPage() {
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h2 className="text-white font-semibold truncate">{s.nombre}</h2>
                     <span className="text-xs uppercase tracking-wide px-2 py-0.5 rounded-full bg-lime-500/15 text-lime-400 border border-lime-500/30">
-                      {s.plan_id}
+                      {plan.nombre} · ${plan.precioLabel} ·{" "}
+                      {labelOportunidades(plan.claves)}
                     </span>
-                    {esBold ? (
-                      <span className="text-xs uppercase tracking-wide px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30">
-                        Bold
-                      </span>
-                    ) : null}
-                    <span className="text-xs text-zinc-500">{s.estado}</span>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full border ${
+                        pagada
+                          ? "bg-lime-500/15 text-lime-400 border-lime-500/30"
+                          : "bg-amber-500/10 text-amber-300 border-amber-500/30"
+                      }`}
+                    >
+                      {pagada ? "Pagada" : "Sin confirmar"}
+                    </span>
                   </div>
                   <p className="text-sm text-zinc-400 truncate">
                     {s.email} · {s.telefono}
@@ -146,25 +161,26 @@ export default function AdminSolicitudesPage() {
                   </p>
                   <p className="text-xs text-zinc-600 mt-1">
                     Cédula {s.cedula}
-                    {meta.bold_order_id ? ` · Orden ${meta.bold_order_id}` : ""}
-                    {meta.amount ? ` · $${Number(meta.amount).toLocaleString("es-CO")}` : ""}
+                    {` · $${Number(monto).toLocaleString("es-CO")}`}
                     {" · "}
                     {s.created_at
                       ? new Date(s.created_at).toLocaleString("es-CO")
                       : "—"}
                   </p>
                 </div>
-                {s.estado !== "convertida" ? (
+                {pagada ? (
+                  <span className="text-sm text-lime-400/80 shrink-0">
+                    ✓ Membresía activa
+                  </span>
+                ) : (
                   <button
                     type="button"
                     disabled={aprobando === s.id}
                     onClick={() => aprobar(s.id)}
-                    className="shrink-0 px-4 py-2 rounded-lg bg-amber-500 text-zinc-950 font-semibold text-sm hover:bg-amber-400 disabled:opacity-60"
+                    className="shrink-0 px-4 py-2 rounded-lg bg-zinc-800 text-amber-200 font-semibold text-sm border border-amber-500/40 hover:bg-amber-500 hover:text-zinc-950 disabled:opacity-60"
                   >
-                    {aprobando === s.id ? "Activando…" : "Activar manual"}
+                    {aprobando === s.id ? "Activando…" : "Activar solo si ya cobró"}
                   </button>
-                ) : (
-                  <span className="text-sm text-lime-400/80 shrink-0">✓ Pagada / activa</span>
                 )}
               </article>
             );

@@ -146,9 +146,9 @@ export default function AdminBeneficiosPage() {
         Fechas de premio
       </h1>
       <p className="text-sm text-zinc-500 mb-6">
-        Estas fechas son las mismas que ve el público en la homepage. Cada
-        premio va ligado a un día: los últimos 3 dígitos de {LOTERIA_INTERNA}
-        deciden el ganador entre las claves del mes.
+        Destacado: Yamaha Crypton 0 km más $1.000.000 el 17 de octubre. Los
+        últimos 3 dígitos de {LOTERIA_INTERNA} ganan entre las oportunidades
+        del mes (web 701–999 y físico 000–700).
       </p>
 
       <div className="flex flex-wrap items-end gap-3 mb-6">

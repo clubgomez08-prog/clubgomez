@@ -26,7 +26,7 @@ export default function AdminDashboardPage() {
     premiosProgramados: 0,
   });
   const [periodo, setPeriodo] = useState("");
-  const [ultimosMiembros, setUltimosMiembros] = useState([]);
+  const [ultimasVentas, setUltimasVentas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [finanzasVisibles, setFinanzasVisibles] = useState(false);
   const [modalFinanzas, setModalFinanzas] = useState(false);
@@ -44,7 +44,7 @@ export default function AdminDashboardPage() {
         if (!res.ok) throw new Error(data.error || "Error");
         setStats(data.stats || {});
         setPeriodo(data.periodo || "");
-        setUltimosMiembros(data.ultimosMiembros || []);
+        setUltimasVentas(data.ultimasVentas || []);
       } catch {
         setStats({
           miembrosActivos: 0,
@@ -55,7 +55,7 @@ export default function AdminDashboardPage() {
           clavesLibres: 1000,
           premiosProgramados: 0,
         });
-        setUltimosMiembros([]);
+        setUltimasVentas([]);
       } finally {
         setCargando(false);
       }
@@ -96,11 +96,14 @@ export default function AdminDashboardPage() {
         <div>
           <p className="admin-dash__kicker">Club Gómez</p>
           <h1 className="admin-dash__title">Dashboard</h1>
-          {periodo ? (
-            <p className="admin-dash__meta">
-              Periodo {periodo} · Web 701–999 · Físico 000–700
-            </p>
-          ) : null}
+          <p className="admin-dash__meta">
+            Yamaha Crypton 0 km más $1.000.000 · 17 de octubre · Boyacá
+            {periodo ? ` · ${periodo}` : ""}
+          </p>
+          <p className="admin-dash__meta" style={{ marginTop: 4, opacity: 0.75 }}>
+            Élite $100.000 / 6 · Selecto $50.000 / 3 · Esencial $20.000 / 1 · Web
+            701–999 · Físico 000–700
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
           {finanzasVisibles ? (
@@ -148,7 +151,7 @@ export default function AdminDashboardPage() {
               value={stats.membresiasActivas}
             />
             <StatsCard
-              title="Solicitudes Bold nuevas"
+              title="Intentos web sin pagar"
               value={stats.solicitudesNuevas}
             />
             <StatsCard
@@ -160,18 +163,18 @@ export default function AdminDashboardPage() {
               }
             />
             <StatsCard
-              title="Claves web (701–999)"
+              title="Oportunidades web 701–999"
               value={
                 stats.clavesWebLibres != null
-                  ? `${stats.clavesWebEmitidas || 0} / ${stats.clavesWebLibres} libres`
+                  ? `${stats.clavesWebEmitidas || 0} dadas · ${stats.clavesWebLibres} libres`
                   : stats.clavesEmitidas
               }
             />
             <StatsCard
-              title="Claves físico (000–700)"
+              title="Oportunidades físico 000–700"
               value={
                 stats.clavesFisicoLibres != null
-                  ? `${stats.clavesFisicoEmitidas || 0} / ${stats.clavesFisicoLibres} libres`
+                  ? `${stats.clavesFisicoEmitidas || 0} dadas · ${stats.clavesFisicoLibres} libres`
                   : stats.clavesLibres
               }
             />
@@ -182,26 +185,30 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="mb-6">
-            <p className="admin-section-label">Últimos miembros</p>
+            <p className="admin-section-label">Últimas ventas (pagadas)</p>
             <div className="admin-panel">
-              {ultimosMiembros.length === 0 ? (
-                <div className="admin-empty">Sin registros recientes</div>
+              {ultimasVentas.length === 0 ? (
+                <div className="admin-empty">
+                  Aún no hay pagos aprobados este mes. Los intentos de Bold van
+                  en Pagos web.
+                </div>
               ) : (
-                ultimosMiembros.map((m) => (
-                  <div key={m.id} className="admin-member-row">
+                ultimasVentas.map((v) => (
+                  <div key={v.id} className="admin-member-row">
                     <div className="min-w-0">
                       <div className="admin-member-row__name">
-                        {m.nombre || "—"}
+                        {v.nombre}
                       </div>
                       <div className="admin-member-row__email">
-                        {m.email || "—"}
+                        {v.planNombre} · {v.oportunidades} oport. · {v.canal}
+                        {v.email ? ` · ${v.email}` : ""}
                       </div>
                     </div>
                     <div className="admin-member-row__meta">
-                      <span className="admin-chip">{m.estado || "—"}</span>
-                      <div style={{ marginTop: 6 }}>
-                        {formatFecha(m.created_at)}
-                      </div>
+                      <span className="admin-chip">
+                        ${Number(v.monto || 0).toLocaleString("es-CO")}
+                      </span>
+                      <div style={{ marginTop: 6 }}>{formatFecha(v.fecha)}</div>
                     </div>
                   </div>
                 ))
@@ -218,7 +225,7 @@ export default function AdminDashboardPage() {
             {
               href: "/admin/solicitudes",
               icon: "✓",
-              label: "Solicitudes Bold",
+              label: "Pagos web",
               color: LIME,
             },
             {

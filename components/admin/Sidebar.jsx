@@ -7,7 +7,7 @@ import { signOut } from "@/lib/auth";
 
 export const ADMIN_NAV = [
   { href: "/admin", label: "Dashboard", short: "Inicio", icon: "◆" },
-  { href: "/admin/solicitudes", label: "Solicitudes Bold", short: "Pagos", icon: "✓" },
+  { href: "/admin/solicitudes", label: "Pagos web", short: "Pagos", icon: "✓" },
   { href: "/admin/venta-fisica", label: "Venta física", short: "Venta", icon: "▣" },
   { href: "/admin/beneficios", label: "Fechas de premio", short: "Premios", icon: "★" },
   { href: "/admin/miembros", label: "Clientes", short: "Clientes", icon: "○" },

@@ -95,7 +95,7 @@ export default function AdminLoginPage() {
                 fontSize: 13,
               }}
             >
-              Solicitudes Bold, miembros y operaciones
+              Crypton · pagos web · venta física · clientes
             </p>
           </div>
 

@@ -114,9 +114,10 @@ export default function VentaFisicaPage() {
     <div className="max-w-3xl">
       <h1 className="text-2xl font-semibold text-white mb-1">Venta física</h1>
       <p className="text-sm text-zinc-500 mb-6">
-        Daniel vende en físico el <strong className="text-zinc-300">000–700</strong>.
-        Aquí registras al cliente e <strong className="text-zinc-300">ingresas esas claves</strong>.
-        Obligatorio: nombre, teléfono y las claves. La web solo reparte el <strong className="text-zinc-300">701–999</strong>.
+        Crypton 0 km más $1.000.000. Daniel entrega oportunidades{" "}
+        <strong className="text-zinc-300">000–700</strong> (Élite 6 · Selecto 3 ·
+        Esencial 1). La web reparte <strong className="text-zinc-300">701–999</strong>.
+        Obligatorio: nombre, teléfono y los números impresos.
       </p>
 
       {fisico ? (
@@ -153,7 +154,7 @@ export default function VentaFisicaPage() {
             >
               {PLANES.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.nombre} · ${p.precioLabel} · {p.claves} claves
+                  {p.nombre} · ${p.precioLabel} · {p.claves} oport.
                 </option>
               ))}
             </select>
