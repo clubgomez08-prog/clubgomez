@@ -88,8 +88,8 @@ export default function VentaFisicaPage() {
   async function onSubmit(e) {
     e.preventDefault();
     setResultado(null);
-    if (!form.nombre.trim() || !form.telefono.trim()) {
-      addToast("Nombre y teléfono son obligatorios.", "error");
+    if (!form.nombre.trim() || !form.telefono.trim() || !form.cedula.trim()) {
+      addToast("Nombre, teléfono y cédula son obligatorios.", "error");
       return;
     }
     if (!form.clavesTexto.trim()) {
@@ -106,7 +106,7 @@ export default function VentaFisicaPage() {
           nombre: form.nombre.trim(),
           telefono: form.telefono.trim(),
           email: form.email.trim() || undefined,
-          cedula: form.cedula.trim() || undefined,
+          cedula: form.cedula.trim(),
           ciudad: form.ciudad.trim() || undefined,
           fecha_nacimiento: form.fecha_nacimiento || undefined,
           claves: form.clavesTexto,
@@ -279,12 +279,14 @@ export default function VentaFisicaPage() {
           </label>
 
           <label className="grid gap-1 text-sm text-zinc-400">
-            Cédula (opcional)
+            Cédula *
             <input
+              required
               name="cedula"
               value={form.cedula}
               onChange={onChange}
-              placeholder="Documento"
+              placeholder="Para que pueda consultar sus números"
+              inputMode="numeric"
               className={INPUT}
             />
           </label>

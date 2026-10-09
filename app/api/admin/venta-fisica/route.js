@@ -112,6 +112,9 @@ export async function POST(request) {
 
     if (!nombre) return bad("El nombre es obligatorio.");
     if (!telefono) return bad("El WhatsApp / teléfono es obligatorio.");
+    if (cedula.replace(/\D/g, "").length < 5) {
+      return bad("La cédula es obligatoria para que el cliente pueda consultar sus números.");
+    }
 
     const clavesManuales = parseClavesInput(body.claves || body.clavesTexto || "");
     if (!clavesManuales.length) {
