@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { getPlanById } from "@/lib/club-gomez/planes";
+import { usePlan } from "@/lib/club-gomez/use-planes";
 import {
   guardarSesion,
   leerSesionLocal,
@@ -20,10 +20,7 @@ import styles from "./formulario.module.css";
 
 function FormularioMembresia() {
   const searchParams = useSearchParams();
-  const plan = useMemo(
-    () => getPlanById(searchParams.get("plan")),
-    [searchParams]
-  );
+  const plan = usePlan(searchParams.get("plan"));
 
   const [sesion, setSesion] = useState(null);
   const [ready, setReady] = useState(false);
@@ -166,6 +163,7 @@ function FormularioMembresia() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planId: plan.id,
+          precioVisto: plan.precio,
           nombre: form.nombre.trim(),
           cedula: form.cedula.trim(),
           email: form.email.trim(),

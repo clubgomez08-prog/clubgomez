@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarFirmaWebhookBold } from "@/lib/club-gomez/bold";
 import { activarMembresiaManual } from "@/lib/club-gomez/activar-membresia";
-import { getPlanById } from "@/lib/club-gomez/planes";
+import { planDeSolicitud } from "@/lib/club-gomez/planes-db";
 import { sendPurchaseCapi } from "@/lib/club-gomez/meta-capi";
 import { buscarSolicitudPorBoldOrder } from "@/lib/club-gomez/solicitudes-bold";
 
@@ -61,8 +61,10 @@ export async function POST(request) {
     }
 
     const notas = parseNotas(solicitud.notas);
+    const plan = planDeSolicitud(solicitud.plan_id, notas);
     await activarMembresiaManual(supabaseAdmin, {
       planId: solicitud.plan_id,
+      plan,
       nombre: solicitud.nombre,
       cedula: solicitud.cedula,
       email: solicitud.email,
@@ -77,7 +79,6 @@ export async function POST(request) {
     });
 
     try {
-      const plan = getPlanById(solicitud.plan_id);
       const value =
         Number(event?.data?.amount?.total) ||
         Number(notas.amount) ||

@@ -3,6 +3,7 @@ import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
 import { periodoDe } from "@/lib/club-gomez/claves-pool";
 import { LOTERIA_INTERNA } from "@/lib/club-gomez/claves-whatsapp";
+import { registrarActividad } from "@/lib/admin-actividad";
 
 export const dynamic = "force-dynamic";
 
@@ -116,6 +117,11 @@ export async function POST(request) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+
+    await registrarActividad(supabaseAdmin, user, "premio_creado", {
+      premio,
+      fecha: fecha_sorteo,
+    });
 
     return NextResponse.json({ ok: true, beneficio: data });
   } catch (err) {

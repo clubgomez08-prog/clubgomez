@@ -3,6 +3,7 @@ import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
 import { padClave } from "@/lib/club-gomez/claves-pool";
 import { enviarEmailGanador } from "@/lib/email";
+import { registrarActividad } from "@/lib/admin-actividad";
 
 export const dynamic = "force-dynamic";
 
@@ -127,6 +128,13 @@ export async function POST(request, { params }) {
     if (upErr) {
       return NextResponse.json({ error: upErr.message }, { status: 400 });
     }
+
+    await registrarActividad(supabaseAdmin, user, "premio_resultado", {
+      premio: beneficio.premio,
+      fecha: beneficio.fecha_sorteo,
+      resultado,
+      ganador: ganador?.nombre || null,
+    });
 
     return NextResponse.json({
       ok: true,

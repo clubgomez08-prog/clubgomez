@@ -9,10 +9,10 @@ import { getSession } from "@/lib/auth";
 import "./admin.css";
 
 const BOTTOM_NAV = [
-  ADMIN_NAV[0],
-  ADMIN_NAV[2],
-  ADMIN_NAV[4],
-];
+  "/admin",
+  "/admin/venta-fisica",
+  "/admin/miembros",
+].map((href) => ADMIN_NAV.find((item) => item.href === href));
 
 export default function AdminLayout({ children }) {
   const router = useRouter();

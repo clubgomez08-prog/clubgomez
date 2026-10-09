@@ -4,16 +4,31 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { getAdminAuthHeaders } from "@/lib/auth";
 import { useToast } from "@/components/admin/Toast";
-import { PLANES_MEMBRESIA } from "@/lib/club-gomez/planes";
+import { usePlanes } from "@/lib/club-gomez/use-planes";
+import { linkWhatsappNumeros } from "@/lib/admin-descarga";
 import DateOfBirthSelect from "@/components/club-gomez/DateOfBirthSelect";
 
 const LIME = "#B8E351";
-const PLANES = Object.values(PLANES_MEMBRESIA);
+const INPUT = "px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-700 text-white";
+
+function cop(n) {
+  return "$" + Number(n || 0).toLocaleString("es-CO");
+}
+
+function hora(d) {
+  return new Date(d).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
+}
 
 export default function VentaFisicaPage() {
   const { addToast } = useToast();
+  const planesMap = usePlanes();
+  const PLANES = Object.values(planesMap);
   const [inventario, setInventario] = useState(null);
+  const [caja, setCaja] = useState(null);
+  const [ventas, setVentas] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [sugiriendo, setSugiriendo] = useState(false);
+  const [busyId, setBusyId] = useState(null);
   const [resultado, setResultado] = useState(null);
   const [form, setForm] = useState({
     planId: "esencial",
@@ -26,24 +41,48 @@ export default function VentaFisicaPage() {
     clavesTexto: "",
   });
 
-  const cargarInventario = useCallback(async () => {
+  const cargar = useCallback(async () => {
     try {
-      const headers = await getAdminAuthHeaders();
-      const res = await fetch("/api/admin/venta-fisica", { headers });
+      const res = await fetch("/api/admin/venta-fisica", {
+        headers: await getAdminAuthHeaders(),
+      });
       const data = await res.json();
-      if (res.ok) setInventario(data.inventario || null);
+      if (res.ok) {
+        setInventario(data.inventario || null);
+        setCaja(data.caja || null);
+        setVentas(data.ventas || []);
+      }
     } catch {
       /* ignore */
     }
   }, []);
 
   useEffect(() => {
-    cargarInventario();
-  }, [cargarInventario]);
+    cargar();
+  }, [cargar]);
 
   function onChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  const plan = planesMap[form.planId] || planesMap.esencial;
+  const fisico = inventario?.fisico;
+
+  async function sugerir() {
+    setSugiriendo(true);
+    try {
+      const res = await fetch(`/api/admin/venta-fisica?sugerir=${plan.claves}`, {
+        headers: await getAdminAuthHeaders(),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo sugerir");
+      setForm((f) => ({ ...f, clavesTexto: (data.numeros || []).join(" ") }));
+    } catch (err) {
+      addToast(err.message || "Error", "error");
+    } finally {
+      setSugiriendo(false);
+    }
   }
 
   async function onSubmit(e) {
@@ -54,18 +93,14 @@ export default function VentaFisicaPage() {
       return;
     }
     if (!form.clavesTexto.trim()) {
-      addToast("Ingresa las claves impresas que le entregaste (000–700).", "error");
+      addToast("Ingresa los números que le entregaste (000–700).", "error");
       return;
     }
     setSubmitting(true);
     try {
-      const headers = {
-        ...(await getAdminAuthHeaders()),
-        "Content-Type": "application/json",
-      };
       const res = await fetch("/api/admin/venta-fisica", {
         method: "POST",
-        headers,
+        headers: { ...(await getAdminAuthHeaders()), "Content-Type": "application/json" },
         body: JSON.stringify({
           planId: form.planId,
           nombre: form.nombre.trim(),
@@ -85,8 +120,8 @@ export default function VentaFisicaPage() {
       setResultado(data);
       addToast(
         data.emailOk
-          ? `Activada. ${data.claves?.length || 0} claves (correo enviado).`
-          : `Activada. ${data.claves?.length || 0} claves del pool físico.`,
+          ? `Venta registrada. ${data.claves?.length || 0} números (correo enviado).`
+          : `Venta registrada. ${data.claves?.length || 0} números.`,
         "success"
       );
       setForm((prev) => ({
@@ -99,7 +134,7 @@ export default function VentaFisicaPage() {
         fecha_nacimiento: "",
         clavesTexto: "",
       }));
-      await cargarInventario();
+      await cargar();
     } catch {
       addToast("Error de conexión.", "error");
     } finally {
@@ -107,32 +142,83 @@ export default function VentaFisicaPage() {
     }
   }
 
-  const plan = PLANES_MEMBRESIA[form.planId] || PLANES_MEMBRESIA.esencial;
-  const fisico = inventario?.fisico;
+  async function anular(v) {
+    const motivo = prompt(
+      `Anular la venta de ${v.nombre} (números ${v.numeros.join(", ")}).\n` +
+        "Los números quedan libres otra vez. Escribe el motivo:"
+    );
+    if (motivo === null) return;
+    if (!motivo.trim()) {
+      addToast("Escribe un motivo para anular.", "error");
+      return;
+    }
+    setBusyId(v.id);
+    try {
+      const res = await fetch("/api/admin/anular-venta", {
+        method: "POST",
+        headers: { ...(await getAdminAuthHeaders()), "Content-Type": "application/json" },
+        body: JSON.stringify({ membresiaId: v.membresiaId, motivo: motivo.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo anular");
+      addToast(`Venta anulada. Liberados: ${(data.liberados || []).join(", ")}`, "success");
+      await cargar();
+    } catch (err) {
+      addToast(err.message || "Error", "error");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  const waResultado = resultado
+    ? linkWhatsappNumeros({
+        telefono: resultado.miembro?.telefono,
+        nombre: resultado.miembro?.nombre,
+        numeros: resultado.claves,
+        planNombre: resultado.plan?.nombre,
+      })
+    : null;
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl">
       <h1 className="text-2xl font-semibold text-white mb-1">Venta física</h1>
       <p className="text-sm text-zinc-500 mb-6">
-        Crypton 0 km más $1.000.000. Daniel entrega oportunidades{" "}
-        <strong className="text-zinc-300">000–700</strong> (Élite 6 · Selecto 3 ·
-        Esencial 1). La web reparte <strong className="text-zinc-300">701–999</strong>.
-        Obligatorio: nombre, teléfono y los números impresos.
+        Daniel entrega números del <strong className="text-zinc-300">000 al 700</strong>.
+        La web reparte del <strong className="text-zinc-300">701 al 999</strong>. Obligatorio:
+        nombre, teléfono y los números entregados.
       </p>
 
-      {fisico ? (
-        <div
-          className="mb-6 rounded-xl px-4 py-3 text-sm"
-          style={{
-            background: "rgba(184,227,81,0.08)",
-            border: "1px solid rgba(184,227,81,0.22)",
-            color: "#d4f06a",
-          }}
-        >
-          Pool físico {inventario.periodo}: {fisico.emitidas} usadas ·{" "}
-          {fisico.libres} libres de {fisico.total}
+      <div
+        className="grid gap-3 mb-6"
+        style={{ gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}
+      >
+        <div className="admin-stat">
+          <p className="admin-stat__title">Caja de hoy</p>
+          <p className="admin-stat__value">{caja ? cop(caja.hoyTotal) : "—"}</p>
+          <p className="text-xs text-zinc-500 mt-1">
+            {caja ? `${caja.hoyVentas} venta${caja.hoyVentas === 1 ? "" : "s"}` : ""}
+          </p>
         </div>
-      ) : null}
+        <div className="admin-stat">
+          <p className="admin-stat__title">Físico este mes</p>
+          <p className="admin-stat__value">{caja ? cop(caja.mesTotal) : "—"}</p>
+          <p className="text-xs text-zinc-500 mt-1">
+            {caja ? `${caja.mesVentas} venta${caja.mesVentas === 1 ? "" : "s"}` : ""}
+          </p>
+        </div>
+        <div className="admin-stat">
+          <p className="admin-stat__title">Números físicos</p>
+          <p className="admin-stat__value">
+            {fisico ? `${fisico.libres} libres` : "—"}
+          </p>
+          <p className="text-xs text-zinc-500 mt-1">
+            {fisico ? `${fisico.emitidas} usados de ${fisico.total}` : ""}{" "}
+            <Link href="/admin/numeros" style={{ color: LIME }}>
+              Ver mapa →
+            </Link>
+          </p>
+        </div>
+      </div>
 
       <form
         onSubmit={onSubmit}
@@ -140,18 +226,13 @@ export default function VentaFisicaPage() {
         style={{ border: "1px solid rgba(184,227,81,0.2)" }}
       >
         <p className="text-xs font-semibold tracking-wide text-zinc-500 mb-4">
-          NUEVO CLIENTE FÍSICO
+          NUEVA VENTA FÍSICA
         </p>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-sm text-zinc-400 sm:col-span-2">
             Plan
-            <select
-              name="planId"
-              value={form.planId}
-              onChange={onChange}
-              className="px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-700 text-white"
-            >
+            <select name="planId" value={form.planId} onChange={onChange} className={INPUT}>
               {PLANES.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nombre} · ${p.precioLabel} · {p.claves} oport.
@@ -168,7 +249,7 @@ export default function VentaFisicaPage() {
               value={form.nombre}
               onChange={onChange}
               placeholder="Nombre del cliente"
-              className="px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-700 text-white"
+              className={INPUT}
             />
           </label>
 
@@ -181,7 +262,7 @@ export default function VentaFisicaPage() {
               onChange={onChange}
               placeholder="3001234567"
               inputMode="tel"
-              className="px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-700 text-white"
+              className={INPUT}
             />
           </label>
 
@@ -192,8 +273,8 @@ export default function VentaFisicaPage() {
               type="email"
               value={form.email}
               onChange={onChange}
-              placeholder="Si lo tiene, se envían las claves"
-              className="px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-700 text-white"
+              placeholder="Si lo tiene, se envían los números"
+              className={INPUT}
             />
           </label>
 
@@ -204,7 +285,7 @@ export default function VentaFisicaPage() {
               value={form.cedula}
               onChange={onChange}
               placeholder="Documento"
-              className="px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-700 text-white"
+              className={INPUT}
             />
           </label>
 
@@ -215,11 +296,11 @@ export default function VentaFisicaPage() {
               value={form.ciudad}
               onChange={onChange}
               placeholder="Cúcuta"
-              className="px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-700 text-white"
+              className={INPUT}
             />
           </label>
 
-          <label className="grid gap-1 text-sm text-zinc-400 sm:col-span-2">
+          <label className="grid gap-1 text-sm text-zinc-400">
             Cumpleaños (opcional)
             <DateOfBirthSelect
               name="fecha_nacimiento"
@@ -237,23 +318,36 @@ export default function VentaFisicaPage() {
             />
           </label>
 
-          <label className="grid gap-1 text-sm text-zinc-400 sm:col-span-2">
-            Claves impresas * ({plan.claves} del plan {plan.nombre}, rango 000–700)
+          <div className="grid gap-1 text-sm text-zinc-400 sm:col-span-2">
+            <div className="flex items-center justify-between gap-2">
+              <span>
+                Números entregados * ({plan.claves} del plan {plan.nombre}, 000–700)
+              </span>
+              <button
+                type="button"
+                onClick={sugerir}
+                disabled={sugiriendo}
+                className="px-3 py-1 rounded-lg text-xs font-semibold border border-zinc-600 text-zinc-200 hover:bg-zinc-800"
+              >
+                {sugiriendo ? "…" : "Sugerir números libres"}
+              </button>
+            </div>
             <textarea
               required
               name="clavesTexto"
               value={form.clavesTexto}
               onChange={onChange}
-              rows={3}
+              rows={2}
               placeholder={`Ej: ${Array.from({ length: plan.claves }, (_, i) =>
                 String(i + 1).padStart(3, "0")
               ).join(" ")}`}
-              className="px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-700 text-white font-mono"
+              className={`${INPUT} font-mono`}
             />
             <span className="text-xs text-zinc-600">
-              Deben ser exactamente {plan.claves} claves. Si ya están usadas este mes, el sistema avisa.
+              Escribe los que imprimiste o usa “Sugerir” para que el sistema proponga
+              libres. Deben ser exactamente {plan.claves}. Se revisan antes de guardar.
             </span>
-          </label>
+          </div>
         </div>
 
         <button
@@ -264,29 +358,21 @@ export default function VentaFisicaPage() {
         >
           {submitting
             ? "Registrando…"
-            : `Registrar cliente · ${plan.claves} claves impresas`}
+            : `Registrar venta · ${plan.claves} número${plan.claves === 1 ? "" : "s"} · $${plan.precioLabel}`}
         </button>
       </form>
 
       {resultado ? (
         <section
-          className="rounded-xl p-5"
-          style={{
-            background: "#111",
-            border: "1px solid rgba(184,227,81,0.28)",
-          }}
+          className="rounded-xl p-5 mb-6"
+          style={{ background: "#111", border: "1px solid rgba(184,227,81,0.28)" }}
         >
-          <p className="text-xs text-zinc-500 mb-1">Cliente registrado</p>
-          <p className="text-lg font-semibold text-white mb-1">
-            {resultado.miembro?.nombre}
-          </p>
+          <p className="text-xs text-zinc-500 mb-1">Venta registrada</p>
+          <p className="text-lg font-semibold text-white mb-1">{resultado.miembro?.nombre}</p>
           <p className="text-sm text-zinc-400 mb-4">
             {resultado.miembro?.telefono}
             {resultado.plan?.nombre ? ` · ${resultado.plan.nombre}` : ""}
             {resultado.emailOk ? " · correo enviado" : " · sin correo"}
-          </p>
-          <p className="text-xs text-zinc-500 mb-2">
-            Claves ({resultado.claves?.length || 0})
           </p>
           <div className="flex flex-wrap gap-2 mb-4">
             {(resultado.claves || []).map((c) => (
@@ -303,15 +389,73 @@ export default function VentaFisicaPage() {
               </span>
             ))}
           </div>
-          <Link
-            href="/admin/miembros"
-            className="text-sm font-semibold"
-            style={{ color: LIME }}
-          >
-            Ver en Clientes →
-          </Link>
+          {waResultado ? (
+            <a
+              href={waResultado}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block px-4 py-2 rounded-lg text-sm font-bold"
+              style={{ background: "#22c55e", color: "#050607" }}
+            >
+              Enviar números por WhatsApp
+            </a>
+          ) : null}
         </section>
       ) : null}
+
+      <p className="admin-section-label">Ventas físicas del mes</p>
+      <div className="admin-panel">
+        {ventas.length === 0 ? (
+          <div className="admin-empty">Aún no hay ventas físicas este mes.</div>
+        ) : (
+          ventas.map((v) => {
+            const anulada = v.estado === "anulado";
+            const wa = linkWhatsappNumeros({
+              telefono: v.telefono,
+              nombre: v.nombre,
+              numeros: v.numeros,
+              planNombre: planesMap[v.planId]?.nombre,
+            });
+            return (
+              <div key={v.id} className="admin-member-row" style={anulada ? { opacity: 0.5 } : undefined}>
+                <div className="min-w-0">
+                  <div className="admin-member-row__name">
+                    {v.nombre}
+                    {anulada ? " · ANULADA" : ""}
+                  </div>
+                  <div className="admin-member-row__email">
+                    {planesMap[v.planId]?.nombre || v.planId} · {v.telefono}
+                    {v.numeros.length ? (
+                      <span className="font-mono"> · {v.numeros.join(" ")}</span>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="admin-member-row__meta">
+                  <span className="admin-chip">{cop(v.monto)}</span>
+                  <div style={{ marginTop: 6 }}>{hora(v.fecha)}</div>
+                  {!anulada ? (
+                    <div className="flex gap-2 justify-end mt-2">
+                      {wa ? (
+                        <a href={wa} target="_blank" rel="noreferrer" className="text-xs" style={{ color: "#22c55e" }}>
+                          WhatsApp
+                        </a>
+                      ) : null}
+                      <button
+                        type="button"
+                        disabled={busyId === v.id}
+                        onClick={() => anular(v)}
+                        className="text-xs text-red-300"
+                      >
+                        {busyId === v.id ? "…" : "Anular"}
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

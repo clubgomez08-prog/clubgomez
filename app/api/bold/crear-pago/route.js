@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
-import { getPlanById } from "@/lib/club-gomez/planes";
+import { obtenerPlan } from "@/lib/club-gomez/planes-db";
 import {
   boldConfigured,
   boldIdentityKey,
@@ -28,7 +28,14 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const plan = getPlanById(body.planId || body.plan_id);
+    const plan = await obtenerPlan(supabaseAdmin, body.planId || body.plan_id);
+    const precioVisto = Number(body.precioVisto);
+    if (precioVisto > 0 && precioVisto !== plan.precio) {
+      return bad(
+        "El precio de este plan se acaba de actualizar. Recarga la página para ver el valor correcto.",
+        409
+      );
+    }
     const nombre = String(body.nombre || "").trim();
     const cedula = String(body.cedula || "").trim();
     const email = String(body.email || "")
@@ -109,6 +116,8 @@ export async function POST(request) {
         notas: JSON.stringify({
           bold_order_id: orderId,
           amount: plan.precio,
+          claves: plan.claves,
+          plan_nombre: plan.nombre,
           currency,
           canal: "bold",
           fecha_nacimiento: fechaNacimiento,

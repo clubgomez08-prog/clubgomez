@@ -145,9 +145,9 @@ export default function AdminDashboardPage() {
               gridTemplateColumns: "repeat(auto-fit, minmax(148px, 1fr))",
             }}
           >
-            <StatsCard title="Miembros activos" value={stats.miembrosActivos} />
+            <StatsCard title="Miembros con membresía vigente" value={stats.miembrosActivos} />
             <StatsCard
-              title="Membresías activas"
+              title="Membresías vigentes"
               value={stats.membresiasActivas}
             />
             <StatsCard
@@ -155,13 +155,19 @@ export default function AdminDashboardPage() {
               value={stats.solicitudesNuevas}
             />
             <StatsCard
-              title="Ingresos (pagos)"
+              title="Ingresos del mes"
               value={
                 finanzasVisibles
                   ? "$ " + Number(stats.ingresos || 0).toLocaleString("es-CO")
                   : "$ ***"
               }
             />
+            {finanzasVisibles ? (
+              <StatsCard
+                title="Ingresos históricos"
+                value={"$ " + Number(stats.ingresosTotal || 0).toLocaleString("es-CO")}
+              />
+            ) : null}
             <StatsCard
               title="Oportunidades web 701–999"
               value={
@@ -183,6 +189,21 @@ export default function AdminDashboardPage() {
               value={stats.premiosProgramados}
             />
           </div>
+
+          {stats.ventasSinPago > 0 ? (
+            <div
+              className="admin-panel mb-6"
+              style={{ borderColor: "rgba(248,113,113,0.5)", padding: "14px 16px" }}
+            >
+              <p className="text-sm" style={{ color: "#fca5a5" }}>
+                {stats.ventasSinPago === 1
+                  ? "Hay 1 membresía de este mes sin pago registrado."
+                  : `Hay ${stats.ventasSinPago} membresías de este mes sin pago registrado.`}{" "}
+                Tienen oportunidades asignadas pero no suman en ingresos. Avísale al
+                equipo técnico.
+              </p>
+            </div>
+          ) : null}
 
           <div className="mb-6">
             <p className="admin-section-label">Últimas ventas (pagadas)</p>

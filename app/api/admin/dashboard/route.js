@@ -6,6 +6,7 @@ import {
   periodoDe,
 } from "@/lib/club-gomez/claves-pool";
 import { getPlanById } from "@/lib/club-gomez/planes";
+import { rangoPeriodoBogota } from "@/lib/club-gomez/periodo-rango";
 
 export const dynamic = "force-dynamic";
 
@@ -20,32 +21,31 @@ export async function GET(request) {
     }
 
     const periodo = periodoDe();
+    const { desde, hasta } = rangoPeriodoBogota(periodo);
+    const ahora = new Date().toISOString();
 
     const [
-      rMiembros,
-      rMembresias,
+      rVigentes,
       rSolicitudes,
       rPagos,
       inventario,
       rBeneficios,
       rUltimos,
       rPagosRecientes,
+      rMembresiasMes,
     ] = await Promise.all([
       supabaseAdmin
-        .from("miembros")
-        .select("*", { count: "exact", head: true })
-        .eq("estado", "activo"),
-      supabaseAdmin
         .from("membresias")
-        .select("*", { count: "exact", head: true })
-        .eq("estado", "activa"),
+        .select("miembro_id")
+        .eq("estado", "activa")
+        .gt("vence_en", ahora),
       supabaseAdmin
         .from("solicitudes_membresia")
         .select("*", { count: "exact", head: true })
         .eq("estado", "nueva"),
       supabaseAdmin
         .from("pagos")
-        .select("monto_cop")
+        .select("monto_cop, pagado_en, membresia_id")
         .eq("estado", "aprobado"),
       inventarioClavesPeriodo(supabaseAdmin, periodo).catch(() => ({
         periodo,
@@ -69,12 +69,33 @@ export async function GET(request) {
         .eq("estado", "aprobado")
         .order("pagado_en", { ascending: false })
         .limit(8),
+      supabaseAdmin
+        .from("membresias")
+        .select("id")
+        .gte("created_at", desde)
+        .lt("created_at", hasta),
     ]);
 
-    const ingresos =
-      rPagos.error || !rPagos.data
-        ? 0
-        : rPagos.data.reduce((acc, p) => acc + (Number(p.monto_cop) || 0), 0);
+    const vigentes = rVigentes.error ? [] : rVigentes.data || [];
+    const miembrosActivos = new Set(
+      vigentes.map((m) => m.miembro_id).filter(Boolean)
+    ).size;
+
+    const pagos = rPagos.error ? [] : rPagos.data || [];
+    const desdeMs = Date.parse(desde);
+    const hastaMs = Date.parse(hasta);
+    let ingresos = 0;
+    let ingresosTotal = 0;
+    for (const p of pagos) {
+      const monto = Number(p.monto_cop) || 0;
+      ingresosTotal += monto;
+      const t = Date.parse(p.pagado_en);
+      if (t >= desdeMs && t < hastaMs) ingresos += monto;
+    }
+
+    const conPago = new Set(pagos.map((p) => p.membresia_id).filter(Boolean));
+    const ventasSinPago = (rMembresiasMes.error ? [] : rMembresiasMes.data || [])
+      .filter((m) => !conPago.has(m.id)).length;
 
     const pagosRecientes = rPagosRecientes.error ? [] : rPagosRecientes.data || [];
     const miembroIds = [
@@ -85,6 +106,7 @@ export async function GET(request) {
     ];
     let miembrosMap = {};
     let planesMap = {};
+    const clavesCount = {};
     if (miembroIds.length) {
       const { data: ms } = await supabaseAdmin
         .from("miembros")
@@ -95,9 +117,12 @@ export async function GET(request) {
     if (membresiaIds.length) {
       const { data: mems } = await supabaseAdmin
         .from("membresias")
-        .select("id, plan_id")
+        .select("id, plan_id, claves(numero)")
         .in("id", membresiaIds);
-      for (const m of mems || []) planesMap[m.id] = m.plan_id;
+      for (const m of mems || []) {
+        planesMap[m.id] = m.plan_id;
+        clavesCount[m.id] = (m.claves || []).length;
+      }
     }
     const ultimasVentas = pagosRecientes.map((p) => {
       const plan = getPlanById(planesMap[p.membresia_id]);
@@ -107,7 +132,7 @@ export async function GET(request) {
         nombre: persona.nombre || "—",
         email: persona.email || "—",
         planNombre: plan.nombre,
-        oportunidades: plan.claves,
+        oportunidades: clavesCount[p.membresia_id] ?? plan.claves,
         monto: p.monto_cop,
         fecha: p.pagado_en,
         canal: p.metodo === "efectivo" ? "físico" : "web",
@@ -118,10 +143,12 @@ export async function GET(request) {
       ok: true,
       periodo,
       stats: {
-        miembrosActivos: rMiembros.error ? 0 : rMiembros.count ?? 0,
-        membresiasActivas: rMembresias.error ? 0 : rMembresias.count ?? 0,
+        miembrosActivos,
+        membresiasActivas: vigentes.length,
         solicitudesNuevas: rSolicitudes.error ? 0 : rSolicitudes.count ?? 0,
         ingresos,
+        ingresosTotal,
+        ventasSinPago,
         clavesEmitidas: inventario.emitidas,
         clavesLibres: inventario.libres,
         clavesWebEmitidas: inventario.web?.emitidas ?? 0,

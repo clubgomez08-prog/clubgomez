@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { getAdminAuthHeaders } from "@/lib/auth";
 import { useToast } from "@/components/admin/Toast";
-import { getPlanById, labelOportunidades } from "@/lib/club-gomez/planes";
+import { labelOportunidades } from "@/lib/club-gomez/planes";
+import { planDeSolicitud } from "@/lib/club-gomez/planes-db";
 
 function parseNotas(notas) {
   try {
@@ -130,7 +131,7 @@ export default function AdminSolicitudesPage() {
         <div className="space-y-3">
           {items.map((s) => {
             const meta = parseNotas(s.notas);
-            const plan = getPlanById(s.plan_id);
+            const plan = planDeSolicitud(s.plan_id, meta);
             const monto = Number(meta.amount) || plan.precio;
             const pagada = s.estado === "convertida";
             return (
@@ -142,7 +143,7 @@ export default function AdminSolicitudesPage() {
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h2 className="text-white font-semibold truncate">{s.nombre}</h2>
                     <span className="text-xs uppercase tracking-wide px-2 py-0.5 rounded-full bg-lime-500/15 text-lime-400 border border-lime-500/30">
-                      {plan.nombre} · ${plan.precioLabel} ·{" "}
+                      {plan.nombre} · ${Number(monto).toLocaleString("es-CO")} ·{" "}
                       {labelOportunidades(plan.claves)}
                     </span>
                     <span

@@ -98,7 +98,49 @@ function ClavesDetalle({ m, periodo, destacarClave }) {
           Membresía hasta {formatFecha(m.membresia.vence_en)}
         </p>
       ) : null}
+      <ReenviarCorreo m={m} />
     </div>
+  );
+}
+
+function ReenviarCorreo({ m }) {
+  const { addToast } = useToast();
+  const [enviando, setEnviando] = useState(false);
+  const email = String(m.email || "");
+  const sinEmail = !email.includes("@") || email.endsWith("@sin-email.clubgomez.co");
+  if (!m.membresia?.id || !m.claves?.length || sinEmail) return null;
+
+  async function reenviar() {
+    if (!confirm(`¿Reenviar el correo de oportunidades a ${email}?`)) return;
+    setEnviando(true);
+    try {
+      const res = await fetch("/api/admin/reenviar-correo", {
+        method: "POST",
+        headers: { ...(await getAdminAuthHeaders()), "Content-Type": "application/json" },
+        body: JSON.stringify({ membresiaId: m.membresia.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo reenviar");
+      addToast(`Correo reenviado a ${data.email}`, "success");
+    } catch (err) {
+      addToast(err.message || "Error", "error");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        reenviar();
+      }}
+      disabled={enviando}
+      className="mt-3 px-3 py-1.5 rounded-lg text-xs font-semibold border border-zinc-600 text-zinc-200 hover:bg-zinc-800"
+    >
+      {enviando ? "Enviando…" : "Reenviar correo de oportunidades"}
+    </button>
   );
 }
 
@@ -361,11 +403,19 @@ export default function AdminMiembrosPage() {
               const abierto = expandido === m.id;
               const cumpleHoy = esCumpleHoy(m.fecha_nacimiento);
               return (
-                <button
-                  type="button"
+                <div
+                  role="button"
+                  tabIndex={0}
                   key={m.id}
-                  className="admin-client-card text-left w-full"
+                  className="admin-client-card text-left w-full cursor-pointer"
                   onClick={() => setExpandido(abierto ? null : m.id)}
+                  onKeyDown={(e) => {
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setExpandido(abierto ? null : m.id);
+                    }
+                  }}
                 >
                   <div className="admin-client-card__top">
                     <div>
@@ -398,7 +448,7 @@ export default function AdminMiembrosPage() {
                       destacarClave={busquedaClave}
                     />
                   ) : null}
-                </button>
+                </div>
               );
             })}
           </div>

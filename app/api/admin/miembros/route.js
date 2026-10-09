@@ -119,9 +119,14 @@ export async function GET(request) {
         .in("miembro_id", ids)
         .order("created_at", { ascending: false });
 
+      const ahora = Date.now();
       for (const mem of membresias || []) {
         if (!membresiasByMiembro[mem.miembro_id]) {
-          membresiasByMiembro[mem.miembro_id] = mem;
+          const vencida =
+            mem.estado === "activa" && mem.vence_en && Date.parse(mem.vence_en) < ahora;
+          membresiasByMiembro[mem.miembro_id] = vencida
+            ? { ...mem, estado: "vencida" }
+            : mem;
         }
       }
 

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
 import { activarMembresiaManual } from "@/lib/club-gomez/activar-membresia";
+import { registrarActividad } from "@/lib/admin-actividad";
+import { planDeSolicitud } from "@/lib/club-gomez/planes-db";
 
 export const dynamic = "force-dynamic";
 
@@ -37,8 +39,15 @@ export async function POST(request, { params }) {
       );
     }
 
+    let notas = {};
+    try {
+      notas = solicitud.notas ? JSON.parse(solicitud.notas) : {};
+    } catch {
+      notas = {};
+    }
     const resultado = await activarMembresiaManual(supabaseAdmin, {
       planId: solicitud.plan_id,
+      plan: planDeSolicitud(solicitud.plan_id, notas),
       nombre: solicitud.nombre,
       cedula: solicitud.cedula,
       email: solicitud.email,
@@ -46,6 +55,12 @@ export async function POST(request, { params }) {
       ciudad: solicitud.ciudad,
       origen: "whatsapp",
       solicitudId: solicitud.id,
+    });
+
+    await registrarActividad(supabaseAdmin, user, "pago_web_activado", {
+      nombre: solicitud.nombre,
+      plan: solicitud.plan_id,
+      claves: resultado.claves,
     });
 
     return NextResponse.json({

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
+import { registrarActividad } from "@/lib/admin-actividad";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,11 @@ export async function POST(request, { params }) {
     if (upErr) {
       return NextResponse.json({ error: upErr.message }, { status: 400 });
     }
+
+    await registrarActividad(supabaseAdmin, user, "premio_entregado", {
+      premio: beneficio.premio,
+      fecha: beneficio.fecha_sorteo,
+    });
 
     return NextResponse.json({ ok: true, beneficio: updated });
   } catch (err) {

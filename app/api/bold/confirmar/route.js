@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { consultarVoucherBold } from "@/lib/club-gomez/bold";
 import { activarMembresiaManual } from "@/lib/club-gomez/activar-membresia";
-import { getPlanById } from "@/lib/club-gomez/planes";
+import { planDeSolicitud } from "@/lib/club-gomez/planes-db";
 import { sendPurchaseCapi } from "@/lib/club-gomez/meta-capi";
 import { buscarSolicitudPorBoldOrder } from "@/lib/club-gomez/solicitudes-bold";
 import { mensajeErrorMiembro } from "@/lib/club-gomez/miembro-identidad";
@@ -78,8 +78,8 @@ export async function POST(request) {
     }
 
     if (solicitud.estado === "convertida") {
-      const planYa = getPlanById(solicitud.plan_id);
       const metaYa = parseNotas(solicitud.notas);
+      const planYa = planDeSolicitud(solicitud.plan_id, metaYa);
       const valueYa = Number(metaYa.amount) || planYa.precio || 0;
       await maybeCapiPurchase({
         request,
@@ -146,8 +146,10 @@ export async function POST(request) {
     }
 
     const notas = parseNotas(solicitud.notas);
+    const plan = planDeSolicitud(solicitud.plan_id, notas);
     const resultado = await activarMembresiaManual(supabaseAdmin, {
       planId: solicitud.plan_id,
+      plan,
       nombre: solicitud.nombre,
       cedula: solicitud.cedula,
       email: solicitud.email,
@@ -161,7 +163,6 @@ export async function POST(request) {
       montoCop: voucher?.total || null,
     });
 
-    const plan = getPlanById(solicitud.plan_id);
     const value =
       Number(voucher?.total) || Number(notas.amount) || plan.precio || 0;
 

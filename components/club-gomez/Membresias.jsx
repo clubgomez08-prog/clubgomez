@@ -3,18 +3,14 @@
 import Image from "next/image";
 import { STICKERS } from "@/lib/club-gomez/stickers";
 import { irASuscribir } from "@/lib/club-gomez/flujo-suscripcion";
-import {
-  getPlanById,
-  PLANES_MEMBRESIA,
-  labelOportunidades,
-} from "@/lib/club-gomez/planes";
+import { labelOportunidades } from "@/lib/club-gomez/planes";
+import { usePlanes } from "@/lib/club-gomez/use-planes";
 import { trackInitiateCheckoutThenGo } from "@/lib/club-gomez/meta-pixel";
 import { useReveal } from "./hooks";
 
-const PLANES = [
+const PRESENTACION = [
   {
-    ...PLANES_MEMBRESIA.elite,
-    precio: PLANES_MEMBRESIA.elite.precioLabel,
+    id: "elite",
     badge: "Recomendado por el Club",
     highlight: true,
     extras: ["Te conviertes en miembro VIP"],
@@ -22,8 +18,7 @@ const PLANES = [
     sticker: STICKERS.corona,
   },
   {
-    ...PLANES_MEMBRESIA.selecto,
-    precio: PLANES_MEMBRESIA.selecto.precioLabel,
+    id: "selecto",
     badge: null,
     highlight: false,
     extras: [],
@@ -31,8 +26,7 @@ const PLANES = [
     sticker: STICKERS.cadena,
   },
   {
-    ...PLANES_MEMBRESIA.esencial,
-    precio: PLANES_MEMBRESIA.esencial.precioLabel,
+    id: "esencial",
     badge: null,
     highlight: false,
     extras: [],
@@ -43,6 +37,12 @@ const PLANES = [
 
 export default function Membresias() {
   const { ref, className } = useReveal();
+  const planes = usePlanes();
+  const PLANES = PRESENTACION.map((extra) => ({
+    ...planes[extra.id],
+    ...extra,
+    precio: planes[extra.id].precioLabel,
+  }));
 
   return (
     <section id="membresias" ref={ref} className={`cg-planes ${className}`}>
@@ -142,7 +142,7 @@ export default function Membresias() {
                 type="button"
                 className="cg-plan-card__cta"
                 onClick={() => {
-                  trackInitiateCheckoutThenGo(getPlanById(p.id), () =>
+                  trackInitiateCheckoutThenGo(planes[p.id], () =>
                     irASuscribir({ planId: p.id })
                   );
                 }}

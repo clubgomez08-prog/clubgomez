@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { STICKERS } from "@/lib/club-gomez/stickers";
 import { irASuscribir } from "@/lib/club-gomez/flujo-suscripcion";
-import { getPlanById, PLANES_MEMBRESIA } from "@/lib/club-gomez/planes";
+import { usePlanes } from "@/lib/club-gomez/use-planes";
 import { trackInitiateCheckoutThenGo } from "@/lib/club-gomez/meta-pixel";
 import { useReveal } from "./hooks";
 import styles from "./DestacadoClub.module.css";
@@ -46,24 +46,21 @@ const CONFETTI = Array.from({ length: 42 }, (_, n) => ({
   spin: `${n % 2 === 0 ? 320 : -280}deg`,
 }));
 
-const MINI_PLANES = [
+const PRESENTACION = [
   {
-    ...PLANES_MEMBRESIA.elite,
-    precio: PLANES_MEMBRESIA.elite.precioLabel,
+    id: "elite",
     highlight: true,
     badge: "Recomendado",
     sticker: STICKERS.corona,
   },
   {
-    ...PLANES_MEMBRESIA.selecto,
-    precio: PLANES_MEMBRESIA.selecto.precioLabel,
+    id: "selecto",
     highlight: false,
     badge: null,
     sticker: STICKERS.cadena,
   },
   {
-    ...PLANES_MEMBRESIA.esencial,
-    precio: PLANES_MEMBRESIA.esencial.precioLabel,
+    id: "esencial",
     highlight: false,
     badge: null,
     sticker: STICKERS.llave,
@@ -72,6 +69,12 @@ const MINI_PLANES = [
 
 export default function DestacadoClub() {
   const { ref, className } = useReveal();
+  const planes = usePlanes();
+  const MINI_PLANES = PRESENTACION.map((extra) => ({
+    ...planes[extra.id],
+    ...extra,
+    precio: planes[extra.id].precioLabel,
+  }));
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
   const other = (i + 1) % FOTOS.length;
@@ -181,7 +184,7 @@ export default function DestacadoClub() {
                   type="button"
                   className={styles.cta}
                   onClick={() => {
-                    trackInitiateCheckoutThenGo(getPlanById(p.id), () =>
+                    trackInitiateCheckoutThenGo(planes[p.id], () =>
                       irASuscribir({ planId: p.id })
                     );
                   }}

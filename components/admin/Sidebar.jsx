@@ -7,11 +7,15 @@ import { signOut } from "@/lib/auth";
 
 export const ADMIN_NAV = [
   { href: "/admin", label: "Dashboard", short: "Inicio", icon: "◆" },
+  { href: "/admin/campana", label: "Campaña", short: "Campaña", icon: "✦" },
+  { href: "/admin/planes", label: "Planes", short: "Planes", icon: "$" },
   { href: "/admin/solicitudes", label: "Pagos web", short: "Pagos", icon: "✓" },
   { href: "/admin/venta-fisica", label: "Venta física", short: "Venta", icon: "▣" },
+  { href: "/admin/numeros", label: "Números", short: "Números", icon: "#" },
   { href: "/admin/beneficios", label: "Fechas de premio", short: "Premios", icon: "★" },
   { href: "/admin/miembros", label: "Clientes", short: "Clientes", icon: "○" },
   { href: "/admin/correos", label: "Correos", short: "Correos", icon: "✉" },
+  { href: "/admin/historial", label: "Historial", short: "Historial", icon: "≡" },
 ];
 
 export default function Sidebar({ abierto, onClose, className = "" }) {
