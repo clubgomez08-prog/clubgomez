@@ -1,37 +1,32 @@
-"use client";
+import HomePage from "@/components/club-gomez/HomePage";
+import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
+import {
+  CAMPANA_LANDING_DEFAULT,
+  campanaParaLanding,
+} from "@/lib/club-gomez/campana-landing";
 
-import { useEffect } from "react";
-import Header from "@/components/club-gomez/Header";
-import AmbientBg from "@/components/club-gomez/AmbientBg";
-import HeroCarousel from "@/components/club-gomez/HeroCarousel";
-import DestacadoClub from "@/components/club-gomez/DestacadoClub";
-import BeneficiosCards from "@/components/club-gomez/BeneficiosCards";
-import BeneficiosDelMes from "@/components/club-gomez/BeneficiosDelMes";
-import Membresias from "@/components/club-gomez/Membresias";
-import Testimonios from "@/components/club-gomez/Testimonios";
-import VerMisClaves from "@/components/club-gomez/VerMisClaves";
-import Footer from "@/components/club-gomez/Footer";
-import { trackViewContent } from "@/lib/club-gomez/meta-pixel";
+export const revalidate = 30;
 
-export default function ClubGomezHomePage() {
-  useEffect(() => {
-    trackViewContent();
-  }, []);
+async function cargarCampanaActiva() {
+  if (supabaseMissingEnv) return CAMPANA_LANDING_DEFAULT;
+  try {
+    const consulta = supabaseAdmin
+      .from("campanas")
+      .select("*")
+      .eq("activa", true)
+      .maybeSingle();
+    const limite = new Promise((resolve) =>
+      setTimeout(() => resolve({ data: null, error: "timeout" }), 3000)
+    );
+    const { data, error } = await Promise.race([consulta, limite]);
+    if (error || !data) return CAMPANA_LANDING_DEFAULT;
+    return campanaParaLanding(data);
+  } catch {
+    return CAMPANA_LANDING_DEFAULT;
+  }
+}
 
-  return (
-    <div className="cg-home">
-      <AmbientBg />
-      <Header />
-      <main className="cg-home__main">
-        <HeroCarousel />
-        <DestacadoClub />
-        <BeneficiosCards />
-        <BeneficiosDelMes />
-        <Membresias />
-        <Testimonios />
-        <VerMisClaves />
-      </main>
-      <Footer />
-    </div>
-  );
+export default async function ClubGomezHome() {
+  const campana = await cargarCampanaActiva();
+  return <HomePage campana={campana} />;
 }

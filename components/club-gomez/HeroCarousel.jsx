@@ -2,9 +2,12 @@
 
 import CtaButton from "./CtaButton";
 import { lanzarConfeti } from "@/lib/club-gomez/confeti";
+import { CAMPANA_LANDING_DEFAULT, partirEfectivo } from "@/lib/club-gomez/campana-landing";
 import { scrollToId } from "./hooks";
 
-export default function HeroCarousel() {
+export default function HeroCarousel({ campana = CAMPANA_LANDING_DEFAULT }) {
+  const efectivo = partirEfectivo(campana.heroEfectivo);
+
   function irAParticipar() {
     lanzarConfeti();
     window.setTimeout(() => scrollToId("destacado-club"), 180);
@@ -24,10 +27,10 @@ export default function HeroCarousel() {
         <picture className="cg-hero__picture is-active">
           <source
             media="(max-width: 767px)"
-            srcSet="/club-gomez/hero-crypton-movil.jpg"
+            srcSet={campana.heroImgMovil}
           />
           <img
-            src="/club-gomez/hero-crypton-pc.png"
+            src={campana.heroImgPc}
             alt=""
             className="cg-hero__img"
             style={{ ["--cg-hero-pos-mobile"]: "72% 42%" }}
@@ -40,18 +43,20 @@ export default function HeroCarousel() {
       <div className="cg-hero__content">
         <div className="cg-hero__copy">
           <div className="cg-hero__copy-text">
-            <p className="cg-hero__eyebrow">0 km · la nueva moto del Club</p>
+            <p className="cg-hero__eyebrow">{campana.heroEyebrow}</p>
             <h1 className="cg-hero__title">
-              YAMAHA
+              {campana.heroTitulo}
               <br />
-              <span className="cg-hero__title-accent">CRYPTON</span>
+              <span className="cg-hero__title-accent">{campana.heroTituloAcento}</span>
             </h1>
-            <div className="cg-hero__sub">
-              <p className="cg-hero__sub-cash">
-                + $1.000.000
-                <span> EN EFECTIVO</span>
-              </p>
-            </div>
+            {efectivo.monto ? (
+              <div className="cg-hero__sub">
+                <p className="cg-hero__sub-cash">
+                  {efectivo.monto}
+                  {efectivo.resto ? <span>{efectivo.resto}</span> : null}
+                </p>
+              </div>
+            ) : null}
           </div>
         </div>
         <div className="cg-hero__cta">
@@ -60,7 +65,7 @@ export default function HeroCarousel() {
             className="cg-cta-blink"
             onClick={irAParticipar}
           >
-            ¡Participar!
+            {campana.heroCta}
           </CtaButton>
         </div>
       </div>

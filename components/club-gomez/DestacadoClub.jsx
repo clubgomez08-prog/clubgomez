@@ -5,23 +5,9 @@ import { STICKERS } from "@/lib/club-gomez/stickers";
 import { irASuscribir } from "@/lib/club-gomez/flujo-suscripcion";
 import { usePlanes } from "@/lib/club-gomez/use-planes";
 import { trackInitiateCheckoutThenGo } from "@/lib/club-gomez/meta-pixel";
+import { CAMPANA_LANDING_DEFAULT } from "@/lib/club-gomez/campana-landing";
 import { useReveal } from "./hooks";
 import styles from "./DestacadoClub.module.css";
-
-const FOTOS = [
-  {
-    src: "/club-gomez/daniel-crypton.jpg",
-    alt: "Daniel con la Yamaha Crypton",
-  },
-  {
-    src: "/club-gomez/crypton-frente-sol.jpg",
-    alt: "Yamaha Crypton",
-  },
-  {
-    src: "/club-gomez/crypton-trasera-sol.jpg",
-    alt: "Yamaha Crypton",
-  },
-];
 
 const CONFETTI_COLORS = [
   "#B8E351",
@@ -67,7 +53,8 @@ const PRESENTACION = [
   },
 ];
 
-export default function DestacadoClub() {
+export default function DestacadoClub({ campana = CAMPANA_LANDING_DEFAULT }) {
+  const FOTOS = campana.fotos?.length ? campana.fotos : CAMPANA_LANDING_DEFAULT.fotos;
   const { ref, className } = useReveal();
   const planes = usePlanes();
   const MINI_PLANES = PRESENTACION.map((extra) => ({
@@ -79,13 +66,14 @@ export default function DestacadoClub() {
   const [paused, setPaused] = useState(false);
   const other = (i + 1) % FOTOS.length;
 
+  const totalFotos = FOTOS.length;
   useEffect(() => {
-    if (paused) return undefined;
+    if (paused || totalFotos < 2) return undefined;
     const t = window.setInterval(() => {
-      setI((n) => (n + 1) % FOTOS.length);
+      setI((n) => (n + 1) % totalFotos);
     }, 4200);
     return () => window.clearInterval(t);
-  }, [paused]);
+  }, [paused, totalFotos]);
 
   return (
     <section
@@ -132,22 +120,28 @@ export default function DestacadoClub() {
                 />
               ))}
             </div>
-            <span className={styles.pill}>0 kilómetros</span>
+            {campana.pill ? <span className={styles.pill}>{campana.pill}</span> : null}
             <div className={styles.captionBlock}>
-              <p className={styles.date}>17 de octubre · Lotería de Boyacá</p>
-              <p className={styles.caption}>Yamaha Crypton</p>
-              <p className={styles.cash}>+ $1.000.000 en efectivo</p>
+              {campana.destacadoFecha ? (
+                <p className={styles.date}>{campana.destacadoFecha}</p>
+              ) : null}
+              <p className={styles.caption}>{campana.destacadoPremio}</p>
+              {campana.destacadoEfectivo ? (
+                <p className={styles.cash}>{campana.destacadoEfectivo}</p>
+              ) : null}
             </div>
           </div>
 
-          <button
-            type="button"
-            className={styles.thumb}
-            onClick={() => setI(other)}
-            aria-label="Ver la otra foto"
-          >
-            <img src={FOTOS[other].src} alt="" />
-          </button>
+          {totalFotos > 1 ? (
+            <button
+              type="button"
+              className={styles.thumb}
+              onClick={() => setI(other)}
+              aria-label="Ver la otra foto"
+            >
+              <img src={FOTOS[other].src} alt="" />
+            </button>
+          ) : null}
         </div>
 
         <div className={styles.copy}>
@@ -155,9 +149,7 @@ export default function DestacadoClub() {
           <h2 className={styles.title}>
             Elige tu <span>membresía</span>
           </h2>
-          <p className={styles.kicker}>
-            Crypton 0 km más $1.000.000 en efectivo. 17 de octubre, Lotería de Boyacá.
-          </p>
+          <p className={styles.kicker}>{campana.destacadoKicker}</p>
 
           <div className={styles.cards}>
             {MINI_PLANES.map((p) => (

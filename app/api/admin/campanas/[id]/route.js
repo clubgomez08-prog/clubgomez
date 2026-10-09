@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
 import { normalizarCampana } from "@/lib/club-gomez/campanas";
@@ -57,6 +58,13 @@ export async function PUT(request, { params }) {
       body.activa === true ? "campana_activada" : "campana_guardada",
       { nombre: data.nombre, periodo: data.periodo }
     );
+    if (data.activa) {
+      try {
+        revalidatePath("/");
+      } catch (e) {
+        console.error("[admin/campanas PUT] revalidate:", e?.message || e);
+      }
+    }
     return NextResponse.json({ ok: true, campana: data });
   } catch (err) {
     console.error("[admin/campanas PUT]", err);

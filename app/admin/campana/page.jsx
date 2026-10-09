@@ -273,8 +273,10 @@ export default function AdminCampanaPage() {
           color: "#fcd34d",
         }}
       >
-        Por ahora esto solo se guarda. La landing sigue mostrando Crypton tal
-        como está hoy hasta que se conecte esta sección.
+        La campaña <strong>activa</strong> es la que se ve en la página: portada,
+        fotos del destacado, fecha y lotería. Al guardarla, la página se actualiza
+        en segundos. Si dejas un campo vacío se usa el de la Crypton, menos el
+        premio extra: vacío significa que no hay efectivo.
       </div>
 
       {loading ? (
