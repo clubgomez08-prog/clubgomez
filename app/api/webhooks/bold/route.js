@@ -1,20 +1,12 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarFirmaWebhookBold } from "@/lib/club-gomez/bold";
-import { activarMembresiaManual } from "@/lib/club-gomez/activar-membresia";
+import { activarSolicitudSiBoldCobro } from "@/lib/club-gomez/activar-pago-bold";
 import { planDeSolicitud } from "@/lib/club-gomez/planes-db";
 import { sendPurchaseCapi } from "@/lib/club-gomez/meta-capi";
 import { buscarSolicitudPorBoldOrder } from "@/lib/club-gomez/solicitudes-bold";
 
 export const dynamic = "force-dynamic";
-
-function parseNotas(notas) {
-  try {
-    return notas ? JSON.parse(notas) : {};
-  } catch {
-    return {};
-  }
-}
 
 export async function POST(request) {
   const rawBody = await request.text();
@@ -60,23 +52,17 @@ export async function POST(request) {
       return NextResponse.json({ ok: true, already: true });
     }
 
-    const notas = parseNotas(solicitud.notas);
+    // El aviso solo dispara la revisión: se activa únicamente si la API de Bold confirma el cobro.
+    const revision = await activarSolicitudSiBoldCobro(supabaseAdmin, solicitud);
+    if (revision.estado === "pendiente") {
+      return NextResponse.json({ ok: false, pending: true }, { status: 503 });
+    }
+    if (revision.estado !== "activada") {
+      return NextResponse.json({ ok: true, estado: revision.estado });
+    }
+
+    const notas = revision.notas;
     const plan = planDeSolicitud(solicitud.plan_id, notas);
-    await activarMembresiaManual(supabaseAdmin, {
-      planId: solicitud.plan_id,
-      plan,
-      nombre: solicitud.nombre,
-      cedula: solicitud.cedula,
-      email: solicitud.email,
-      telefono: solicitud.telefono,
-      ciudad: solicitud.ciudad,
-      fechaNacimiento: notas.fecha_nacimiento || null,
-      origen: "bold",
-      solicitudId: solicitud.id,
-      boldOrderId: reference,
-      boldTransactionId: paymentId,
-      montoCop: event?.data?.amount?.total || null,
-    });
 
     try {
       const value =

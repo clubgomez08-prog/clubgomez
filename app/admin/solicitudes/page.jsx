@@ -20,6 +20,8 @@ export default function AdminSolicitudesPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [aprobando, setAprobando] = useState(null);
+  const [revisando, setRevisando] = useState(false);
+  const [revision, setRevision] = useState(null);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -42,6 +44,32 @@ export default function AdminSolicitudesPage() {
   useEffect(() => {
     cargar();
   }, [cargar]);
+
+  async function revisarConBold() {
+    setRevisando(true);
+    setRevision(null);
+    try {
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch("/api/admin/solicitudes/revisar-bold", {
+        method: "POST",
+        headers,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo revisar con Bold");
+      setRevision(data);
+      addToast(
+        data.activadas.length
+          ? `${data.activadas.length} pago(s) cobrado(s) en Bold activado(s).`
+          : "Bold no tiene pagos cobrados pendientes de activar.",
+        data.activadas.length ? "success" : "info"
+      );
+      await cargar();
+    } catch (err) {
+      addToast(err.message || "Error al revisar con Bold", "error");
+    } finally {
+      setRevisando(false);
+    }
+  }
 
   async function aprobar(id) {
     if (
@@ -91,6 +119,49 @@ export default function AdminSolicitudesPage() {
           “Sin confirmar” = recargó, canceló o Bold aún no avisó. No pulses Activar
           a menos que el dinero ya esté en Bold.
         </p>
+      </div>
+
+      <div className="mb-5 rounded-xl border border-sky-500/30 bg-sky-500/5 p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-sky-200">Revisar pagos con Bold</p>
+            <p className="text-xs text-zinc-400 mt-1">
+              Pregunta a Bold por los intentos sin confirmar de los últimos 7 días
+              (por ejemplo, pagos con Nequi donde la persona no volvió a la página).
+              Solo activa los que Bold confirma como cobrados.
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={revisando}
+            onClick={revisarConBold}
+            className="shrink-0 px-4 py-2 rounded-lg bg-sky-500 text-zinc-950 font-semibold text-sm hover:bg-sky-400 disabled:opacity-60"
+          >
+            {revisando ? "Revisando con Bold…" : "Revisar pagos con Bold"}
+          </button>
+        </div>
+        {revision && (
+          <div className="mt-3 text-xs text-zinc-300 space-y-1">
+            <p>
+              Revisados: {revision.revisados} · Activados: {revision.activadas.length} ·
+              Sin cobro: {revision.sinCobro}
+              {revision.pendientes.length
+                ? ` · En proceso en Bold: ${revision.pendientes.length}`
+                : ""}
+            </p>
+            {revision.activadas.map((a, i) => (
+              <p key={i} className="text-lime-300">
+                ✓ {a.nombre}: {a.numeros.join(", ")}
+                {a.emailOk ? " · correo enviado" : " · revisa el correo"}
+              </p>
+            ))}
+            {revision.errores.map((e, i) => (
+              <p key={i} className="text-red-300">
+                {e.nombre}: {e.error}
+              </p>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2 mb-5">
