@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import Sidebar, { ADMIN_NAV } from "@/components/admin/Sidebar";
 import { ToastProvider } from "@/components/admin/Toast";
-import { getSession } from "@/lib/auth";
+import { getAdminAuthHeaders } from "@/lib/auth";
 import "./admin.css";
 
 const BOTTOM_NAV = [
@@ -30,12 +30,13 @@ export default function AdminLayout({ children }) {
 
   useEffect(() => {
     async function checkAuth() {
-      const currentSession = await getSession();
-      setSession(currentSession);
+      const headers = await getAdminAuthHeaders();
+      const autenticado = Boolean(headers.Authorization);
+      setSession(autenticado ? { ok: true } : null);
 
-      if (!currentSession && !isLoginPage) {
+      if (!autenticado && !isLoginPage) {
         router.replace("/admin/login");
-      } else if (currentSession && isLoginPage) {
+      } else if (autenticado && isLoginPage) {
         router.replace("/admin");
       }
 

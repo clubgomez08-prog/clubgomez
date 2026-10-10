@@ -28,6 +28,7 @@ export default function AdminDashboardPage() {
   const [periodo, setPeriodo] = useState("");
   const [ultimasVentas, setUltimasVentas] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState("");
   const [finanzasVisibles, setFinanzasVisibles] = useState(false);
   const [modalFinanzas, setModalFinanzas] = useState(false);
   const [passwordFinanzas, setPasswordFinanzas] = useState("");
@@ -37,6 +38,7 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function cargar() {
       setCargando(true);
+      setErrorCarga("");
       try {
         const headers = await getAdminAuthHeaders();
         const res = await fetch("/api/admin/dashboard", { headers });
@@ -45,7 +47,8 @@ export default function AdminDashboardPage() {
         setStats(data.stats || {});
         setPeriodo(data.periodo || "");
         setUltimasVentas(data.ultimasVentas || []);
-      } catch {
+      } catch (err) {
+        setErrorCarga(err.message || "No se pudieron cargar los datos. Recarga la página.");
         setStats({
           miembrosActivos: 0,
           membresiasActivas: 0,
@@ -129,6 +132,10 @@ export default function AdminDashboardPage() {
           )}
         </div>
       </div>
+
+      {errorCarga ? (
+        <p className="text-sm text-red-300 mb-4">{errorCarga}</p>
+      ) : null}
 
       {cargando ? (
         <div className="flex justify-center py-6 mb-4">
