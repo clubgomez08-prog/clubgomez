@@ -110,7 +110,7 @@ export async function GET(request) {
 
     const ids = (miembros || []).map((m) => m.id);
     let membresiasByMiembro = {};
-    let clavesByMembresia = {};
+    let clavesByMiembro = {};
 
     if (ids.length > 0) {
       const { data: membresias } = await supabaseAdmin
@@ -120,7 +120,9 @@ export async function GET(request) {
         .order("created_at", { ascending: false });
 
       const ahora = Date.now();
+      const memPorId = {};
       for (const mem of membresias || []) {
+        memPorId[mem.id] = mem;
         if (!membresiasByMiembro[mem.miembro_id]) {
           const vencida =
             mem.estado === "activa" && mem.vence_en && Date.parse(mem.vence_en) < ahora;
@@ -130,7 +132,7 @@ export async function GET(request) {
         }
       }
 
-      const memIds = Object.values(membresiasByMiembro).map((m) => m.id);
+      const memIds = Object.keys(memPorId);
       if (memIds.length > 0) {
         const { data: claves } = await supabaseAdmin
           .from("claves")
@@ -139,13 +141,16 @@ export async function GET(request) {
           .eq("periodo", periodo);
 
         for (const c of claves || []) {
-          if (!clavesByMembresia[c.membresia_id]) {
-            clavesByMembresia[c.membresia_id] = [];
+          const mem = memPorId[c.membresia_id];
+          if (!mem || mem.estado === "cancelada") continue;
+          const miembroId = mem.miembro_id;
+          if (!clavesByMiembro[miembroId]) clavesByMiembro[miembroId] = [];
+          const numero = padClave(c.numero);
+          if (!clavesByMiembro[miembroId].includes(numero)) {
+            clavesByMiembro[miembroId].push(numero);
           }
-          clavesByMembresia[c.membresia_id].push(c.numero);
         }
 
-        // Si buscaron por clave de otro periodo, igual mostrar esa clave encontrada
         if (porClave) {
           const padded = padClave(buscar);
           const { data: extra } = await supabaseAdmin
@@ -154,11 +159,12 @@ export async function GET(request) {
             .in("membresia_id", memIds)
             .eq("numero", padded);
           for (const c of extra || []) {
-            if (!clavesByMembresia[c.membresia_id]) {
-              clavesByMembresia[c.membresia_id] = [];
-            }
-            if (!clavesByMembresia[c.membresia_id].includes(c.numero)) {
-              clavesByMembresia[c.membresia_id].push(c.numero);
+            const mem = memPorId[c.membresia_id];
+            if (!mem) continue;
+            if (!clavesByMiembro[mem.miembro_id]) clavesByMiembro[mem.miembro_id] = [];
+            const numero = padClave(c.numero);
+            if (!clavesByMiembro[mem.miembro_id].includes(numero)) {
+              clavesByMiembro[mem.miembro_id].push(numero);
             }
           }
         }
@@ -167,10 +173,12 @@ export async function GET(request) {
 
     const items = (miembros || []).map((m) => {
       const mem = membresiasByMiembro[m.id] || null;
-      const plan = mem?.plan_id
-        ? PLANES_MEMBRESIA[mem.plan_id] || { id: mem.plan_id, nombre: mem.plan_id }
-        : null;
-      const claves = mem ? clavesByMembresia[mem.id] || [] : [];
+      const plan = !mem?.plan_id
+        ? null
+        : mem.plan_id === "varios"
+          ? { id: "varios", nombre: "Varios números" }
+          : PLANES_MEMBRESIA[mem.plan_id] || { id: mem.plan_id, nombre: mem.plan_id };
+      const claves = (clavesByMiembro[m.id] || []).sort();
       return {
         ...m,
         membresia: mem,

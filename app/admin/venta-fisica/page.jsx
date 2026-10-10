@@ -32,6 +32,8 @@ export default function VentaFisicaPage() {
   const [resultado, setResultado] = useState(null);
   const [form, setForm] = useState({
     planId: "esencial",
+    cantidadLibre: "",
+    monto: "",
     nombre: "",
     telefono: "",
     email: "",
@@ -66,13 +68,34 @@ export default function VentaFisicaPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
+  const varios = form.planId === "varios";
   const plan = planesMap[form.planId] || planesMap.esencial;
+  const numerosEscritos = form.clavesTexto
+    .split(/[\s,;]+/)
+    .map((n) => n.trim())
+    .filter(Boolean);
+  const cantidadPedida = Math.min(
+    100,
+    Math.max(0, Number(String(form.cantidadLibre).replace(/\D/g, "")) || 0)
+  );
+  const cantidad = varios ? numerosEscritos.length : plan.claves;
+  const cantidadVisible = varios ? numerosEscritos.length || cantidadPedida : plan.claves;
+  const valorUnitario = planesMap.esencial?.precio || 20000;
+  const montoSugerido = varios
+    ? valorUnitario * Math.max(cantidadVisible, 1)
+    : plan.precio;
+  const montoCobrado = varios
+    ? (form.monto === "" ? montoSugerido : Number(String(form.monto).replace(/\D/g, "")) || 0)
+    : plan.precio;
   const fisico = inventario?.fisico;
 
   async function sugerir() {
     setSugiriendo(true);
     try {
-      const res = await fetch(`/api/admin/venta-fisica?sugerir=${plan.claves}`, {
+      const cuanto = varios
+        ? Math.min(100, Math.max(1, numerosEscritos.length || cantidadPedida || 1))
+        : plan.claves;
+      const res = await fetch(`/api/admin/venta-fisica?sugerir=${cuanto}`, {
         headers: await getAdminAuthHeaders(),
       });
       const data = await res.json();
@@ -96,6 +119,10 @@ export default function VentaFisicaPage() {
       addToast("Ingresa los números que le entregaste (000–700).", "error");
       return;
     }
+    if (!varios && numerosEscritos.length !== plan.claves) {
+      addToast(`El plan ${plan.nombre} lleva exactamente ${plan.claves} número(s).`, "error");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await fetch("/api/admin/venta-fisica", {
@@ -103,6 +130,7 @@ export default function VentaFisicaPage() {
         headers: { ...(await getAdminAuthHeaders()), "Content-Type": "application/json" },
         body: JSON.stringify({
           planId: form.planId,
+          monto: varios ? montoCobrado : undefined,
           nombre: form.nombre.trim(),
           telefono: form.telefono.trim(),
           email: form.email.trim() || undefined,
@@ -126,6 +154,7 @@ export default function VentaFisicaPage() {
       );
       setForm((prev) => ({
         ...prev,
+        monto: "",
         nombre: "",
         telefono: "",
         email: "",
@@ -233,6 +262,7 @@ export default function VentaFisicaPage() {
           <label className="grid gap-1 text-sm text-zinc-400 sm:col-span-2">
             Plan
             <select name="planId" value={form.planId} onChange={onChange} className={INPUT}>
+              <option value="varios">Varios números · la cantidad que entregues</option>
               {PLANES.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nombre} · ${p.precioLabel} · {p.claves} oport.
@@ -240,6 +270,33 @@ export default function VentaFisicaPage() {
               ))}
             </select>
           </label>
+
+          {varios ? (
+            <>
+              <label className="grid gap-1 text-sm text-zinc-400">
+                Cantidad de números
+                <input
+                  name="cantidadLibre"
+                  value={form.cantidadLibre}
+                  onChange={onChange}
+                  inputMode="numeric"
+                  placeholder="Ej: 7"
+                  className={INPUT}
+                />
+              </label>
+              <label className="grid gap-1 text-sm text-zinc-400">
+                Valor cobrado
+                <input
+                  name="monto"
+                  value={form.monto}
+                  onChange={onChange}
+                  inputMode="numeric"
+                  placeholder={`Vacío: ${cop(montoSugerido)} (${cop(valorUnitario)} c/u)`}
+                  className={INPUT}
+                />
+              </label>
+            </>
+          ) : null}
 
           <label className="grid gap-1 text-sm text-zinc-400">
             Nombre completo *
@@ -323,7 +380,9 @@ export default function VentaFisicaPage() {
           <div className="grid gap-1 text-sm text-zinc-400 sm:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <span>
-                Números entregados * ({plan.claves} del plan {plan.nombre}, 000–700)
+                {varios
+                  ? "Números entregados * (los que quieras, del 000 al 700)"
+                  : `Números entregados * (${plan.claves} del plan ${plan.nombre}, 000–700)`}
               </span>
               <button
                 type="button"
@@ -340,14 +399,19 @@ export default function VentaFisicaPage() {
               value={form.clavesTexto}
               onChange={onChange}
               rows={2}
-              placeholder={`Ej: ${Array.from({ length: plan.claves }, (_, i) =>
-                String(i + 1).padStart(3, "0")
-              ).join(" ")}`}
+              placeholder={
+                varios
+                  ? "Ej: 012 045 188 320"
+                  : `Ej: ${Array.from({ length: plan.claves }, (_, i) =>
+                      String(i + 1).padStart(3, "0")
+                    ).join(" ")}`
+              }
               className={`${INPUT} font-mono`}
             />
             <span className="text-xs text-zinc-600">
-              Escribe los que imprimiste o usa “Sugerir” para que el sistema proponga
-              libres. Deben ser exactamente {plan.claves}. Se revisan antes de guardar.
+              {varios
+                ? "Escribe la cantidad y pulsa Sugerir, o pega los números que ya imprimiste. Pueden ser 2, 5, 10 o los que sean. Se revisan antes de guardar."
+                : `Escribe los que imprimiste o usa “Sugerir”. Deben ser exactamente ${plan.claves}.`}
             </span>
           </div>
         </div>
@@ -360,7 +424,7 @@ export default function VentaFisicaPage() {
         >
           {submitting
             ? "Registrando…"
-            : `Registrar venta · ${plan.claves} número${plan.claves === 1 ? "" : "s"} · $${plan.precioLabel}`}
+            : `Registrar venta · ${cantidadVisible || 0} número${cantidadVisible === 1 ? "" : "s"} · ${cop(montoCobrado)}`}
         </button>
       </form>
 
@@ -416,7 +480,7 @@ export default function VentaFisicaPage() {
               telefono: v.telefono,
               nombre: v.nombre,
               numeros: v.numeros,
-              planNombre: planesMap[v.planId]?.nombre,
+              planNombre: planesMap[v.planId]?.nombre || (v.planId === "varios" ? "Varios números" : v.planId),
             });
             return (
               <div key={v.id} className="admin-member-row" style={anulada ? { opacity: 0.5 } : undefined}>
@@ -426,7 +490,7 @@ export default function VentaFisicaPage() {
                     {anulada ? " · ANULADA" : ""}
                   </div>
                   <div className="admin-member-row__email">
-                    {planesMap[v.planId]?.nombre || v.planId} · {v.telefono}
+                    {planesMap[v.planId]?.nombre || (v.planId === "varios" ? "Varios números" : v.planId)} · {v.telefono}
                     {v.numeros.length ? (
                       <span className="font-mono"> · {v.numeros.join(" ")}</span>
                     ) : null}

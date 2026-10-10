@@ -76,7 +76,7 @@ export async function GET(request) {
     if (sugerir > 0) {
       // Solo propone números libres del rango físico; no los reserva.
       const numeros = await asignarClavesDelPool(supabaseAdmin, {
-        count: Math.min(20, Math.floor(sugerir)),
+        count: Math.min(100, Math.floor(sugerir)),
         canal: "fisico",
       });
       return NextResponse.json({ ok: true, numeros: numeros.sort() });
@@ -108,7 +108,7 @@ export async function POST(request) {
     const email = String(body.email || "").trim();
     const cedula = String(body.cedula || "").trim();
     const ciudad = String(body.ciudad || "").trim();
-    const plan = await obtenerPlan(supabaseAdmin, body.planId || body.plan_id);
+    const planPedido = String(body.planId || body.plan_id || "").trim().toLowerCase();
 
     if (!nombre) return bad("El nombre es obligatorio.");
     if (!telefono) return bad("El WhatsApp / teléfono es obligatorio.");
@@ -117,9 +117,43 @@ export async function POST(request) {
     }
 
     const clavesManuales = parseClavesInput(body.claves || body.clavesTexto || "");
+    const varios = planPedido === "varios";
+    if (varios && (clavesManuales.length < 1 || clavesManuales.length > 100)) {
+      return bad("Escribe entre 1 y 100 números del 000 al 700.");
+    }
+
+    let plan = await obtenerPlan(supabaseAdmin, varios ? "esencial" : planPedido);
+    if (varios) {
+      const unit = Number(plan.precio) || 20000;
+      const montoTexto = String(body.monto ?? "").replace(/\D/g, "");
+      const precio = montoTexto === "" ? unit * clavesManuales.length : Number(montoTexto);
+      const { error: planErr } = await supabaseAdmin.from("planes").upsert(
+        {
+          id: "varios",
+          nombre: "Varios números",
+          precio_cop: unit,
+          claves: 1,
+          tag: "Venta física, cantidad libre",
+          activo: false,
+        },
+        { onConflict: "id" }
+      );
+      if (planErr) return bad(planErr.message);
+      plan = {
+        id: "varios",
+        nombre: "Varios números",
+        precio,
+        precioLabel: String(precio),
+        claves: clavesManuales.length,
+        clavesLibre: true,
+      };
+    }
+
     if (!clavesManuales.length) {
       return bad(
-        `Ingresa las ${plan.claves} claves impresas (000–700) que le entregaste.`
+        varios
+          ? "Escribe los números que le entregaste (000–700)."
+          : `Ingresa las ${plan.claves} claves impresas (000–700) que le entregaste.`
       );
     }
 

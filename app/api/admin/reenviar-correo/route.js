@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
 import { getPlanById } from "@/lib/club-gomez/planes";
+import { padClave, periodoDe } from "@/lib/club-gomez/claves-pool";
 import { esEmailPlaceholder } from "@/lib/club-gomez/activar-membresia";
 import { enviarTicketCompra } from "@/lib/email";
 import { registrarActividad } from "@/lib/admin-actividad";
@@ -44,12 +45,28 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-    const numeros = (mem.claves || []).map((c) => c.numero).sort();
+    const periodo = periodoDe();
+    const { data: ventas } = await supabaseAdmin
+      .from("membresias")
+      .select("estado, claves(numero, periodo)")
+      .eq("miembro_id", miembro.id)
+      .neq("estado", "cancelada");
+    const numeros = [
+      ...new Set(
+        (ventas || []).flatMap((v) =>
+          (v.claves || [])
+            .filter((c) => c.periodo === periodo)
+            .map((c) => padClave(c.numero))
+        )
+      ),
+    ].sort();
     if (!numeros.length) {
       return NextResponse.json({ error: "Esta membresía no tiene números." }, { status: 400 });
     }
 
-    const plan = getPlanById(mem.plan_id);
+    const plan = mem.plan_id === "varios"
+      ? { ...getPlanById("esencial"), nombre: "Varios números" }
+      : getPlanById(mem.plan_id);
     const pago = (mem.pagos || []).find((p) => p.estado === "aprobado");
 
     await enviarTicketCompra(
