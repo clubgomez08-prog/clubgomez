@@ -256,6 +256,9 @@ export async function POST(request) {
       /^[0-9a-f-]{36}$/i.test(sorteoPedido) ? { id: sorteoPedido } : { principal: true }
     );
     if (sorteoPedido && !sorteo) return bad("Ese sorteo no existe.");
+    if (sorteo?.estado === "cerrado") {
+      return bad("Este sorteo ya terminó. Llegó la fecha y ya no se vende.");
+    }
     const rangoFisico = sorteo ? rangoFisicoDe(sorteo) : null;
     const textoRango = rangoFisico
       ? `${pad3(rangoFisico.min)} al ${pad3(rangoFisico.max)}`

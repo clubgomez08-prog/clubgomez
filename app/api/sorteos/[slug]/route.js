@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
-import { faltaTablaSorteo, planesDeSorteo, planPublico } from "@/lib/club-gomez/sorteos";
+import { cerrarVencidos, faltaTablaSorteo, planesDeSorteo, planPublico } from "@/lib/club-gomez/sorteos";
 
 export const dynamic = "force-dynamic";
 
@@ -24,10 +24,11 @@ export async function GET(_request, { params }) {
     if (!data || data.estado === "borrador") {
       return NextResponse.json({ error: "Sorteo no encontrado" }, { status: 404 });
     }
-    const planes = (await planesDeSorteo(supabaseAdmin, data.id))
+    const [sorteo] = await cerrarVencidos(supabaseAdmin, [data]);
+    const planes = (await planesDeSorteo(supabaseAdmin, sorteo.id))
       .filter((p) => p.activo)
       .map(planPublico);
-    return NextResponse.json({ ok: true, sorteo: data, planes });
+    return NextResponse.json({ ok: true, sorteo, planes });
   } catch (err) {
     return NextResponse.json({ error: err.message || "Error" }, { status: 500 });
   }

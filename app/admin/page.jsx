@@ -16,12 +16,46 @@ function pesos(n) {
   return "$ " + Number(n || 0).toLocaleString("es-CO");
 }
 
+function cantidad(n, uno, varios) {
+  return `${n} ${Number(n) === 1 ? uno : varios}`;
+}
+
+function ListaVentas({ titulo, vacio, ventas, finanzasVisibles }) {
+  return (
+    <section className="dash-bloque">
+      <h2>{titulo}</h2>
+      <div className="dash-lista">
+        {ventas.length === 0 ? (
+          <p className="dash-nada">{vacio}</p>
+        ) : (
+          ventas.map((v) => (
+            <div key={v.id} className="dash-venta">
+              <div>
+                <strong>{v.nombre}</strong>
+                <p>
+                  {v.planNombre}
+                  {v.numeros?.length ? ` · ${v.numeros.join(" ")}` : ""}
+                </p>
+              </div>
+              <div className="dash-venta__lado">
+                <span>{finanzasVisibles ? pesos(v.monto) : "••••"}</span>
+                <small>{formatFecha(v.fecha)}</small>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function AdminDashboardPage() {
   const [sorteoId, setSorteoId] = useState("");
   const [sorteo, setSorteo] = useState(null);
   const [otros, setOtros] = useState([]);
   const [stats, setStats] = useState(null);
-  const [ventas, setVentas] = useState([]);
+  const [ventasFisicas, setVentasFisicas] = useState([]);
+  const [ventasWeb, setVentasWeb] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState("");
   const [finanzasVisibles, setFinanzasVisibles] = useState(false);
@@ -42,13 +76,15 @@ export default function AdminDashboardPage() {
       setSorteo(data.sorteo || null);
       setOtros(data.otros || []);
       setStats(data.stats || null);
-      setVentas(data.ventas || []);
+      setVentasFisicas(data.ventasFisicas || []);
+      setVentasWeb(data.ventasWeb || []);
       if (data.sorteo?.id) setSorteoId(data.sorteo.id);
     } catch (err) {
       setErrorCarga(err.message || "No se pudieron cargar los datos. Recarga la página.");
       setSorteo(null);
       setStats(null);
-      setVentas([]);
+      setVentasFisicas([]);
+      setVentasWeb([]);
     } finally {
       setCargando(false);
     }
@@ -145,45 +181,76 @@ export default function AdminDashboardPage() {
             </div>
           </header>
 
-          {lista.length > 1 ? (
+          <section className="dash-elige">
+            <p>Ver un sorteo</p>
             <div className="dash-switch" role="tablist" aria-label="Sorteos">
               {lista.map((s) => (
                 <button
                   key={s.id}
                   type="button"
+                  role="tab"
+                  aria-selected={s.id === sorteoId}
                   className={s.id === sorteoId ? "is-on" : ""}
                   onClick={() => cargar(s.id)}
                 >
-                  {s.nombre}
+                  <strong>{s.nombre}</strong>
+                  <span>{s.enInicio ? "En la página de inicio" : s.pagina}</span>
                 </button>
               ))}
             </div>
-          ) : null}
+            <p className="dash-aclaracion">
+              {lista.length > 1
+                ? "Las ventas de abajo son solo del sorteo marcado. Elegir otro no cambia el de la página de inicio."
+                : "Cuando haya otro sorteo, sale aquí al lado. Sus ventas no se suman con este."}
+            </p>
+          </section>
 
-          <div className="dash-grid">
+          <div className="dash-resumen">
             <article className="dash-card">
-              <p>Números libres</p>
-              <strong className="is-lime">{stats.libres}</strong>
-              <span>
-                {stats.dadas === 1 ? "1 dado" : `${stats.dadas} dados`} de {stats.total}. Local {stats.dadasFisico} · web {stats.dadasWeb}
-              </span>
+              <p>Ventas físicas</p>
+              <strong>{stats.ventasLocal}</strong>
+              <span className="dash-card__monto">{finanzasVisibles ? pesos(stats.ingresosFisico) : "$ ***"}</span>
+              <span>{cantidad(stats.dadasFisico, "número dado", "números dados")} de {stats.totalFisico}</span>
+              <span>Del {stats.rangoFisico}</span>
+              <Link href="/admin/venta-fisica" className="dash-card__ir">Ir a venta física</Link>
             </article>
             <article className="dash-card">
-              <p>Ventas</p>
+              <p>Ventas web</p>
+              <strong>{stats.ventasWeb}</strong>
+              <span className="dash-card__monto">{finanzasVisibles ? pesos(stats.ingresosWeb) : "$ ***"}</span>
+              <span>{cantidad(stats.dadasWeb, "número dado", "números dados")} de {stats.totalWeb}</span>
+              <span>Del {stats.rangoWeb}</span>
+              {stats.sinConfirmar > 0 ? (
+                <span>{cantidad(stats.sinConfirmar, "pago abierto en Bold", "pagos abiertos en Bold")}, todavía sin confirmar.</span>
+              ) : (
+                <span>Sin pagos pendientes.</span>
+              )}
+              <Link href="/admin/solicitudes" className="dash-card__ir">Ir a pagos web</Link>
+            </article>
+            <article className="dash-card dash-card--total">
+              <p>Ventas totales</p>
               <strong>{stats.ventasLocal + stats.ventasWeb}</strong>
-              <span>
-                {stats.ventasWeb} por la página · {stats.ventasLocal} en el local
-              </span>
+              <span className="dash-card__monto">{finanzasVisibles ? pesos(stats.ingresos) : "$ ***"}</span>
+              <span>{stats.ventasLocal} físicas · {stats.ventasWeb} web</span>
+              <span>{cantidad(stats.dadas, "número dado", "números dados")} de {stats.total}</span>
+              <span>{cantidad(stats.libres, "libre", "libres")}</span>
             </article>
-            <article className="dash-card">
-              <p>Ingresos de este sorteo</p>
-              <strong>{finanzasVisibles ? pesos(stats.ingresos) : "$ ***"}</strong>
-              <span>Solo lo pagado de este premio.</span>
+          </div>
+
+          <div className="dash-numeros">
+            <article className="dash-numero">
+              <div>
+                <p>Libres en físico</p>
+                <span>Del {stats.rangoFisico}</span>
+              </div>
+              <strong className="is-lime">{stats.libresFisico}</strong>
             </article>
-            <article className="dash-card">
-              <p>Pagos web sin confirmar</p>
-              <strong>{stats.sinConfirmar}</strong>
-              <span>Abrieron Bold y todavía no aparece el pago.</span>
+            <article className="dash-numero">
+              <div>
+                <p>Libres en la web</p>
+                <span>Del {stats.rangoWeb}</span>
+              </div>
+              <strong className="is-lime">{stats.libresWeb}</strong>
             </article>
           </div>
 
@@ -195,47 +262,21 @@ export default function AdminDashboardPage() {
             </p>
           ) : null}
 
-          <section className="dash-bloque">
-            <h2>Ventas de este sorteo</h2>
-            <div className="dash-lista">
-              {ventas.length === 0 ? (
-                <p className="dash-nada">Todavía no hay pagos de este premio.</p>
-              ) : (
-                ventas.map((v) => (
-                  <div key={v.id} className="dash-venta">
-                    <div>
-                      <strong>{v.nombre}</strong>
-                      <p>
-                        {v.planNombre} · {v.canal}
-                        {v.numeros?.length ? ` · ${v.numeros.join(" ")}` : ""}
-                      </p>
-                    </div>
-                    <div className="dash-venta__lado">
-                      <span>{finanzasVisibles ? pesos(v.monto) : "••••"}</span>
-                      <small>{formatFecha(v.fecha)}</small>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
+          <div className="dash-columnas">
+            <ListaVentas
+              titulo="Ventas físicas"
+              vacio="Todavía no hay ventas en el local."
+              ventas={ventasFisicas}
+              finanzasVisibles={finanzasVisibles}
+            />
+            <ListaVentas
+              titulo="Ventas web"
+              vacio="Todavía no hay ventas por la página."
+              ventas={ventasWeb}
+              finanzasVisibles={finanzasVisibles}
+            />
+          </div>
 
-          {otros.length ? (
-            <section className="dash-bloque">
-              <h2>Otros sorteos</h2>
-              <div className="dash-otros">
-                {otros.map((s) => (
-                  <button key={s.id} type="button" className="dash-otro" onClick={() => cargar(s.id)}>
-                    <strong>{s.nombre}</strong>
-                    <span>
-                      {s.dadas} números · {s.pagina}
-                      {s.enInicio ? " · En la página de inicio" : ""}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          ) : null}
         </>
       )}
 

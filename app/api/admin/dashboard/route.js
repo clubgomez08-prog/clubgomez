@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
-import { fechaLegible } from "@/lib/club-gomez/sorteos";
+import { cerrarVencidos, fechaLegible } from "@/lib/club-gomez/sorteos";
 import { padClave } from "@/lib/club-gomez/claves-pool";
 
 export const dynamic = "force-dynamic";
@@ -19,9 +19,13 @@ function enRango(numero, min, max) {
 }
 
 function estadoPagina(sorteo) {
-  if (sorteo.estado === "cerrado") return "Terminada";
-  if (sorteo.estado === "en_venta") return "Publicada";
+  if (sorteo.estado === "cerrado") return "Terminado";
+  if (sorteo.estado === "en_venta") return "En venta";
   return "Oculta";
+}
+
+function rangoTexto(min, max) {
+  return `${padClave(min)} al ${padClave(max)}`;
 }
 
 function notasDe(raw) {
@@ -54,7 +58,7 @@ export async function GET(request) {
       return NextResponse.json({ ok: true, sorteo: null, otros: [], stats: null, ventas: [] });
     }
 
-    const lista = sorteos || [];
+    const lista = await cerrarVencidos(supabaseAdmin, sorteos || []);
     const activo =
       lista.find((s) => pedido && s.id === pedido) ||
       lista.find((s) => s.es_principal) ||
@@ -114,7 +118,9 @@ export async function GET(request) {
 
     const memPorId = Object.fromEntries(mems.map((m) => [m.id, m]));
     const conPago = new Set(pagos.map((p) => p.membresia_id));
-    const ventas = pagos.slice(0, 8).map((p) => {
+    const pagosFisicos = pagos.filter((p) => p.metodo === "efectivo");
+    const pagosWeb = pagos.filter((p) => p.metodo !== "efectivo");
+    const aVenta = (p) => {
       const mem = memPorId[p.membresia_id] || {};
       const nums = (numerosPorMem[p.membresia_id] || []).sort();
       return {
@@ -124,13 +130,18 @@ export async function GET(request) {
         numeros: nums,
         monto: p.monto_cop,
         fecha: p.pagado_en,
-        canal: p.metodo === "efectivo" ? "local" : "web",
+        canal: p.metodo === "efectivo" ? "físico" : "web",
       };
-    });
+    };
+    const ventasFisicas = pagosFisicos.slice(0, 8).map(aVenta);
+    const ventasWebLista = pagosWeb.slice(0, 8).map(aVenta);
 
-    const ventasLocal = pagos.filter((p) => p.metodo === "efectivo").length;
-    const ventasWeb = pagos.length - ventasLocal;
-    const ingresos = pagos.reduce((suma, p) => suma + (Number(p.monto_cop) || 0), 0);
+    const ventasLocal = pagosFisicos.length;
+    const ventasWeb = pagosWeb.length;
+    const sumaMontos = (listaPagos) => listaPagos.reduce((suma, p) => suma + (Number(p.monto_cop) || 0), 0);
+    const ingresosFisico = sumaMontos(pagosFisicos);
+    const ingresosWeb = sumaMontos(pagosWeb);
+    const ingresos = ingresosFisico + ingresosWeb;
     const sinPago = mems.filter((m) => !conPago.has(m.id)).length;
     const sinConfirmar = (solicitudes || []).filter((s) => {
       const notas = notasDe(s.notas);
@@ -164,15 +175,22 @@ export async function GET(request) {
         total,
         dadasFisico,
         libresFisico: Math.max(0, totalFisico - dadasFisico),
+        totalFisico,
+        rangoFisico: rangoTexto(activo.fisico_min, activo.fisico_max),
         dadasWeb,
         libresWeb: Math.max(0, totalWeb - dadasWeb),
+        totalWeb,
+        rangoWeb: rangoTexto(activo.web_min, activo.web_max),
         ventasLocal,
         ventasWeb,
         ingresos,
+        ingresosFisico,
+        ingresosWeb,
         sinConfirmar,
         sinPago,
       },
-      ventas,
+      ventasFisicas,
+      ventasWeb: ventasWebLista,
     });
   } catch (err) {
     console.error("[admin/dashboard]", err);

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getAdminAuthHeaders } from "@/lib/auth";
 import { useToast } from "@/components/admin/Toast";
-import { BLOQUE_TARJETAS_DEFAULT, FUENTES, slugificar, urlPublicaSorteo } from "@/lib/club-gomez/sorteos";
+import { BLOQUE_TARJETAS_DEFAULT, FUENTES, fechaLegible, slugificar, urlPublicaSorteo } from "@/lib/club-gomez/sorteos";
 import { STICKERS } from "@/lib/club-gomez/stickers";
 
 const PREVIEW_KEY = "cg-sorteo-preview";
@@ -116,6 +116,7 @@ export default function SorteosPage() {
   const [tab, setTab] = useState("datos");
   const [guardando, setGuardando] = useState(false);
   const [marcando, setMarcando] = useState("");
+  const [confirmarId, setConfirmarId] = useState("");
   const [dispositivo, setDispositivo] = useState("pc");
   const [verPreview, setVerPreview] = useState(false);
   const [planForm, setPlanForm] = useState(PLAN_VACIO);
@@ -198,12 +199,7 @@ export default function SorteosPage() {
   }
 
   function terminar(s) {
-    const extra = s.es_principal
-      ? " Sigue en la página de inicio hasta que marques otro."
-      : "";
-    if (!window.confirm(`¿Terminar ${s.nombre}? El link sigue abriendo, pero ya no se puede comprar.${extra}`)) {
-      return;
-    }
+    setConfirmarId("");
     marcar(s, { estado: "cerrado" }, "Sorteo terminado. Ya no se vende.");
   }
 
@@ -380,7 +376,7 @@ export default function SorteosPage() {
             <p className="sorteo-kicker">Premios</p>
             <h1 className="sorteo-title">Sorteos</h1>
             <p className="sorteo-lead">
-              Cada premio tiene su página, su link, sus planes y sus números.
+              Cada premio tiene su página y su link. El marcado es el que sale al entrar a clubgomez.co. Solo puede haber uno.
             </p>
           </div>
           <button type="button" className="sorteo-btn sorteo-btn--lime" onClick={() => abrir(null)}>
@@ -396,44 +392,79 @@ export default function SorteosPage() {
               const url = urlPublicaSorteo(s.slug);
               const historia = `Ya puedes participar por ${s.premio || s.nombre}. Entra aquí: ${url}`;
               return (
-                <article key={s.id} className="sorteo-card">
-                  <button type="button" className="sorteo-card__abrir" onClick={() => abrir(s)}>
-                    <span className={`sorteo-estado is-${s.estado}`}>{estadoTexto(s.estado)}</span>
-                    <strong>{s.nombre}</strong>
-                    <span className="sorteo-card__meta">
-                      {s.es_principal ? "En la página principal" : "Solo por su link"}
-                    </span>
-                    <span className="sorteo-card__cta">Editar</span>
-                  </button>
+                <article key={s.id} className={`sorteo-card${s.es_principal ? " is-principal" : ""}`}>
+                  <div className="sorteo-card__cabeza">
+                    <button type="button" className="sorteo-card__abrir" onClick={() => abrir(s)}>
+                      <span className={`sorteo-estado is-${s.estado}`}>{estadoTexto(s.estado)}</span>
+                      <strong>{s.nombre}</strong>
+                    </button>
+                    <button type="button" className="sorteo-card__editar" onClick={() => abrir(s)}>
+                      Editar
+                    </button>
+                  </div>
+                  {s.es_principal ? (
+                    <div className="sorteo-marca is-on">
+                      <span className="sorteo-marca__punto" aria-hidden="true" />
+                      <span>
+                        <strong>Sale en clubgomez.co</strong>
+                        <small>Quien entra al dominio ve este premio. Si marcas otro, este deja de salir.</small>
+                      </span>
+                    </div>
+                  ) : (
+                    <button type="button" className="sorteo-marca" disabled={marcando === s.id} onClick={() => ponerEnInicio(s)}>
+                      <span className="sorteo-marca__punto" aria-hidden="true" />
+                      <span>
+                        <strong>Marcar para clubgomez.co</strong>
+                        <small>Al marcarlo, este sale en el dominio y el otro deja de salir.</small>
+                      </span>
+                    </button>
+                  )}
                   <div className="sorteo-card__share">
                     <span className="sorteo-card__url">{url}</span>
                     <div className="sorteo-card__acciones">
-                      {s.es_principal ? (
-                        <span className="sorteo-card__nota">Este es el que se ve al entrar a clubgomez.co.</span>
-                      ) : (
-                        <button type="button" disabled={marcando === s.id} onClick={() => ponerEnInicio(s)}>
-                          Poner en la página principal
-                        </button>
-                      )}
-                      {s.estado === "borrador" ? (
-                        <button type="button" disabled={marcando === s.id} onClick={() => marcar(s, { estado: "en_venta" }, "El link ya abre y se puede comprar.")}>
-                          Publicar
-                        </button>
-                      ) : null}
-                      {s.estado !== "cerrado" ? (
-                        <button type="button" disabled={marcando === s.id} onClick={() => terminar(s)}>
-                          Terminar sorteo
-                        </button>
-                      ) : (
-                        <span className="sorteo-card__nota">Terminado. El link abre, pero ya no se vende.</span>
-                      )}
                       <button type="button" onClick={() => copiar(url, "Link copiado")}>
                         Copiar link
                       </button>
                       <button type="button" onClick={() => copiar(historia, "Texto copiado para la historia")}>
                         Copiar para historias
                       </button>
+                      {s.estado === "borrador" ? (
+                        <button type="button" disabled={marcando === s.id} onClick={() => marcar(s, { estado: "en_venta" }, "El link ya abre y se puede comprar.")}>
+                          Publicar
+                        </button>
+                      ) : null}
                     </div>
+                  </div>
+                  <div className="sorteo-card__fin">
+                    {s.estado === "cerrado" ? (
+                      <small>Terminado. El link abre, pero ya no se vende.</small>
+                    ) : confirmarId === s.id ? (
+                      <div className="sorteo-card__confirma">
+                        <p>
+                          ¿Terminar {s.nombre}? El link sigue abriendo, pero ya no se puede comprar.
+                          {s.es_principal ? " Sigue en clubgomez.co hasta que marques otro." : ""}
+                        </p>
+                        <div>
+                          <button type="button" disabled={marcando === s.id} onClick={() => terminar(s)}>
+                            Sí, terminar
+                          </button>
+                          <button type="button" onClick={() => setConfirmarId("")}>
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <button type="button" disabled={marcando === s.id} onClick={() => setConfirmarId(s.id)}>
+                          Terminar sorteo
+                        </button>
+                        <small>
+                          {fechaLegible(s.fecha_sorteo)
+                            ? `Se termina solo el ${fechaLegible(s.fecha_sorteo)}. Desde ese día ya no se puede comprar.`
+                            : "Cierra la venta. El link sigue abriendo, pero ya no se puede comprar."}
+                        </small>
+                      </>
+                    )}
                   </div>
                 </article>
               );

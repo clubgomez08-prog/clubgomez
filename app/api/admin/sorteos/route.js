@@ -10,6 +10,7 @@ import {
   planesDeSorteo,
   slugificar,
   urlPublicaSorteo,
+  cerrarVencidos,
 } from "@/lib/club-gomez/sorteos";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +36,8 @@ export async function GET(request) {
       return bad(error.message);
     }
 
-    const ids = (data || []).map((s) => s.id);
+    const sorteos = await cerrarVencidos(supabaseAdmin, data || []);
+    const ids = sorteos.map((s) => s.id);
     let planes = [];
     if (ids.length) {
       const res = await supabaseAdmin
@@ -54,7 +56,7 @@ export async function GET(request) {
 
     return NextResponse.json({
       ok: true,
-      sorteos: (data || []).map((s) => ({
+      sorteos: sorteos.map((s) => ({
         ...s,
         url: urlPublicaSorteo(s.slug),
         planes: porSorteo[s.id] || [],
