@@ -16,17 +16,27 @@ function esBusquedaClave(raw) {
   return /^\d{1,4}$/.test(t);
 }
 
-async function miembroIdsPorClave(buscar) {
+async function miembroIdsPorClave(buscar, sorteo) {
   const t = String(buscar || "")
     .trim()
     .replace(/\s/g, "");
   const padded = padClave(t);
   const numeros = [...new Set([padded, t, `0${padded}`])];
 
-  const { data: clavesRows, error } = await supabaseAdmin
+  let clavesQuery = supabaseAdmin
     .from("claves")
-    .select("membresia_id, numero, periodo")
+    .select("membresia_id, numero, periodo, sorteo_id")
     .in("numero", numeros);
+  if (sorteo && sorteo !== "sin") clavesQuery = clavesQuery.eq("sorteo_id", sorteo);
+  let { data: clavesRows, error } = await clavesQuery;
+  if (error && /sorteo_id/i.test(error.message || "")) {
+    const retry = await supabaseAdmin
+      .from("claves")
+      .select("membresia_id, numero, periodo")
+      .in("numero", numeros);
+    clavesRows = retry.data;
+    error = retry.error;
+  }
 
   if (error) throw new Error(error.message);
   if (!clavesRows?.length) {
@@ -40,17 +50,46 @@ async function miembroIdsPorClave(buscar) {
     return { miembroIds: [], matched: clavesRows };
   }
 
-  const { data: mems, error: memErr } = await supabaseAdmin
+  let { data: mems, error: memErr } = await supabaseAdmin
     .from("membresias")
-    .select("id, miembro_id")
+    .select("id, miembro_id, sorteo_id")
     .in("id", memIds);
+  if (memErr && /sorteo_id/i.test(memErr.message || "")) {
+    const retry = await supabaseAdmin
+      .from("membresias")
+      .select("id, miembro_id")
+      .in("id", memIds);
+    mems = retry.data;
+    memErr = retry.error;
+  }
 
   if (memErr) throw new Error(memErr.message);
 
-  const miembroIds = [
-    ...new Set((mems || []).map((m) => m.miembro_id).filter(Boolean)),
-  ];
-  return { miembroIds, matched: clavesRows };
+  const validas = (mems || []).filter((m) => {
+    if (!sorteo) return true;
+    if (sorteo === "sin") return !m.sorteo_id;
+    return m.sorteo_id === sorteo;
+  });
+  const validasIds = new Set(validas.map((m) => m.id));
+  const miembroIds = [...new Set(validas.map((m) => m.miembro_id).filter(Boolean))];
+  return {
+    miembroIds,
+    matched: clavesRows.filter((c) => validasIds.has(c.membresia_id)),
+  };
+}
+
+async function miembroIdsPorSorteo(sorteo) {
+  let { data, error } = await supabaseAdmin
+    .from("membresias")
+    .select("miembro_id, sorteo_id");
+  if (error && /sorteo_id/i.test(error.message || "")) return [];
+  if (error) throw new Error(error.message);
+  const ids = new Set();
+  for (const m of data || []) {
+    if (!m.miembro_id) continue;
+    if (sorteo === "sin" ? !m.sorteo_id : m.sorteo_id === sorteo) ids.add(m.miembro_id);
+  }
+  return [...ids];
 }
 
 export async function GET(request) {
@@ -66,6 +105,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const buscar = String(searchParams.get("buscar") || "").trim();
     const estado = String(searchParams.get("estado") || "").trim();
+    const sorteo = String(searchParams.get("sorteo") || "").trim();
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
@@ -83,7 +123,7 @@ export async function GET(request) {
     }
 
     if (porClave) {
-      const { miembroIds } = await miembroIdsPorClave(buscar);
+      const { miembroIds } = await miembroIdsPorClave(buscar, sorteo);
       if (!miembroIds.length) {
         return NextResponse.json({
           ok: true,
@@ -93,6 +133,20 @@ export async function GET(request) {
           page: 1,
           periodo,
           busquedaClave: padClave(buscar),
+        });
+      }
+      query = query.in("id", miembroIds);
+    } else if (sorteo) {
+      const miembroIds = await miembroIdsPorSorteo(sorteo);
+      if (!miembroIds.length) {
+        return NextResponse.json({
+          ok: true,
+          miembros: [],
+          total: 0,
+          paginas: 1,
+          page: 1,
+          periodo,
+          busquedaClave: null,
         });
       }
       query = query.in("id", miembroIds);
@@ -115,7 +169,7 @@ export async function GET(request) {
     if (ids.length > 0) {
       let { data: membresias, error: memErr } = await supabaseAdmin
         .from("membresias")
-        .select("id, miembro_id, plan_id, estado, inicia_en, vence_en, origen, sorteo_id")
+        .select("id, miembro_id, plan_id, estado, inicia_en, vence_en, origen, sorteo_id, created_at")
         .in("miembro_id", ids)
         .order("created_at", { ascending: false });
       if (memErr) {
@@ -131,6 +185,9 @@ export async function GET(request) {
       const memPorId = {};
       for (const mem of membresias || []) {
         memPorId[mem.id] = mem;
+        const esDeEsteSorteo = !sorteo
+          || (sorteo === "sin" ? !mem.sorteo_id : mem.sorteo_id === sorteo);
+        if (!esDeEsteSorteo) continue;
         if (!membresiasByMiembro[mem.miembro_id]) {
           const vencida =
             mem.estado === "activa" && mem.vence_en && Date.parse(mem.vence_en) < ahora;
@@ -140,17 +197,28 @@ export async function GET(request) {
         }
       }
 
-      const memIds = Object.keys(memPorId);
+      const memIds = Object.values(membresiasByMiembro).map((m) => m.id);
       if (memIds.length > 0) {
-        const { data: claves } = await supabaseAdmin
+        let { data: claves, error: clavesErr } = await supabaseAdmin
           .from("claves")
-          .select("id, membresia_id, numero, periodo")
-          .in("membresia_id", memIds)
-          .eq("periodo", periodo);
+          .select("id, membresia_id, numero, periodo, sorteo_id")
+          .in("membresia_id", memIds);
+        if (clavesErr && /sorteo_id/i.test(clavesErr.message || "")) {
+          const retry = await supabaseAdmin
+            .from("claves")
+            .select("id, membresia_id, numero, periodo")
+            .in("membresia_id", memIds);
+          claves = retry.data;
+        }
 
         for (const c of claves || []) {
-          const mem = memPorId[c.membresia_id];
-          if (!mem || mem.estado === "cancelada") continue;
+          const mem = membresiasByMiembro[memPorId[c.membresia_id]?.miembro_id];
+          if (!mem || mem.id !== c.membresia_id || mem.estado === "cancelada") continue;
+          if (mem.sorteo_id) {
+            if (c.sorteo_id && c.sorteo_id !== mem.sorteo_id) continue;
+          } else if (c.periodo !== periodo || c.sorteo_id) {
+            continue;
+          }
           const miembroId = mem.miembro_id;
           if (!clavesByMiembro[miembroId]) clavesByMiembro[miembroId] = [];
           const numero = padClave(c.numero);

@@ -59,7 +59,7 @@ function ClavesDetalle({ m, periodo, destacarClave, sorteo }) {
   return (
     <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
       <p className="text-xs text-zinc-500 mb-2">
-        Claves del periodo {periodo}
+        {sorteo ? `Números de ${sorteo.premio || sorteo.nombre}` : `Claves del periodo ${periodo}`}
         {m.fecha_nacimiento
           ? ` · Cumpleaños ${formatCumple(m.fecha_nacimiento)}`
           : ""}
@@ -182,6 +182,7 @@ export default function AdminMiembrosPage() {
   const [filtros, setFiltros] = useState({
     buscar: "",
     estado: "",
+    sorteo: "",
     page: 1,
   });
   const [buscarDraft, setBuscarDraft] = useState("");
@@ -194,6 +195,7 @@ export default function AdminMiembrosPage() {
       const params = new URLSearchParams({
         buscar: filtros.buscar,
         estado: filtros.estado,
+        sorteo: filtros.sorteo,
         page: String(filtros.page),
       });
       const res = await fetch(`/api/admin/miembros?${params}`, { headers });
@@ -255,9 +257,8 @@ export default function AdminMiembrosPage() {
         <div>
           <h1 className="text-2xl font-semibold text-white mb-1">Clientes</h1>
           <p className="text-sm text-zinc-500">
-            Campaña Crypton · 3 dígitos (web 701–999). Contacto, plan y
-            oportunidades del periodo {periodo || "actual"}. Busca por nombre,
-            email, cédula o número. Clic en la fila para ver las oportunidades.
+            Elige el sorteo y busca el número. El 537 de la moto no es el 537 de otro premio.
+            Busca también por nombre, email o cédula.
           </p>
         </div>
         <Link
@@ -290,6 +291,21 @@ export default function AdminMiembrosPage() {
             Oport. {busquedaClave}
           </span>
         ) : null}
+        <select
+          value={filtros.sorteo}
+          onChange={(e) =>
+            setFiltros((f) => ({ ...f, sorteo: e.target.value, page: 1 }))
+          }
+          className="px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-sm"
+        >
+          <option value="">Todos los sorteos</option>
+          {sorteos.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.premio || s.nombre}
+            </option>
+          ))}
+          <option value="sin">Sin sorteo</option>
+        </select>
         <select
           value={filtros.estado}
           onChange={(e) =>
@@ -347,6 +363,9 @@ export default function AdminMiembrosPage() {
                     Cumpleaños
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">
+                    Sorteo
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">
                     Plan
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">
@@ -364,6 +383,8 @@ export default function AdminMiembrosPage() {
                 {items.map((m) => {
                   const abierto = expandido === m.id;
                   const cumpleHoy = esCumpleHoy(m.fecha_nacimiento);
+                  const sorteoFila = sorteoDeMiembro(m);
+                  const nombreSorteo = sorteoFila?.premio || sorteoFila?.nombre || (m.membresia?.sorteo_id ? "Sorteo" : "Sin sorteo");
                   return (
                     <Fragment key={m.id}>
                       <tr
@@ -404,6 +425,9 @@ export default function AdminMiembrosPage() {
                             </p>
                           ) : null}
                         </td>
+                        <td className="px-4 py-3 text-sm text-zinc-200">
+                          {nombreSorteo}
+                        </td>
                         <td className="px-4 py-3 text-sm">
                           {m.plan ? (
                             <span style={{ color: LIME }} className="font-semibold">
@@ -431,12 +455,12 @@ export default function AdminMiembrosPage() {
                       </tr>
                       {abierto ? (
                         <tr className="border-b border-zinc-800 bg-zinc-950/60">
-                          <td colSpan={7} className="px-4 py-4">
+                          <td colSpan={8} className="px-4 py-4">
                             <ClavesDetalle
                               m={m}
                               periodo={periodo}
                               destacarClave={busquedaClave}
-                              sorteo={sorteoDeMiembro(m)}
+                              sorteo={sorteoFila}
                             />
                           </td>
                         </tr>
@@ -483,6 +507,8 @@ export default function AdminMiembrosPage() {
                     <span>{m.email || "—"}</span>
                     <span>{m.telefono || "—"}</span>
                     <span>
+                      {sorteoDeMiembro(m)?.premio || sorteoDeMiembro(m)?.nombre || "Sin sorteo"}
+                      {" · "}
                       {m.plan?.nombre || "Sin membresía"} · {m.clavesCount || 0}{" "}
                       oport.
                     </span>
