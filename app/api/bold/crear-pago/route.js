@@ -14,6 +14,7 @@ import {
   mensajeErrorMiembro,
   upsertMiembroParaPago,
 } from "@/lib/club-gomez/miembro-identidad";
+import { espejarPlan, planesDeSorteo, leerSorteoPor } from "@/lib/club-gomez/sorteos";
 
 function bad(msg, status = 400) {
   return NextResponse.json({ ok: false, error: msg }, { status });
@@ -28,7 +29,31 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const plan = await obtenerPlan(supabaseAdmin, body.planId || body.plan_id);
+    const planPedido = String(body.planId || body.plan_id || "");
+    const slugSorteo = String(body.sorteo || body.sorteoSlug || "").trim();
+    let sorteo = null;
+    let plan;
+    if (slugSorteo) {
+      const leido = await leerSorteoPor(supabaseAdmin, { slug: slugSorteo });
+      sorteo = leido.sorteo;
+      if (!sorteo || sorteo.estado !== "en_venta") {
+        return bad("Ese sorteo no está en venta.");
+      }
+      const fila = (await planesDeSorteo(supabaseAdmin, sorteo.id)).find(
+        (p) => p.id === planPedido && p.activo
+      );
+      if (!fila) return bad("Ese plan no es de este sorteo.");
+      await espejarPlan(supabaseAdmin, fila);
+      plan = {
+        id: fila.id,
+        nombre: fila.nombre,
+        precio: Number(fila.precio_cop),
+        precioLabel: Number(fila.precio_cop).toLocaleString("es-CO"),
+        claves: Number(fila.claves),
+      };
+    } else {
+      plan = await obtenerPlan(supabaseAdmin, planPedido);
+    }
     const precioVisto = Number(body.precioVisto);
     if (precioVisto > 0 && precioVisto !== plan.precio) {
       return bad(
@@ -119,6 +144,7 @@ export async function POST(request) {
           claves: plan.claves,
           plan_nombre: plan.nombre,
           currency,
+          ...(sorteo ? { sorteo_id: sorteo.id, sorteo_slug: sorteo.slug } : {}),
           canal: "bold",
           fecha_nacimiento: fechaNacimiento,
           ...(fbp ? { fbp } : {}),

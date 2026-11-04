@@ -32,17 +32,19 @@ function limpiarEmail(e) {
   return s.endsWith("@sin-email.clubgomez.co") ? "" : s;
 }
 
-async function filasVentas(periodo) {
-  const { desde, hasta } = rangoPeriodoBogota(periodo);
-  const { data, error } = await supabaseAdmin
+async function filasVentas(periodo, sorteoId) {
+  let consulta = supabaseAdmin
     .from("pagos")
     .select(
-      "monto_cop, metodo, estado, pagado_en, wompi_reference, miembros(nombre, telefono, email, cedula), membresias(plan_id, origen, claves(numero, periodo))"
+      "monto_cop, metodo, estado, pagado_en, wompi_reference, miembros(nombre, telefono, email, cedula), membresias(plan_id, origen, sorteo_id, claves(numero, periodo, sorteo_id))"
     )
     .in("estado", ["aprobado", "anulado"])
-    .gte("pagado_en", desde)
-    .lt("pagado_en", hasta)
     .order("pagado_en", { ascending: true });
+  if (!sorteoId) {
+    const { desde, hasta } = rangoPeriodoBogota(periodo);
+    consulta = consulta.gte("pagado_en", desde).lt("pagado_en", hasta);
+  }
+  const { data, error } = await consulta;
 
   if (error) throw new Error(error.message);
 
@@ -52,8 +54,9 @@ async function filasVentas(periodo) {
   for (const p of data || []) {
     const mi = p.miembros || {};
     const mem = p.membresias || {};
+    if (sorteoId && mem.sorteo_id !== sorteoId) continue;
     const numeros = (mem.claves || [])
-      .filter((c) => c.periodo === periodo)
+      .filter((c) => (sorteoId ? c.sorteo_id === sorteoId : c.periodo === periodo))
       .map((c) => c.numero)
       .sort()
       .join(" ");
@@ -74,8 +77,8 @@ async function filasVentas(periodo) {
   return filas;
 }
 
-async function filasNumeros(periodo) {
-  const numeros = await listarNumerosPeriodo(supabaseAdmin, periodo);
+async function filasNumeros(periodo, sorteoId) {
+  const numeros = await listarNumerosPeriodo(supabaseAdmin, periodo, sorteoId);
   const filas = [["Número", "Canal", "Nombre", "Teléfono", "Email", "Cédula", "Plan", "Fecha"]];
   for (const n of numeros) {
     filas.push([
@@ -108,8 +111,13 @@ export async function GET(request) {
     const periodo = /^\d{4}-\d{2}$/.test(searchParams.get("periodo") || "")
       ? searchParams.get("periodo")
       : periodoDe();
+    const sorteoId = /^[0-9a-f-]{36}$/i.test(searchParams.get("sorteo") || "")
+      ? searchParams.get("sorteo")
+      : null;
 
-    const filas = tipo === "numeros" ? await filasNumeros(periodo) : await filasVentas(periodo);
+    const filas = tipo === "numeros"
+      ? await filasNumeros(periodo, sorteoId)
+      : await filasVentas(periodo, sorteoId);
 
     await registrarActividad(supabaseAdmin, user, "exportar", {
       tipo,

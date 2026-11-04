@@ -45,6 +45,20 @@ export async function POST(request, { params }) {
     } catch {
       notas = {};
     }
+    let rangoFisico = null;
+    let rangoWeb = null;
+    if (notas.sorteo_id) {
+      const { data: sorteo } = await supabaseAdmin
+        .from("sorteos_rifa")
+        .select("fisico_min, fisico_max, web_min, web_max")
+        .eq("id", notas.sorteo_id)
+        .maybeSingle();
+      if (sorteo) {
+        rangoFisico = { min: sorteo.fisico_min, max: sorteo.fisico_max };
+        rangoWeb = { min: sorteo.web_min, max: sorteo.web_max };
+      }
+    }
+
     const resultado = await activarMembresiaManual(supabaseAdmin, {
       planId: solicitud.plan_id,
       plan: planDeSolicitud(solicitud.plan_id, notas),
@@ -53,8 +67,12 @@ export async function POST(request, { params }) {
       email: solicitud.email,
       telefono: solicitud.telefono,
       ciudad: solicitud.ciudad,
+      fechaNacimiento: notas.fecha_nacimiento || null,
       origen: "whatsapp",
       solicitudId: solicitud.id,
+      sorteoId: notas.sorteo_id || null,
+      rangoFisico,
+      rangoWeb,
     });
 
     await registrarActividad(supabaseAdmin, user, "pago_web_activado", {

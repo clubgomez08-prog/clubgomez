@@ -20,12 +20,28 @@ export default function AdminLayout({ children }) {
   const [session, setSession] = useState(null);
   const [checking, setChecking] = useState(true);
   const [sidebarAbierto, setSidebarAbierto] = useState(false);
+  const [menuOculto, setMenuOculto] = useState(false);
   const [sidebarPath, setSidebarPath] = useState(pathname);
   const isLoginPage = pathname === "/admin/login";
+  const esVista = pathname === "/admin/sorteos/vista";
 
   if (pathname !== sidebarPath) {
     setSidebarPath(pathname);
     if (sidebarAbierto) setSidebarAbierto(false);
+  }
+
+  useEffect(() => {
+    setMenuOculto(localStorage.getItem("cg-admin-menu") === "oculto");
+  }, []);
+
+  function ocultarMenu() {
+    setMenuOculto(true);
+    localStorage.setItem("cg-admin-menu", "oculto");
+  }
+
+  function mostrarMenu() {
+    setMenuOculto(false);
+    localStorage.setItem("cg-admin-menu", "visible");
   }
 
   useEffect(() => {
@@ -62,6 +78,10 @@ export default function AdminLayout({ children }) {
     return null;
   }
 
+  if (esVista) {
+    return <ToastProvider>{children}</ToastProvider>;
+  }
+
   const paginaActiva =
     ADMIN_NAV.find(
       (item) =>
@@ -71,11 +91,15 @@ export default function AdminLayout({ children }) {
 
   return (
     <ToastProvider>
-      <div className="admin-shell">
+      <div className={`admin-shell${menuOculto ? " is-menu-oculto" : ""}`}>
+        {menuOculto ? (
+          <button type="button" className="admin-menu-abrir" onClick={mostrarMenu}>
+            Menú
+          </button>
+        ) : null}
         <header className="admin-topbar">
           <button
             type="button"
-            className="admin-topbar__menu"
             aria-label={sidebarAbierto ? "Cerrar menú" : "Abrir menú"}
             onClick={() => setSidebarAbierto((v) => !v)}
           >
@@ -97,6 +121,7 @@ export default function AdminLayout({ children }) {
         <Sidebar
           abierto={sidebarAbierto}
           onClose={() => setSidebarAbierto(false)}
+          onOcultar={ocultarMenu}
         />
 
         <main className="admin-main">{children}</main>
@@ -112,7 +137,9 @@ export default function AdminLayout({ children }) {
                 href={item.href}
                 className={`admin-bottom-nav__item${activo ? " is-active" : ""}`}
               >
-                <span className="admin-bottom-nav__icon">{item.icon}</span>
+                <span className="admin-bottom-nav__icon">
+                  <item.icon />
+                </span>
                 {item.short}
               </Link>
             );

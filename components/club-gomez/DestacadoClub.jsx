@@ -53,15 +53,33 @@ const PRESENTACION = [
   },
 ];
 
-export default function DestacadoClub({ campana = CAMPANA_LANDING_DEFAULT }) {
+export default function DestacadoClub({
+  campana = CAMPANA_LANDING_DEFAULT,
+  soloGaleria = false,
+  planesLista = null,
+  sorteoSlug = "",
+  cerrado = false,
+  anclaPlanes = false,
+}) {
   const FOTOS = campana.fotos?.length ? campana.fotos : CAMPANA_LANDING_DEFAULT.fotos;
   const { ref, className } = useReveal();
   const planes = usePlanes();
-  const MINI_PLANES = PRESENTACION.map((extra) => ({
-    ...planes[extra.id],
-    ...extra,
-    precio: planes[extra.id].precioLabel,
-  }));
+  const MINI_PLANES = planesLista?.length
+    ? planesLista.slice(0, 6).map((p, i) => {
+        const marcado = typeof p.recomendado === "boolean" ? p.recomendado : i === 0;
+        return {
+          ...PRESENTACION[i % PRESENTACION.length],
+          ...p,
+          highlight: marcado,
+          badge: marcado ? "Recomendado" : null,
+          precio: p.precioLabel || p.precio,
+        };
+      })
+    : PRESENTACION.map((extra) => ({
+        ...planes[extra.id],
+        ...extra,
+        precio: planes[extra.id].precioLabel,
+      }));
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
   const other = (i + 1) % FOTOS.length;
@@ -81,6 +99,7 @@ export default function DestacadoClub({ campana = CAMPANA_LANDING_DEFAULT }) {
       ref={ref}
       className={`${styles.combo} ${className}`}
     >
+      {anclaPlanes ? <span id="membresias" /> : null}
       <div className={styles.inner}>
         <div
           className={styles.stage}
@@ -144,7 +163,7 @@ export default function DestacadoClub({ campana = CAMPANA_LANDING_DEFAULT }) {
           ) : null}
         </div>
 
-        <div className={styles.copy}>
+        {soloGaleria ? null : <div className={styles.copy}>
           <p className={styles.eyebrow}>Entrá este mes</p>
           <h2 className={styles.title}>
             Elige tu <span>membresía</span>
@@ -159,34 +178,36 @@ export default function DestacadoClub({ campana = CAMPANA_LANDING_DEFAULT }) {
               >
                 <img src={p.sticker} alt="" className={styles.sticker} />
                 {p.badge ? <span className={styles.ribbon}>{p.badge}</span> : null}
-                <span className={styles.period}>Plan mensual</span>
+                <span className={styles.period}>{p.etiqueta || "Plan mensual"}</span>
                 <h3>{p.nombre}</h3>
                 <p className={styles.keys}>
                   <strong>{p.claves}</strong>{" "}
                   {p.claves === 1 ? "oportunidad" : "oportunidades"}
                 </p>
                 <div className={styles.price}>
-                  <span className={styles.before}>${p.precioAntes}</span>
+                  {p.precioAntes ? <span className={styles.before}>${p.precioAntes}</span> : null}
                   <span className={styles.now}>
                     ${p.precio}
-                    <small>/mes</small>
+                    <small>{p.sufijo || "/mes"}</small>
                   </span>
                 </div>
                 <button
                   type="button"
                   className={styles.cta}
+                  disabled={cerrado}
                   onClick={() => {
-                    trackInitiateCheckoutThenGo(planes[p.id], () =>
-                      irASuscribir({ planId: p.id })
+                    if (cerrado) return;
+                    trackInitiateCheckoutThenGo(p, () =>
+                      irASuscribir({ planId: p.id, sorteoSlug })
                     );
                   }}
                 >
-                  ¡Suscribirme ya!
+                  {cerrado ? "Sorteo cerrado" : p.boton || "¡Suscribirme ya!"}
                 </button>
               </article>
             ))}
           </div>
-        </div>
+        </div>}
       </div>
     </section>
   );

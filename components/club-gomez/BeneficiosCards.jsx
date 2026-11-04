@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import CtaButton from "./CtaButton";
 import { BENEFICIO_CARDS } from "@/lib/club-gomez/stickers";
 import { scrollToId, useReveal } from "./hooks";
@@ -16,8 +15,16 @@ const TEXTO_BANDA = [
   "3 últimos números",
 ];
 
-export default function BeneficiosCards() {
+export default function BeneficiosCards({ textos = null, bloque = null }) {
   const { ref, className } = useReveal();
+  const cinta = textos?.length ? textos : TEXTO_BANDA;
+  const titulo = bloque?.titulo || "Una membresía";
+  const acento = bloque?.acento || "exclusiva";
+  const bajada = bloque?.bajada || "para disfrutar cada mes de:";
+  const boton = bloque?.boton || "Quiero suscribirme";
+  const tarjetas = bloque?.items?.length
+    ? bloque.items
+    : BENEFICIO_CARDS.map((c) => ({ titulo: c.title, texto: c.desc, sticker: c.sticker }));
 
   return (
     <section id="como-funciona" ref={ref} className={`cg-perk-cards ${className}`}>
@@ -25,34 +32,35 @@ export default function BeneficiosCards() {
         <div className="cg-perk-cards__head">
           <div>
             <h2>
-              Una membresía <span>exclusiva</span>
+              {titulo} {acento ? <span>{acento}</span> : null}
             </h2>
-            <p>para disfrutar cada mes de:</p>
+            <p>{bajada}</p>
           </div>
           <CtaButton
             requireAuth
             onClick={() => scrollToId("membresias")}
             animate={false}
           >
-            Quiero suscribirme
+            {boton}
           </CtaButton>
         </div>
 
-        <div className="cg-perk-cards__grid">
-          {BENEFICIO_CARDS.map((c) => (
-            <article key={c.id} className="cg-perk-card">
+        <div className={`cg-perk-cards__grid${tarjetas.length === 1 ? " is-una" : ""}`}>
+          {tarjetas.map((c) => (
+            <article key={`${c.titulo}-${c.sticker}`} className="cg-perk-card">
               <div className="cg-perk-card__sticker">
                 <img src={c.sticker} alt="" className="cg-sticker-img" decoding="async" />
               </div>
-              <h3>{c.title}</h3>
-              <p>{c.desc}</p>
-              <Link
-                href="/beneficios"
+              <h3>{c.titulo}</h3>
+              <p>{c.texto}</p>
+              <button
+                type="button"
                 className="cg-perk-card__more"
-                aria-label={`Ver más: ${c.title}`}
+                aria-label={`Bajar a los planes: ${c.titulo}`}
+                onClick={() => scrollToId("membresias")}
               >
                 ↓
-              </Link>
+              </button>
             </article>
           ))}
         </div>
@@ -60,7 +68,7 @@ export default function BeneficiosCards() {
 
       <div className="cg-text-band" aria-hidden="true">
         <div className="cg-text-band__track">
-          {[...TEXTO_BANDA, ...TEXTO_BANDA].map((t, i) => (
+          {[...cinta, ...cinta].map((t, i) => (
             <span key={`${t}-${i}`} className="cg-text-band__item">
               {t}
               <span className="cg-text-band__dot" />

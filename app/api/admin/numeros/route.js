@@ -21,8 +21,25 @@ export async function GET(request) {
       ? searchParams.get("periodo")
       : periodoDe();
 
-    const numeros = await listarNumerosPeriodo(supabaseAdmin, periodo);
-    return NextResponse.json({ ok: true, periodo, rangos: CLAVES_RANGO, numeros });
+    const sorteoId = String(searchParams.get("sorteo") || "").trim();
+    const idOk = /^[0-9a-f-]{36}$/i.test(sorteoId) ? sorteoId : null;
+    let rangos = CLAVES_RANGO;
+    if (idOk) {
+      const { data: sorteo } = await supabaseAdmin
+        .from("sorteos_rifa")
+        .select("fisico_min, fisico_max, web_min, web_max")
+        .eq("id", idOk)
+        .maybeSingle();
+      const ok = (n) => Number.isInteger(n) && n >= 0 && n <= 999;
+      if (sorteo && ok(sorteo.fisico_min) && ok(sorteo.fisico_max) && ok(sorteo.web_min) && ok(sorteo.web_max)) {
+        rangos = {
+          fisico: { min: sorteo.fisico_min, max: sorteo.fisico_max },
+          web: { min: sorteo.web_min, max: sorteo.web_max },
+        };
+      }
+    }
+    const numeros = await listarNumerosPeriodo(supabaseAdmin, periodo, idOk);
+    return NextResponse.json({ ok: true, periodo, sorteoId: idOk, rangos, numeros });
   } catch (err) {
     console.error("[admin/numeros]", err);
     return NextResponse.json(

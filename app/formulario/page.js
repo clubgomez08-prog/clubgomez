@@ -20,7 +20,34 @@ import styles from "./formulario.module.css";
 
 function FormularioMembresia() {
   const searchParams = useSearchParams();
-  const plan = usePlan(searchParams.get("plan"));
+  const sorteoSlug = searchParams.get("sorteo") || "";
+  const planBase = usePlan(searchParams.get("plan"));
+  const [planSorteo, setPlanSorteo] = useState(null);
+  const [sorteoCerrado, setSorteoCerrado] = useState(false);
+  const plan = planSorteo || planBase;
+
+  useEffect(() => {
+    if (!sorteoSlug) return;
+    let vivo = true;
+    fetch(`/api/sorteos/${encodeURIComponent(sorteoSlug)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!vivo) return;
+        if (!data?.ok) {
+          setSorteoCerrado(true);
+          return;
+        }
+        if (data.sorteo?.estado === "cerrado") setSorteoCerrado(true);
+        const encontrado = (data.planes || []).find((p) => p.id === searchParams.get("plan"));
+        if (encontrado) setPlanSorteo(encontrado);
+      })
+      .catch(() => {
+        if (vivo) setSorteoCerrado(true);
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [sorteoSlug, searchParams]);
 
   const [sesion, setSesion] = useState(null);
   const [ready, setReady] = useState(false);

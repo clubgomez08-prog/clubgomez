@@ -1,14 +1,38 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
-import {
-  inventarioClavesPeriodo,
-  periodoDe,
-} from "@/lib/club-gomez/claves-pool";
-import { getPlanById } from "@/lib/club-gomez/planes";
-import { rangoPeriodoBogota } from "@/lib/club-gomez/periodo-rango";
+import { fechaLegible } from "@/lib/club-gomez/sorteos";
+import { padClave } from "@/lib/club-gomez/claves-pool";
 
 export const dynamic = "force-dynamic";
+
+function tamano(min, max) {
+  const a = Number(min);
+  const b = Number(max);
+  if (!Number.isFinite(a) || !Number.isFinite(b) || b < a) return 0;
+  return b - a + 1;
+}
+
+function enRango(numero, min, max) {
+  const n = Number(padClave(numero));
+  return n >= Number(min) && n <= Number(max);
+}
+
+function estadoPagina(sorteo) {
+  if (sorteo.estado === "cerrado") return "Terminada";
+  if (sorteo.estado === "en_venta") return "Publicada";
+  return "Oculta";
+}
+
+function notasDe(raw) {
+  if (!raw) return {};
+  if (typeof raw === "object") return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
 
 export async function GET(request) {
   try {
@@ -20,146 +44,136 @@ export async function GET(request) {
       return NextResponse.json({ error: "Supabase no configurado" }, { status: 503 });
     }
 
-    const periodo = periodoDe();
-    const { desde, hasta } = rangoPeriodoBogota(periodo);
-    const ahora = new Date().toISOString();
+    const pedido = new URL(request.url).searchParams.get("sorteo");
+    const { data: sorteos, error: errorSorteos } = await supabaseAdmin
+      .from("sorteos_rifa")
+      .select("id, nombre, premio, slug, estado, fecha_sorteo, loteria, trabajando, es_principal, fisico_min, fisico_max, web_min, web_max")
+      .order("created_at", { ascending: false });
 
-    const [
-      rVigentes,
-      rSolicitudes,
-      rPagos,
-      inventario,
-      rBeneficios,
-      rUltimos,
-      rPagosRecientes,
-      rMembresiasMes,
-    ] = await Promise.all([
+    if (errorSorteos) {
+      return NextResponse.json({ ok: true, sorteo: null, otros: [], stats: null, ventas: [] });
+    }
+
+    const lista = sorteos || [];
+    const activo =
+      lista.find((s) => pedido && s.id === pedido) ||
+      lista.find((s) => s.trabajando) ||
+      lista.find((s) => s.es_principal) ||
+      lista[0] ||
+      null;
+
+    if (!activo) {
+      return NextResponse.json({ ok: true, sorteo: null, otros: [], stats: null, ventas: [] });
+    }
+
+    const ids = lista.map((s) => s.id);
+    const [{ data: claves }, { data: membresias }, { data: solicitudes }] = await Promise.all([
+      supabaseAdmin.from("claves").select("numero, sorteo_id, membresia_id").in("sorteo_id", ids),
       supabaseAdmin
         .from("membresias")
-        .select("miembro_id")
-        .eq("estado", "activa")
-        .gt("vence_en", ahora),
-      supabaseAdmin
-        .from("solicitudes_membresia")
-        .select("*", { count: "exact", head: true })
-        .eq("estado", "nueva"),
-      supabaseAdmin
-        .from("pagos")
-        .select("monto_cop, pagado_en, membresia_id")
-        .eq("estado", "aprobado"),
-      inventarioClavesPeriodo(supabaseAdmin, periodo).catch(() => ({
-        periodo,
-        emitidas: 0,
-        libres: 1000,
-        total: 1000,
-      })),
-      supabaseAdmin
-        .from("sorteos_beneficio")
-        .select("*", { count: "exact", head: true })
-        .eq("periodo", periodo)
-        .eq("estado", "programado"),
-      supabaseAdmin
-        .from("miembros")
-        .select("id, nombre, email, estado, created_at")
-        .order("created_at", { ascending: false })
-        .limit(8),
-      supabaseAdmin
-        .from("pagos")
-        .select("id, monto_cop, pagado_en, metodo, miembro_id, membresia_id")
-        .eq("estado", "aprobado")
-        .order("pagado_en", { ascending: false })
-        .limit(8),
-      supabaseAdmin
-        .from("membresias")
-        .select("id")
-        .gte("created_at", desde)
-        .lt("created_at", hasta),
+        .select("id, plan_id, origen, created_at, miembro_id, sorteo_id, miembros(nombre)")
+        .eq("sorteo_id", activo.id)
+        .order("created_at", { ascending: false }),
+      supabaseAdmin.from("solicitudes_membresia").select("id, notas, estado").eq("estado", "nueva"),
     ]);
 
-    const vigentes = rVigentes.error ? [] : rVigentes.data || [];
-    const miembrosActivos = new Set(
-      vigentes.map((m) => m.miembro_id).filter(Boolean)
-    ).size;
+    const clavesTodas = claves || [];
+    const delSorteo = clavesTodas.filter((c) => c.sorteo_id === activo.id);
+    const dadasFisico = delSorteo.filter((c) => enRango(c.numero, activo.fisico_min, activo.fisico_max)).length;
+    const dadasWeb = delSorteo.filter((c) => enRango(c.numero, activo.web_min, activo.web_max)).length;
+    const totalFisico = tamano(activo.fisico_min, activo.fisico_max);
+    const totalWeb = tamano(activo.web_min, activo.web_max);
+    const dadas = dadasFisico + dadasWeb;
+    const total = totalFisico + totalWeb;
 
-    const pagos = rPagos.error ? [] : rPagos.data || [];
-    const desdeMs = Date.parse(desde);
-    const hastaMs = Date.parse(hasta);
-    let ingresos = 0;
-    let ingresosTotal = 0;
-    for (const p of pagos) {
-      const monto = Number(p.monto_cop) || 0;
-      ingresosTotal += monto;
-      const t = Date.parse(p.pagado_en);
-      if (t >= desdeMs && t < hastaMs) ingresos += monto;
+    const mems = membresias || [];
+    const memIds = mems.map((m) => m.id);
+    let pagos = [];
+    if (memIds.length) {
+      const { data } = await supabaseAdmin
+        .from("pagos")
+        .select("id, monto_cop, pagado_en, metodo, membresia_id, estado")
+        .in("membresia_id", memIds)
+        .eq("estado", "aprobado")
+        .order("pagado_en", { ascending: false });
+      pagos = data || [];
     }
 
-    const conPago = new Set(pagos.map((p) => p.membresia_id).filter(Boolean));
-    const ventasSinPago = (rMembresiasMes.error ? [] : rMembresiasMes.data || [])
-      .filter((m) => !conPago.has(m.id)).length;
+    const planIds = [...new Set(mems.map((m) => m.plan_id).filter(Boolean))];
+    const planes = {};
+    if (planIds.length) {
+      const { data } = await supabaseAdmin.from("planes").select("id, nombre").in("id", planIds);
+      for (const p of data || []) planes[p.id] = p.nombre;
+    }
 
-    const pagosRecientes = rPagosRecientes.error ? [] : rPagosRecientes.data || [];
-    const miembroIds = [
-      ...new Set(pagosRecientes.map((p) => p.miembro_id).filter(Boolean)),
-    ];
-    const membresiaIds = [
-      ...new Set(pagosRecientes.map((p) => p.membresia_id).filter(Boolean)),
-    ];
-    let miembrosMap = {};
-    let planesMap = {};
-    const clavesCount = {};
-    if (miembroIds.length) {
-      const { data: ms } = await supabaseAdmin
-        .from("miembros")
-        .select("id, nombre, email")
-        .in("id", miembroIds);
-      for (const m of ms || []) miembrosMap[m.id] = m;
+    const numerosPorMem = {};
+    for (const c of delSorteo) {
+      if (!c.membresia_id) continue;
+      if (!numerosPorMem[c.membresia_id]) numerosPorMem[c.membresia_id] = [];
+      numerosPorMem[c.membresia_id].push(padClave(c.numero));
     }
-    if (membresiaIds.length) {
-      const { data: mems } = await supabaseAdmin
-        .from("membresias")
-        .select("id, plan_id, claves(numero)")
-        .in("id", membresiaIds);
-      for (const m of mems || []) {
-        planesMap[m.id] = m.plan_id;
-        clavesCount[m.id] = (m.claves || []).length;
-      }
-    }
-    const ultimasVentas = pagosRecientes.map((p) => {
-      const plan = getPlanById(planesMap[p.membresia_id]);
-      const persona = miembrosMap[p.miembro_id] || {};
+
+    const memPorId = Object.fromEntries(mems.map((m) => [m.id, m]));
+    const conPago = new Set(pagos.map((p) => p.membresia_id));
+    const ventas = pagos.slice(0, 8).map((p) => {
+      const mem = memPorId[p.membresia_id] || {};
+      const nums = (numerosPorMem[p.membresia_id] || []).sort();
       return {
         id: p.id,
-        nombre: persona.nombre || "—",
-        email: persona.email || "—",
-        planNombre: plan.nombre,
-        oportunidades: clavesCount[p.membresia_id] ?? plan.claves,
+        nombre: mem.miembros?.nombre || "—",
+        planNombre: planes[mem.plan_id] || "Plan",
+        numeros: nums,
         monto: p.monto_cop,
         fecha: p.pagado_en,
-        canal: p.metodo === "efectivo" ? "físico" : "web",
+        canal: p.metodo === "efectivo" ? "local" : "web",
       };
+    });
+
+    const ventasLocal = pagos.filter((p) => p.metodo === "efectivo").length;
+    const ventasWeb = pagos.length - ventasLocal;
+    const ingresos = pagos.reduce((suma, p) => suma + (Number(p.monto_cop) || 0), 0);
+    const sinPago = mems.filter((m) => !conPago.has(m.id)).length;
+    const sinConfirmar = (solicitudes || []).filter((s) => {
+      const notas = notasDe(s.notas);
+      return notas.sorteo_id === activo.id || notas.sorteo_slug === activo.slug;
+    }).length;
+
+    const cuentas = {};
+    for (const c of clavesTodas) {
+      cuentas[c.sorteo_id] = (cuentas[c.sorteo_id] || 0) + 1;
+    }
+
+    const ficha = (s) => ({
+      id: s.id,
+      nombre: s.premio || s.nombre,
+      slug: s.slug,
+      fecha: fechaLegible(s.fecha_sorteo),
+      loteria: s.loteria || "",
+      pagina: estadoPagina(s),
+      vendiendo: Boolean(s.trabajando),
+      dadas: cuentas[s.id] || 0,
+      total: tamano(s.fisico_min, s.fisico_max) + tamano(s.web_min, s.web_max),
     });
 
     return NextResponse.json({
       ok: true,
-      periodo,
+      sorteo: ficha(activo),
+      otros: lista.filter((s) => s.id !== activo.id).map(ficha),
       stats: {
-        miembrosActivos,
-        membresiasActivas: vigentes.length,
-        solicitudesNuevas: rSolicitudes.error ? 0 : rSolicitudes.count ?? 0,
+        dadas,
+        libres: Math.max(0, total - dadas),
+        total,
+        dadasFisico,
+        libresFisico: Math.max(0, totalFisico - dadasFisico),
+        dadasWeb,
+        libresWeb: Math.max(0, totalWeb - dadasWeb),
+        ventasLocal,
+        ventasWeb,
         ingresos,
-        ingresosTotal,
-        ventasSinPago,
-        clavesEmitidas: inventario.emitidas,
-        clavesLibres: inventario.libres,
-        clavesWebEmitidas: inventario.web?.emitidas ?? 0,
-        clavesWebLibres: inventario.web?.libres ?? 0,
-        clavesFisicoEmitidas: inventario.fisico?.emitidas ?? 0,
-        clavesFisicoLibres: inventario.fisico?.libres ?? 0,
-        premiosProgramados: rBeneficios.error ? 0 : rBeneficios.count ?? 0,
+        sinConfirmar,
+        sinPago,
       },
-      inventario,
-      ultimosMiembros: rUltimos.error ? [] : rUltimos.data || [],
-      ultimasVentas,
+      ventas,
     });
   } catch (err) {
     console.error("[admin/dashboard]", err);

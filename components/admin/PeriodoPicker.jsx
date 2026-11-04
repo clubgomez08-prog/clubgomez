@@ -84,7 +84,7 @@ export default function PeriodoPicker({ value, onChange, label = "Periodo" }) {
           })
         }
         aria-expanded={open}
-        className="inline-flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left transition-colors"
+        className="is-oscuro inline-flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-left transition-colors"
         style={{
           background: "#0c0c0c",
           border: open
@@ -144,7 +144,7 @@ export default function PeriodoPicker({ value, onChange, label = "Periodo" }) {
 
       {open ? (
         <div
-          className="absolute left-0 top-[calc(100%+8px)] z-50 w-[280px] rounded-2xl p-3"
+          className="is-oscuro absolute left-0 top-[calc(100%+8px)] z-50 w-[280px] rounded-2xl p-3"
           style={{
             background: "#111111",
             border: "1px solid rgba(184,227,81,0.28)",

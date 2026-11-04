@@ -1,11 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import StatsCard from "@/components/admin/StatsCard";
 import { getAdminAuthHeaders } from "@/lib/auth";
-
-const LIME = "#B8E351";
 
 function formatFecha(dateStr) {
   if (!dateStr) return "—";
@@ -15,18 +12,16 @@ function formatFecha(dateStr) {
   });
 }
 
+function pesos(n) {
+  return "$ " + Number(n || 0).toLocaleString("es-CO");
+}
+
 export default function AdminDashboardPage() {
-  const [stats, setStats] = useState({
-    miembrosActivos: 0,
-    membresiasActivas: 0,
-    solicitudesNuevas: 0,
-    ingresos: 0,
-    clavesEmitidas: 0,
-    clavesLibres: 1000,
-    premiosProgramados: 0,
-  });
-  const [periodo, setPeriodo] = useState("");
-  const [ultimasVentas, setUltimasVentas] = useState([]);
+  const [sorteoId, setSorteoId] = useState("");
+  const [sorteo, setSorteo] = useState(null);
+  const [otros, setOtros] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [ventas, setVentas] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState("");
   const [finanzasVisibles, setFinanzasVisibles] = useState(false);
@@ -35,36 +30,33 @@ export default function AdminDashboardPage() {
   const [errorFinanzas, setErrorFinanzas] = useState("");
   const [cargandoFinanzas, setCargandoFinanzas] = useState(false);
 
-  useEffect(() => {
-    async function cargar() {
-      setCargando(true);
-      setErrorCarga("");
-      try {
-        const headers = await getAdminAuthHeaders();
-        const res = await fetch("/api/admin/dashboard", { headers });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Error");
-        setStats(data.stats || {});
-        setPeriodo(data.periodo || "");
-        setUltimasVentas(data.ultimasVentas || []);
-      } catch (err) {
-        setErrorCarga(err.message || "No se pudieron cargar los datos. Recarga la página.");
-        setStats({
-          miembrosActivos: 0,
-          membresiasActivas: 0,
-          solicitudesNuevas: 0,
-          ingresos: 0,
-          clavesEmitidas: 0,
-          clavesLibres: 1000,
-          premiosProgramados: 0,
-        });
-        setUltimasVentas([]);
-      } finally {
-        setCargando(false);
-      }
+  const cargar = useCallback(async (id) => {
+    setCargando(true);
+    setErrorCarga("");
+    try {
+      const headers = await getAdminAuthHeaders();
+      const url = id ? `/api/admin/dashboard?sorteo=${id}` : "/api/admin/dashboard";
+      const res = await fetch(url, { headers });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error");
+      setSorteo(data.sorteo || null);
+      setOtros(data.otros || []);
+      setStats(data.stats || null);
+      setVentas(data.ventas || []);
+      if (data.sorteo?.id) setSorteoId(data.sorteo.id);
+    } catch (err) {
+      setErrorCarga(err.message || "No se pudieron cargar los datos. Recarga la página.");
+      setSorteo(null);
+      setStats(null);
+      setVentas([]);
+    } finally {
+      setCargando(false);
     }
-    cargar();
   }, []);
+
+  useEffect(() => {
+    cargar("");
+  }, [cargar]);
 
   async function confirmarUnlockFinanzas() {
     setCargandoFinanzas(true);
@@ -93,254 +85,166 @@ export default function AdminDashboardPage() {
     }
   }
 
-  return (
-    <div>
-      <div className="admin-dash__head">
-        <div>
-          <p className="admin-dash__kicker">Club Gómez</p>
-          <h1 className="admin-dash__title">Dashboard</h1>
-          <p className="admin-dash__meta">
-            Yamaha Crypton 0 km más $1.000.000 · 17 de octubre · Boyacá
-            {periodo ? ` · ${periodo}` : ""}
-          </p>
-          <p className="admin-dash__meta" style={{ marginTop: 4, opacity: 0.75 }}>
-            Élite $100.000 / 6 · Selecto $50.000 / 3 · Esencial $20.000 / 1 · Web
-            701–999 · Físico 000–700
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-          {finanzasVisibles ? (
-            <button
-              type="button"
-              onClick={() => setFinanzasVisibles(false)}
-              className="admin-btn admin-btn--ghost"
-            >
-              Ocultar finanzas
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setErrorFinanzas("");
-                setPasswordFinanzas("");
-                setModalFinanzas(true);
-              }}
-              className="admin-btn admin-btn--lime"
-            >
-              Ver finanzas
-            </button>
-          )}
-        </div>
-      </div>
+  const lista = sorteo ? [sorteo, ...otros] : [];
 
-      {errorCarga ? (
-        <p className="text-sm text-red-300 mb-4">{errorCarga}</p>
-      ) : null}
+  return (
+    <div className="dash">
+      {errorCarga ? <p className="dash-error">{errorCarga}</p> : null}
 
       {cargando ? (
-        <div className="flex justify-center py-6 mb-4">
-          <div
-            className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin"
-            style={{ borderColor: LIME, borderTopColor: "transparent" }}
-          />
+        <div className="dash-carga">
+          <div className="dash-spin" />
+        </div>
+      ) : !sorteo ? (
+        <div className="dash-vacio">
+          <h1>Todavía no hay un sorteo</h1>
+          <p>Cuando crees uno y lo marques para cobrar, los números de ese premio salen aquí.</p>
+          <Link href="/admin/sorteos" className="dash-btn dash-btn--lime">
+            Ir a sorteos
+          </Link>
         </div>
       ) : (
         <>
-          <div
-            className="grid gap-3 mb-6"
-            style={{
-              gridTemplateColumns: "repeat(auto-fit, minmax(148px, 1fr))",
-            }}
-          >
-            <StatsCard title="Miembros con membresía vigente" value={stats.miembrosActivos} />
-            <StatsCard
-              title="Membresías vigentes"
-              value={stats.membresiasActivas}
-            />
-            <StatsCard
-              title="Intentos web sin pagar"
-              value={stats.solicitudesNuevas}
-            />
-            <StatsCard
-              title="Ingresos del mes"
-              value={
-                finanzasVisibles
-                  ? "$ " + Number(stats.ingresos || 0).toLocaleString("es-CO")
-                  : "$ ***"
-              }
-            />
-            {finanzasVisibles ? (
-              <StatsCard
-                title="Ingresos históricos"
-                value={"$ " + Number(stats.ingresosTotal || 0).toLocaleString("es-CO")}
-              />
-            ) : null}
-            <StatsCard
-              title="Oportunidades web 701–999"
-              value={
-                stats.clavesWebLibres != null
-                  ? `${stats.clavesWebEmitidas || 0} dadas · ${stats.clavesWebLibres} libres`
-                  : stats.clavesEmitidas
-              }
-            />
-            <StatsCard
-              title="Oportunidades físico 000–700"
-              value={
-                stats.clavesFisicoLibres != null
-                  ? `${stats.clavesFisicoEmitidas || 0} dadas · ${stats.clavesFisicoLibres} libres`
-                  : stats.clavesLibres
-              }
-            />
-            <StatsCard
-              title="Premios programados"
-              value={stats.premiosProgramados}
-            />
-          </div>
-
-          {stats.ventasSinPago > 0 ? (
-            <div
-              className="admin-panel mb-6"
-              style={{ borderColor: "rgba(248,113,113,0.5)", padding: "14px 16px" }}
-            >
-              <p className="text-sm" style={{ color: "#fca5a5" }}>
-                {stats.ventasSinPago === 1
-                  ? "Hay 1 membresía de este mes sin pago registrado."
-                  : `Hay ${stats.ventasSinPago} membresías de este mes sin pago registrado.`}{" "}
-                Tienen oportunidades asignadas pero no suman en ingresos. Avísale al
-                equipo técnico.
+          <header className="dash-head">
+            <div>
+              <p className="dash-kicker">{sorteo.vendiendo ? "Vendiendo ahora" : "Este sorteo"}</p>
+              <h1>{sorteo.nombre}</h1>
+              <p className="dash-meta">
+                {[sorteo.fecha, sorteo.loteria].filter(Boolean).join(" · ")}
               </p>
+              <div className="dash-pills">
+                <span>{sorteo.pagina}</span>
+                {sorteo.vendiendo ? <span className="is-on">Vendiendo</span> : null}
+              </div>
+            </div>
+            <div className="dash-acciones">
+              {sorteo.pagina !== "Oculta" ? (
+                <Link href={`/sorteo/${sorteo.slug}`} className="dash-btn">
+                  Ver página
+                </Link>
+              ) : null}
+              <Link href="/admin/sorteos" className="dash-btn">
+                Editar
+              </Link>
+              {finanzasVisibles ? (
+                <button type="button" className="dash-btn" onClick={() => setFinanzasVisibles(false)}>
+                  Ocultar finanzas
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="dash-btn dash-btn--lime"
+                  onClick={() => {
+                    setErrorFinanzas("");
+                    setPasswordFinanzas("");
+                    setModalFinanzas(true);
+                  }}
+                >
+                  Ver finanzas
+                </button>
+              )}
+            </div>
+          </header>
+
+          {lista.length > 1 ? (
+            <div className="dash-switch" role="tablist" aria-label="Sorteos">
+              {lista.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={s.id === sorteoId ? "is-on" : ""}
+                  onClick={() => cargar(s.id)}
+                >
+                  {s.nombre}
+                </button>
+              ))}
             </div>
           ) : null}
 
-          <div className="mb-6">
-            <p className="admin-section-label">Últimas ventas (pagadas)</p>
-            <div className="admin-panel">
-              {ultimasVentas.length === 0 ? (
-                <div className="admin-empty">
-                  Aún no hay pagos aprobados este mes. Los intentos de Bold van
-                  en Pagos web.
-                </div>
+          <div className="dash-grid">
+            <article className="dash-card">
+              <p>Números libres</p>
+              <strong className="is-lime">{stats.libres}</strong>
+              <span>
+                {stats.dadas === 1 ? "1 dado" : `${stats.dadas} dados`} de {stats.total}. Local {stats.dadasFisico} · web {stats.dadasWeb}
+              </span>
+            </article>
+            <article className="dash-card">
+              <p>Ventas</p>
+              <strong>{stats.ventasLocal + stats.ventasWeb}</strong>
+              <span>
+                {stats.ventasWeb} por la página · {stats.ventasLocal} en el local
+              </span>
+            </article>
+            <article className="dash-card">
+              <p>Ingresos de este sorteo</p>
+              <strong>{finanzasVisibles ? pesos(stats.ingresos) : "$ ***"}</strong>
+              <span>Solo lo pagado de este premio.</span>
+            </article>
+            <article className="dash-card">
+              <p>Pagos web sin confirmar</p>
+              <strong>{stats.sinConfirmar}</strong>
+              <span>Abrieron Bold y todavía no aparece el pago.</span>
+            </article>
+          </div>
+
+          {stats.sinPago > 0 ? (
+            <p className="dash-aviso">
+              {stats.sinPago === 1
+                ? "Hay 1 venta de este sorteo con número y sin pago."
+                : `Hay ${stats.sinPago} ventas de este sorteo con número y sin pago.`}
+            </p>
+          ) : null}
+
+          <section className="dash-bloque">
+            <h2>Ventas de este sorteo</h2>
+            <div className="dash-lista">
+              {ventas.length === 0 ? (
+                <p className="dash-nada">Todavía no hay pagos de este premio.</p>
               ) : (
-                ultimasVentas.map((v) => (
-                  <div key={v.id} className="admin-member-row">
-                    <div className="min-w-0">
-                      <div className="admin-member-row__name">
-                        {v.nombre}
-                      </div>
-                      <div className="admin-member-row__email">
-                        {v.planNombre} · {v.oportunidades} oport. · {v.canal}
-                        {v.email ? ` · ${v.email}` : ""}
-                      </div>
+                ventas.map((v) => (
+                  <div key={v.id} className="dash-venta">
+                    <div>
+                      <strong>{v.nombre}</strong>
+                      <p>
+                        {v.planNombre} · {v.canal}
+                        {v.numeros?.length ? ` · ${v.numeros.join(" ")}` : ""}
+                      </p>
                     </div>
-                    <div className="admin-member-row__meta">
-                      <span className="admin-chip">
-                        ${Number(v.monto || 0).toLocaleString("es-CO")}
-                      </span>
-                      <div style={{ marginTop: 6 }}>{formatFecha(v.fecha)}</div>
+                    <div className="dash-venta__lado">
+                      <span>{finanzasVisibles ? pesos(v.monto) : "••••"}</span>
+                      <small>{formatFecha(v.fecha)}</small>
                     </div>
                   </div>
                 ))
               )}
             </div>
-          </div>
+          </section>
+
+          {otros.length ? (
+            <section className="dash-bloque">
+              <h2>Otros sorteos</h2>
+              <div className="dash-otros">
+                {otros.map((s) => (
+                  <button key={s.id} type="button" className="dash-otro" onClick={() => cargar(s.id)}>
+                    <strong>{s.nombre}</strong>
+                    <span>
+                      {s.dadas} números · {s.pagina}
+                      {s.vendiendo ? " · Vendiendo" : ""}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
         </>
       )}
 
-      <div className="py-2">
-        <p className="admin-section-label">Accesos rápidos</p>
-        <div className="admin-quick">
-          {[
-            {
-              href: "/admin/solicitudes",
-              icon: "✓",
-              label: "Pagos web",
-              color: LIME,
-            },
-            {
-              href: "/admin/venta-fisica",
-              icon: "▣",
-              label: "Venta física",
-              color: "#fbbf24",
-            },
-            {
-              href: "/admin/beneficios",
-              icon: "★",
-              label: "Fechas de premio",
-              color: "#60a5fa",
-            },
-            {
-              href: "/admin/miembros",
-              icon: "○",
-              label: "Clientes",
-              color: "#22C55E",
-            },
-            {
-              href: "/admin/correos",
-              icon: "✉",
-              label: "Correos prueba",
-              color: "#fbbf24",
-            },
-          ].map((item) => (
-            <Link key={item.href} href={item.href} className="admin-quick__item">
-              <span
-                className="admin-quick__icon"
-                style={{
-                  backgroundColor: `${item.color}18`,
-                  color: item.color,
-                }}
-              >
-                {item.icon}
-              </span>
-              <span className="admin-quick__label">{item.label}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-
       {modalFinanzas ? (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0,0,0,0.85)",
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "16px",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#1a1a1a",
-              border: "1.5px solid rgba(184,227,81,0.35)",
-              borderRadius: "20px",
-              padding: "28px 24px",
-              width: "100%",
-              maxWidth: "420px",
-            }}
-          >
-            <h2
-              style={{
-                color: "#F8FAFC",
-                fontSize: "20px",
-                fontWeight: "800",
-                textAlign: "center",
-                margin: "0 0 8px",
-              }}
-            >
-              Acceso a finanzas
-            </h2>
-            <p
-              style={{
-                color: "rgba(248,250,252,0.5)",
-                fontSize: "13px",
-                textAlign: "center",
-                margin: "0 0 20px",
-              }}
-            >
-              Ingresa la contraseña secundaria para ver montos.
-            </p>
+        <div className="dash-modal">
+          <div className="dash-modal__caja">
+            <h2>Acceso a finanzas</h2>
+            <p>Ingresa la contraseña para ver los montos de este sorteo.</p>
             <input
               type="password"
               value={passwordFinanzas}
@@ -348,42 +252,21 @@ export default function AdminDashboardPage() {
               onKeyDown={(e) => {
                 if (e.key === "Enter") confirmarUnlockFinanzas();
               }}
-              className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#B8E351]/50 mb-3"
               placeholder="Contraseña"
               autoComplete="current-password"
             />
-            {errorFinanzas ? (
-              <p className="text-sm text-red-400 mb-3 text-center">
-                {errorFinanzas}
-              </p>
-            ) : null}
-            <button
-              type="button"
-              onClick={confirmarUnlockFinanzas}
-              disabled={cargandoFinanzas}
-              style={{
-                width: "100%",
-                backgroundColor: cargandoFinanzas ? "#52525b" : LIME,
-                color: "#0a0a0a",
-                fontWeight: "700",
-                fontSize: "15px",
-                padding: "14px",
-                borderRadius: "12px",
-                border: "none",
-                cursor: cargandoFinanzas ? "not-allowed" : "pointer",
-                marginBottom: "8px",
-              }}
-            >
+            {errorFinanzas ? <p className="dash-error">{errorFinanzas}</p> : null}
+            <button type="button" className="dash-btn dash-btn--lime" onClick={confirmarUnlockFinanzas} disabled={cargandoFinanzas}>
               {cargandoFinanzas ? "…" : "Confirmar"}
             </button>
             <button
               type="button"
+              className="dash-btn"
               onClick={() => {
                 setModalFinanzas(false);
                 setPasswordFinanzas("");
                 setErrorFinanzas("");
               }}
-              className="w-full bg-transparent border border-zinc-600 rounded-xl text-zinc-400 text-sm py-3 cursor-pointer hover:bg-zinc-800/50"
             >
               Cancelar
             </button>

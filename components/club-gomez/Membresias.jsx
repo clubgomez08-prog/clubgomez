@@ -35,14 +35,24 @@ const PRESENTACION = [
   },
 ];
 
-export default function Membresias() {
+export default function Membresias({ planesLista = null, intro = "", frasePremio = "", sorteoSlug = "", cerrado = false }) {
   const { ref, className } = useReveal();
   const planes = usePlanes();
-  const PLANES = PRESENTACION.map((extra) => ({
-    ...planes[extra.id],
-    ...extra,
-    precio: planes[extra.id].precioLabel,
-  }));
+  const PLANES = planesLista
+    ? planesLista.map((p, i) => ({
+        ...p,
+        precio: p.precioLabel,
+        badge: i === 0 ? "Recomendado por el Club" : null,
+        highlight: i === 0,
+        extras: [],
+        avatar: PRESENTACION[i % PRESENTACION.length].avatar,
+        sticker: PRESENTACION[i % PRESENTACION.length].sticker,
+      }))
+    : PRESENTACION.map((extra) => ({
+        ...planes[extra.id],
+        ...extra,
+        precio: planes[extra.id].precioLabel,
+      }));
 
   return (
     <section id="membresias" ref={ref} className={`cg-planes ${className}`}>
@@ -73,8 +83,8 @@ export default function Membresias() {
             Elige tu <span>membresía</span>
           </h2>
           <p>
-            Entras a la Yamaha Crypton 0 km más $1.000.000. 17 de octubre,
-            Lotería de Boyacá.
+            {intro ||
+              "Entras a la Yamaha Crypton 0 km más $1.000.000. 17 de octubre, Lotería de Boyacá."}
           </p>
         </div>
 
@@ -115,7 +125,7 @@ export default function Membresias() {
                   Boyacá)
                 </li>
                 <li>
-                  Participas por la Crypton 0 km más $1.000.000 en efectivo.
+                  {frasePremio || "Participas por la Crypton 0 km más $1.000.000 en efectivo."}
                 </li>
                 <li>Participas de los premios y entregas del mes.</li>
                 <li>Recibes tus oportunidades por correo al activar.</li>
@@ -141,13 +151,16 @@ export default function Membresias() {
               <button
                 type="button"
                 className="cg-plan-card__cta"
+                disabled={cerrado}
                 onClick={() => {
-                  trackInitiateCheckoutThenGo(planes[p.id], () =>
-                    irASuscribir({ planId: p.id })
+                  if (cerrado) return;
+                  trackInitiateCheckoutThenGo(
+                    { ...p, precio: Number(String(p.precio).replace(/\./g, "")) || p.precio },
+                    () => irASuscribir({ planId: p.id, sorteoSlug })
                   );
                 }}
               >
-                ¡Suscribirme ya!
+                {cerrado ? "Sorteo cerrado" : "¡Suscribirme ya!"}
               </button>
             </article>
           ))}

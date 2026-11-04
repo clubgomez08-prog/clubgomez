@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAdminAuthHeaders } from "@/lib/auth";
 import { useToast } from "@/components/admin/Toast";
-import PeriodoPicker from "@/components/admin/PeriodoPicker";
-import { periodoDe, padClave } from "@/lib/club-gomez/claves-pool";
-import { descargarArchivoAdmin, linkWhatsappNumeros } from "@/lib/admin-descarga";
+import { padClave } from "@/lib/club-gomez/claves-pool";
+import { descargarArchivoAdmin, linkWhatsappDeSorteo } from "@/lib/admin-descarga";
 
 const LIME = "#B8E351";
-const WEB = "#60a5fa";
-const FISICO = "#fbbf24";
+const WEB = "#1d4ed8";
+const FISICO = "#b45309";
+const WEB_FONDO = "#dbeafe";
+const FISICO_FONDO = "#fde7c2";
 const TODOS = Array.from({ length: 1000 }, (_, i) => String(i).padStart(3, "0"));
 
 function formatFecha(d) {
@@ -17,8 +18,16 @@ function formatFecha(d) {
   return new Date(d).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
 }
 
-function FichaNumero({ numero, info, canal, onReenviar, onAnular, busy }) {
+function FichaNumero({ numero, info, canal, precio, sorteo, onAsignar, onReenviar, onAnular, busy }) {
   const color = canal === "web" ? WEB : FISICO;
+  const [asignar, setAsignar] = useState(false);
+  const [form, setForm] = useState({
+    nombre: "",
+    telefono: "",
+    cedula: "",
+    email: "",
+    monto: precio ? String(precio) : "",
+  });
   if (!info) {
     return (
       <div className="bg-zinc-900 rounded-xl p-5" style={{ border: "1px solid rgba(63,63,70,1)" }}>
@@ -26,11 +35,86 @@ function FichaNumero({ numero, info, canal, onReenviar, onAnular, busy }) {
         <p className="text-sm mt-2" style={{ color }}>
           Libre · {canal === "web" ? "rango web" : "rango físico"}
         </p>
-        <p className="text-sm text-zinc-500 mt-2">Nadie tiene este número este mes.</p>
+        <p className="text-sm text-zinc-500 mt-2">Nadie tiene este número en este sorteo.</p>
+        {asignar ? (
+          <form
+            className="grid gap-2 mt-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              onAsignar({ ...form, numero });
+            }}
+          >
+            <input
+              required
+              value={form.nombre}
+              onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
+              placeholder="Nombre"
+              className="px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-700 text-white text-sm"
+            />
+            <input
+              required
+              value={form.telefono}
+              onChange={(e) => setForm((f) => ({ ...f, telefono: e.target.value }))}
+              placeholder="Teléfono"
+              inputMode="tel"
+              className="px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-700 text-white text-sm"
+            />
+            <input
+              required
+              value={form.cedula}
+              onChange={(e) => setForm((f) => ({ ...f, cedula: e.target.value }))}
+              placeholder="Cédula"
+              className="px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-700 text-white text-sm"
+            />
+            <input
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              placeholder="Correo, si tiene"
+              className="px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-700 text-white text-sm"
+            />
+            <label className="grid gap-1 text-xs font-semibold text-zinc-500">
+              Cuánto pagó
+              <input
+                value={form.monto}
+                onChange={(e) => setForm((f) => ({ ...f, monto: e.target.value.replace(/\D/g, "") }))}
+                placeholder="0"
+                aria-label="Cuánto pagó"
+                inputMode="numeric"
+                className="px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-700 text-white text-sm font-normal"
+              />
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={busy}
+                className="px-3 py-2 rounded-lg text-sm font-bold"
+                style={{ background: LIME, color: "#161814", opacity: busy ? 0.6 : 1 }}
+              >
+                {busy ? "Asignando…" : "Asignar"}
+              </button>
+              <button
+                type="button"
+                className="px-3 py-2 rounded-lg text-sm font-semibold border border-zinc-600 text-zinc-200"
+                onClick={() => setAsignar(false)}
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        ) : (
+          <button
+            type="button"
+            className="mt-4 px-3 py-2 rounded-lg text-sm font-bold"
+            style={{ background: LIME, color: "#161814" }}
+            onClick={() => setAsignar(true)}
+          >
+            Asignar este número
+          </button>
+        )}
       </div>
     );
   }
-  const wa = linkWhatsappNumeros({
+  const wa = linkWhatsappDeSorteo(sorteo, {
     telefono: info.telefono,
     nombre: info.nombre,
     numeros: info.todos,
@@ -38,7 +122,7 @@ function FichaNumero({ numero, info, canal, onReenviar, onAnular, busy }) {
   });
   return (
     <div className="bg-zinc-900 rounded-xl p-5" style={{ border: `1px solid ${LIME}55` }}>
-      <p className="text-3xl font-black font-mono" style={{ color: LIME }}>
+      <p className="text-3xl font-black font-mono" style={{ color: "#161814" }}>
         {numero}
       </p>
       <p className="text-lg font-semibold text-white mt-2">{info.nombre}</p>
@@ -52,7 +136,7 @@ function FichaNumero({ numero, info, canal, onReenviar, onAnular, busy }) {
         {formatFecha(info.fecha)}
       </p>
       <p className="text-xs text-zinc-500 mt-2">
-        Todos sus números este mes:{" "}
+        Todos sus números en este sorteo:{" "}
         <span className="font-mono text-zinc-300">{info.todos.join(" · ")}</span>
       </p>
       <div className="flex flex-wrap gap-2 mt-4">
@@ -64,7 +148,7 @@ function FichaNumero({ numero, info, canal, onReenviar, onAnular, busy }) {
             className="px-3 py-1.5 rounded-lg text-xs font-bold"
             style={{ background: "#22c55e", color: "#050607" }}
           >
-            WhatsApp
+            Enviar números por WhatsApp
           </a>
         ) : null}
         {info.email ? (
@@ -94,7 +178,8 @@ function FichaNumero({ numero, info, canal, onReenviar, onAnular, busy }) {
 
 export default function NumerosPage() {
   const { addToast } = useToast();
-  const [periodo, setPeriodo] = useState(periodoDe());
+  const [sorteos, setSorteos] = useState([]);
+  const [sorteoId, setSorteoId] = useState("");
   const [numeros, setNumeros] = useState([]);
   const [rangos, setRangos] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -103,10 +188,38 @@ export default function NumerosPage() {
   const [seleccion, setSeleccion] = useState(null);
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/sorteos", { headers: await getAdminAuthHeaders() });
+        const data = await res.json().catch(() => ({}));
+        if (!vivo) return;
+        const lista = data.sorteos || [];
+        setSorteos(lista);
+        const elegido =
+          lista.find((s) => s.trabajando) ||
+          lista.find((s) => s.es_principal) ||
+          lista[0];
+        setSorteoId(elegido?.id || "");
+      } catch {
+        if (vivo) setSorteos([]);
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
   const cargar = useCallback(async () => {
+    if (!sorteoId) {
+      setNumeros([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/numeros?periodo=${periodo}`, {
+      const res = await fetch(`/api/admin/numeros?sorteo=${sorteoId}`, {
         headers: await getAdminAuthHeaders(),
       });
       const data = await res.json();
@@ -119,7 +232,7 @@ export default function NumerosPage() {
     } finally {
       setLoading(false);
     }
-  }, [periodo, addToast]);
+  }, [sorteoId, addToast]);
 
   useEffect(() => {
     cargar();
@@ -168,6 +281,47 @@ export default function NumerosPage() {
     const digits = buscar.replace(/\D/g, "");
     if (!digits) return;
     setSeleccion(padClave(digits));
+  }
+
+  const precioUno = useMemo(() => {
+    const sorteo = sorteos.find((s) => s.id === sorteoId);
+    const planes = (sorteo?.planes || []).filter((p) => p.activo !== false);
+    const uno = planes.find((p) => Number(p.claves) === 1) || planes[0];
+    if (!uno) return 20000;
+    const claves = Math.max(1, Number(uno.claves) || 1);
+    return Math.round(Number(uno.precio_cop) / claves) || 20000;
+  }, [sorteos, sorteoId]);
+
+  async function asignar(datos) {
+    if (!sorteoId) {
+      addToast("Elige el sorteo.", "error");
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/venta-fisica", {
+        method: "POST",
+        headers: { ...(await getAdminAuthHeaders()), "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: "varios",
+          sorteoId,
+          monto: datos.monto,
+          nombre: datos.nombre.trim(),
+          telefono: datos.telefono.trim(),
+          cedula: datos.cedula.trim(),
+          email: datos.email.trim() || undefined,
+          claves: datos.numero,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || "No se pudo asignar");
+      addToast(`${datos.numero} quedó asignado a ${data.miembro?.nombre || datos.nombre}.`, "success");
+      await cargar();
+    } catch (err) {
+      addToast(err.message || "No se pudo asignar", "error");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function reenviar(info) {
@@ -219,9 +373,10 @@ export default function NumerosPage() {
 
   async function descargar(tipo) {
     try {
+      const nombre = (sorteos.find((s) => s.id === sorteoId)?.slug || "sorteo").slice(0, 40);
       await descargarArchivoAdmin(
-        `/api/admin/exportar?tipo=${tipo}&periodo=${periodo}`,
-        `club-gomez-${tipo}-${periodo}.csv`
+        `/api/admin/exportar?tipo=${tipo}&sorteo=${sorteoId}`,
+        `club-gomez-${tipo}-${nombre}.csv`
       );
     } catch (err) {
       addToast(err.message || "No se pudo descargar", "error");
@@ -232,12 +387,31 @@ export default function NumerosPage() {
     <div className="max-w-6xl">
       <h1 className="text-2xl font-semibold text-white mb-1">Números</h1>
       <p className="text-sm text-zinc-500 mb-6">
-        Mapa del 000 al 999 del mes. Consulta quién tiene un número (por ejemplo
-        el ganador de la lotería) sin cambiar nada.
+        Mapa del 000 al 999 de este sorteo, web y físico. Toca un vendido para enviarle los números por WhatsApp, o un libre para asignarlo. El texto es el de Correos.
       </p>
 
       <div className="flex flex-wrap items-end gap-3 mb-6">
-        <PeriodoPicker value={periodo} onChange={setPeriodo} />
+        <label className="grid gap-1.5 min-w-[260px]">
+          <span className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+            Sorteo
+          </span>
+          <select
+            value={sorteoId}
+            onChange={(e) => {
+              setSorteoId(e.target.value);
+              setSeleccion(null);
+            }}
+            className="px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-white"
+          >
+            {sorteos.length === 0 ? <option value="">Sin sorteos</option> : null}
+            {sorteos.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.nombre || s.premio}
+                {s.trabajando ? " · cobrando aquí" : ""}
+              </option>
+            ))}
+          </select>
+        </label>
         <form onSubmit={consultar} className="flex items-end gap-2">
           <label className="grid gap-1.5">
             <span className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
@@ -301,8 +475,10 @@ export default function NumerosPage() {
                   onClick={() => setFiltro(id)}
                   className="px-3 py-1.5 rounded-lg border"
                   style={{
-                    borderColor: filtro === id ? LIME : "rgba(63,63,70,1)",
-                    color: filtro === id ? "#fff" : "#a1a1aa",
+                    background: filtro === id ? LIME : "#fff",
+                    borderColor: filtro === id ? LIME : "rgba(22,24,20,0.12)",
+                    color: "#161814",
+                    fontWeight: filtro === id ? 700 : 500,
                   }}
                 >
                   {label}
@@ -319,7 +495,10 @@ export default function NumerosPage() {
                 Físico vendido
               </span>
               <span>
-                <span className="inline-block w-3 h-3 rounded-sm mr-1 align-middle border border-zinc-600" />
+                <span
+                  className="inline-block w-3 h-3 rounded-sm mr-1 align-middle"
+                  style={{ background: FISICO_FONDO, boxShadow: "inset 0 0 0 1px rgba(22,24,20,0.12)" }}
+                />
                 Libre
               </span>
             </div>
@@ -340,10 +519,16 @@ export default function NumerosPage() {
                     title={vendido ? porNumero[num].nombre : "Libre"}
                     className="rounded font-mono text-[11px] py-1.5"
                     style={{
-                      background: vendido ? color : "transparent",
-                      color: vendido ? "#050607" : `${color}aa`,
-                      border: sel ? `2px solid ${LIME}` : `1px solid ${vendido ? color : "#3f3f46"}`,
-                      fontWeight: vendido ? 700 : 400,
+                      background: vendido
+                        ? color
+                        : c === "web"
+                          ? WEB_FONDO
+                          : FISICO_FONDO,
+                      color: vendido ? "#fff" : "#161814",
+                      border: sel
+                        ? `2px solid ${LIME}`
+                        : "1px solid transparent",
+                      fontWeight: 700,
                     }}
                   >
                     {num}
@@ -356,9 +541,13 @@ export default function NumerosPage() {
           <div className="lg:sticky lg:top-4 content-start grid gap-3">
             {seleccion ? (
               <FichaNumero
+                key={seleccion}
                 numero={seleccion}
                 info={porNumero[seleccion]}
                 canal={canalDe(seleccion)}
+                precio={precioUno}
+                sorteo={sorteos.find((s) => s.id === sorteoId) || null}
+                onAsignar={asignar}
                 onReenviar={reenviar}
                 onAnular={anular}
                 busy={busy}

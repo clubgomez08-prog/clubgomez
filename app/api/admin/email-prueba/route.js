@@ -6,6 +6,8 @@ import {
   resendFromAddress,
 } from "@/lib/email";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
+import { supabaseAdmin } from "@/lib/supabase";
+import { leerSorteoPor } from "@/lib/club-gomez/sorteos";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +56,18 @@ export async function POST(request) {
 
     if (tipo === "claves") {
       label = "Confirmación + oportunidades";
+      let sorteo = null;
+      if (body.sorteoId) {
+        sorteo = (await leerSorteoPor(supabaseAdmin, { id: String(body.sorteoId) })).sorteo;
+        if (sorteo) {
+          if (typeof body.mensaje_correo_asunto === "string") {
+            sorteo = { ...sorteo, mensaje_correo_asunto: body.mensaje_correo_asunto };
+          }
+          if (typeof body.mensaje_correo_cuerpo === "string") {
+            sorteo = { ...sorteo, mensaje_correo_cuerpo: body.mensaje_correo_cuerpo };
+          }
+        }
+      }
       data = await enviarTicketCompra(
         {
           id: "00000000-0000-0000-0000-00000000d3d0",
@@ -63,8 +77,8 @@ export async function POST(request) {
           total_pagado: 20000,
         },
         { nombre: "Plan Esencial (PRUEBA)" },
-        ["845"],
-        { useParticipantEmail: true }
+        ["537"],
+        { useParticipantEmail: true, sorteo }
       );
     } else if (tipo === "cumpleanos") {
       label = "Felicitación de cumpleaños";

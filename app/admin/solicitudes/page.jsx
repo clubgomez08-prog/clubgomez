@@ -5,6 +5,7 @@ import { getAdminAuthHeaders } from "@/lib/auth";
 import { useToast } from "@/components/admin/Toast";
 import { labelOportunidades } from "@/lib/club-gomez/planes";
 import { planDeSolicitud } from "@/lib/club-gomez/planes-db";
+import { linkWhatsappNumeros } from "@/lib/admin-descarga";
 
 function parseNotas(notas) {
   try {
@@ -110,10 +111,10 @@ export default function AdminSolicitudesPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-white">Pagos web</h1>
         <p className="text-sm text-zinc-400 mt-1">
-          Campaña Crypton 0 km más $1.000.000 · planes $20.000 / $50.000 / $100.000.
           Aquí ves quién <strong className="text-zinc-200">abrió Bold</strong>, no
           quién ya pagó. La venta real está en{" "}
-          <strong className="text-zinc-200">Pagadas</strong>.
+          <strong className="text-zinc-200">Pagadas</strong>. El correo sale solo.
+          WhatsApp abre el chat con el texto de Correos de ese sorteo.
         </p>
         <p className="text-xs text-zinc-500 mt-2">
           “Sin confirmar” = recargó, canceló o Bold aún no avisó. No pulses Activar
@@ -205,6 +206,22 @@ export default function AdminSolicitudesPage() {
             const plan = planDeSolicitud(s.plan_id, meta);
             const monto = Number(meta.amount) || plan.precio;
             const pagada = s.estado === "convertida";
+            const tieneSorteo = Boolean(s.premio || s.fecha_sorteo || s.mensaje_whatsapp);
+            const wa =
+              pagada && s.numeros?.length
+                ? linkWhatsappNumeros({
+                    telefono: s.telefono,
+                    nombre: s.nombre,
+                    numeros: s.numeros,
+                    planNombre: plan.nombre,
+                    plantilla: tieneSorteo
+                      ? s.mensaje_whatsapp
+                      : "Hola {nombre}! Tus números: {numeros}. Mucha suerte.",
+                    premio: s.premio,
+                    fecha: s.fecha_sorteo,
+                    loteria: s.loteria,
+                  })
+                : null;
             return (
               <article
                 key={s.id}
@@ -241,9 +258,23 @@ export default function AdminSolicitudesPage() {
                   </p>
                 </div>
                 {pagada ? (
-                  <span className="text-sm text-lime-400/80 shrink-0">
-                    ✓ Membresía activa
-                  </span>
+                  <div className="shrink-0 flex flex-col items-end gap-2">
+                    <span className="text-sm text-lime-400/80">
+                      ✓ Membresía activa
+                      {s.numeros?.length ? ` · ${s.numeros.join(" ")}` : ""}
+                    </span>
+                    {wa ? (
+                      <a
+                        href={wa}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold"
+                        style={{ background: "#22c55e", color: "#050607" }}
+                      >
+                        Enviar números por WhatsApp
+                      </a>
+                    ) : null}
+                  </div>
                 ) : (
                   <button
                     type="button"

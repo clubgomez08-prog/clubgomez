@@ -4,6 +4,7 @@ import {
   CAMPANA_LANDING_DEFAULT,
   campanaParaLanding,
 } from "@/lib/club-gomez/campana-landing";
+import { leerSorteoPor, planesDeSorteo, propsDeSorteo } from "@/lib/club-gomez/sorteos";
 
 export const revalidate = 30;
 
@@ -27,6 +28,17 @@ async function cargarCampanaActiva() {
 }
 
 export default async function ClubGomezHome() {
+  if (!supabaseMissingEnv) {
+    try {
+      const { sorteo } = await leerSorteoPor(supabaseAdmin, { principal: true });
+      if (sorteo && sorteo.estado !== "borrador") {
+        const planes = await planesDeSorteo(supabaseAdmin, sorteo.id);
+        return <HomePage {...propsDeSorteo(sorteo, planes)} />;
+      }
+    } catch {
+      /* sigue la campaña de respaldo */
+    }
+  }
   const campana = await cargarCampanaActiva();
   return <HomePage campana={campana} />;
 }

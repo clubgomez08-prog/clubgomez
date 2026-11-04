@@ -18,6 +18,11 @@
   align-items: center;
 }
 
+.innerSolo {
+  grid-template-columns: minmax(0, 520px);
+  justify-content: center;
+}
+
 .stage {
   position: relative;
   isolation: isolate;

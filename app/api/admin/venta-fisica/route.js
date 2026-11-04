@@ -11,6 +11,7 @@ import {
 import { rangoPeriodoBogota } from "@/lib/club-gomez/periodo-rango";
 import { obtenerPlan } from "@/lib/club-gomez/planes-db";
 import { registrarActividad } from "@/lib/admin-actividad";
+import { leerSorteoPor, espejarPlan } from "@/lib/club-gomez/sorteos";
 
 export const dynamic = "force-dynamic";
 
@@ -22,17 +23,124 @@ function hoyBogota() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date());
 }
 
-async function ventasFisicasPeriodo(periodo) {
-  const { desde, hasta } = rangoPeriodoBogota(periodo);
+function pad3(n) {
+  return String(n).padStart(3, "0");
+}
+
+function rangoFisicoDe(sorteo) {
+  const min = Number(sorteo?.fisico_min);
+  const max = Number(sorteo?.fisico_max);
+  return {
+    min: Number.isFinite(min) ? min : 0,
+    max: Number.isFinite(max) ? max : 700,
+  };
+}
+
+async function inventarioDeSorteo(sorteo) {
+  const rango = rangoFisicoDe(sorteo);
+  const { data, error } = await supabaseAdmin
+    .from("claves")
+    .select("numero")
+    .eq("sorteo_id", sorteo.id);
+  if (error) throw new Error(error.message);
+  const usados = new Set(
+    (data || [])
+      .map((r) => Number(r.numero))
+      .filter((n) => n >= rango.min && n <= rango.max)
+  );
+  const total = rango.max - rango.min + 1;
+  return {
+    fisico: {
+      emitidas: usados.size,
+      libres: Math.max(0, total - usados.size),
+      total,
+      min: rango.min,
+      max: rango.max,
+    },
+  };
+}
+
+async function ventasDeSorteo(sorteoId) {
+  const { data: mems, error: memErr } = await supabaseAdmin
+    .from("membresias")
+    .select("id, plan_id, sorteo_id, claves(numero)")
+    .eq("sorteo_id", sorteoId);
+  if (memErr) throw new Error(memErr.message);
+  const porMembresia = Object.fromEntries((mems || []).map((m) => [m.id, m]));
+  const ids = Object.keys(porMembresia);
+  if (!ids.length) {
+    return {
+      ventas: [],
+      caja: { hoyVentas: 0, hoyTotal: 0, sorteoVentas: 0, sorteoTotal: 0 },
+    };
+  }
+
   const { data, error } = await supabaseAdmin
     .from("pagos")
+    .select("id, monto_cop, estado, pagado_en, membresia_id, metodo, miembros(nombre, telefono, email)")
+    .in("membresia_id", ids)
+    .eq("metodo", "efectivo")
+    .order("pagado_en", { ascending: false });
+  if (error) throw new Error(error.message);
+
+  const hoy = hoyBogota();
+  const fechaBogota = (d) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date(d));
+
+  const ventas = (data || []).map((p) => {
+    const mem = porMembresia[p.membresia_id] || {};
+    return {
+      id: p.id,
+      membresiaId: p.membresia_id,
+      nombre: p.miembros?.nombre || "—",
+      telefono: p.miembros?.telefono || "",
+      planId: mem.plan_id || null,
+      sorteoId: mem.sorteo_id || sorteoId,
+      numeros: (mem.claves || []).map((c) => c.numero).sort(),
+      monto: Number(p.monto_cop) || 0,
+      estado: p.estado,
+      fecha: p.pagado_en,
+      esHoy: fechaBogota(p.pagado_en) === hoy,
+    };
+  });
+
+  const aprobadas = ventas.filter((v) => v.estado === "aprobado");
+  const deHoy = aprobadas.filter((v) => v.esHoy);
+  return {
+    ventas: ventas.slice(0, 50),
+    caja: {
+      hoyVentas: deHoy.length,
+      hoyTotal: deHoy.reduce((a, v) => a + v.monto, 0),
+      sorteoVentas: aprobadas.length,
+      sorteoTotal: aprobadas.reduce((a, v) => a + v.monto, 0),
+    },
+  };
+}
+
+async function ventasFisicasPeriodo(periodo) {
+  const { desde, hasta } = rangoPeriodoBogota(periodo);
+  let { data, error } = await supabaseAdmin
+    .from("pagos")
     .select(
-      "id, monto_cop, estado, pagado_en, membresia_id, miembros(nombre, telefono, email), membresias(plan_id, estado, claves(numero))"
+      "id, monto_cop, estado, pagado_en, membresia_id, miembros(nombre, telefono, email), membresias(plan_id, estado, sorteo_id, claves(numero))"
     )
     .eq("metodo", "efectivo")
     .gte("pagado_en", desde)
     .lt("pagado_en", hasta)
     .order("pagado_en", { ascending: false });
+  if (error) {
+    const retry = await supabaseAdmin
+      .from("pagos")
+      .select(
+        "id, monto_cop, estado, pagado_en, membresia_id, miembros(nombre, telefono, email), membresias(plan_id, estado, claves(numero))"
+      )
+      .eq("metodo", "efectivo")
+      .gte("pagado_en", desde)
+      .lt("pagado_en", hasta)
+      .order("pagado_en", { ascending: false });
+    data = retry.data;
+    error = retry.error;
+  }
   if (error) throw new Error(error.message);
 
   const hoy = hoyBogota();
@@ -45,6 +153,7 @@ async function ventasFisicasPeriodo(periodo) {
     nombre: p.miembros?.nombre || "—",
     telefono: p.miembros?.telefono || "",
     planId: p.membresias?.plan_id || null,
+    sorteoId: p.membresias?.sorteo_id || null,
     numeros: (p.membresias?.claves || []).map((c) => c.numero).sort(),
     monto: Number(p.monto_cop) || 0,
     estado: p.estado,
@@ -72,14 +181,37 @@ export async function GET(request) {
     if (supabaseMissingEnv) return bad("Supabase no configurado", 503);
 
     const { searchParams } = new URL(request.url);
+    const sorteoPedido = String(searchParams.get("sorteo") || "").trim();
+    const { sorteo } = await leerSorteoPor(
+      supabaseAdmin,
+      /^[0-9a-f-]{36}$/i.test(sorteoPedido) ? { id: sorteoPedido } : { trabajando: true }
+    );
     const sugerir = Number(searchParams.get("sugerir") || 0);
     if (sugerir > 0) {
-      // Solo propone números libres del rango físico; no los reserva.
+      const rango = sorteo ? rangoFisicoDe(sorteo) : null;
       const numeros = await asignarClavesDelPool(supabaseAdmin, {
         count: Math.min(100, Math.floor(sugerir)),
         canal: "fisico",
+        sorteoId: sorteo?.id || null,
+        rango,
       });
       return NextResponse.json({ ok: true, numeros: numeros.sort() });
+    }
+
+    if (sorteo) {
+      const [inventario, resumen] = await Promise.all([
+        inventarioDeSorteo(sorteo),
+        ventasDeSorteo(sorteo.id).catch((err) => {
+          console.error("[admin/venta-fisica] ventas:", err);
+          return { ventas: [], caja: null };
+        }),
+      ]);
+      return NextResponse.json({
+        ok: true,
+        sorteoId: sorteo.id,
+        inventario,
+        ...resumen,
+      });
     }
 
     const periodo = periodoDe();
@@ -118,44 +250,104 @@ export async function POST(request) {
 
     const clavesManuales = parseClavesInput(body.claves || body.clavesTexto || "");
     const varios = planPedido === "varios";
+    const sorteoPedido = String(body.sorteoId || "").trim();
+    const { sorteo } = await leerSorteoPor(
+      supabaseAdmin,
+      /^[0-9a-f-]{36}$/i.test(sorteoPedido) ? { id: sorteoPedido } : { trabajando: true }
+    );
+    if (sorteoPedido && !sorteo) return bad("Ese sorteo no existe.");
+    const rangoFisico = sorteo ? rangoFisicoDe(sorteo) : null;
+    const textoRango = rangoFisico
+      ? `${pad3(rangoFisico.min)} al ${pad3(rangoFisico.max)}`
+      : "000 al 700";
     if (varios && (clavesManuales.length < 1 || clavesManuales.length > 100)) {
-      return bad("Escribe entre 1 y 100 números del 000 al 700.");
+      return bad(`Escribe entre 1 y 100 números del ${textoRango}.`);
     }
+    if (body.soloFisico && rangoFisico) {
+      const fuera = clavesManuales.filter((n) => {
+        const v = Number(n);
+        return v < rangoFisico.min || v > rangoFisico.max;
+      });
+      if (fuera.length) {
+        return bad(
+          `La boletería física de este sorteo va del ${textoRango}. Estos no entran: ${fuera.join(", ")}.`
+        );
+      }
+    }
+    const rangoWeb = sorteo ? { min: sorteo.web_min, max: sorteo.web_max } : null;
+    const esPlanSorteo = /^[0-9a-f-]{36}$/i.test(planPedido);
 
-    let plan = await obtenerPlan(supabaseAdmin, varios ? "esencial" : planPedido);
-    if (varios) {
-      const unit = Number(plan.precio) || 20000;
-      const montoTexto = String(body.monto ?? "").replace(/\D/g, "");
-      const precio = montoTexto === "" ? unit * clavesManuales.length : Number(montoTexto);
-      const { error: planErr } = await supabaseAdmin.from("planes").upsert(
-        {
+    let plan;
+    if (esPlanSorteo) {
+      const { data: fila } = await supabaseAdmin
+        .from("sorteo_planes")
+        .select("*")
+        .eq("id", planPedido)
+        .maybeSingle();
+      if (!fila) return bad("Ese plan no existe en el sorteo.");
+      if (sorteo && fila.sorteo_id !== sorteo.id) {
+        return bad("Ese plan es de otro sorteo. Arriba dice en cuál estás vendiendo.");
+      }
+      await espejarPlan(supabaseAdmin, fila);
+      plan = {
+        id: fila.id,
+        nombre: fila.nombre,
+        precio: fila.precio_cop,
+        precioLabel: String(fila.precio_cop),
+        claves: fila.claves,
+      };
+    } else {
+      plan = await obtenerPlan(supabaseAdmin, varios ? "esencial" : planPedido);
+      if (varios) {
+        let unit = Number(plan.precio) || 20000;
+        if (sorteo) {
+          const { data: filas } = await supabaseAdmin
+            .from("sorteo_planes")
+            .select("precio_cop, claves, activo")
+            .eq("sorteo_id", sorteo.id);
+          const activos = (filas || []).filter((p) => p.activo !== false);
+          const uno = activos.find((p) => Number(p.claves) === 1) || activos[0];
+          if (uno) {
+            const claves = Math.max(1, Number(uno.claves) || 1);
+            unit = Math.round(Number(uno.precio_cop) / claves) || unit;
+          }
+        }
+        const montoTexto = String(body.monto ?? "").replace(/\D/g, "");
+        const precio = montoTexto === "" ? unit * clavesManuales.length : Number(montoTexto);
+        const { error: planErr } = await supabaseAdmin.from("planes").upsert(
+          {
+            id: "varios",
+            nombre: "Varios números",
+            precio_cop: unit,
+            claves: 1,
+            tag: "Venta física, cantidad libre",
+            activo: false,
+          },
+          { onConflict: "id" }
+        );
+        if (planErr) return bad(planErr.message);
+        plan = {
           id: "varios",
           nombre: "Varios números",
-          precio_cop: unit,
-          claves: 1,
-          tag: "Venta física, cantidad libre",
-          activo: false,
-        },
-        { onConflict: "id" }
-      );
-      if (planErr) return bad(planErr.message);
-      plan = {
-        id: "varios",
-        nombre: "Varios números",
-        precio,
-        precioLabel: String(precio),
-        claves: clavesManuales.length,
-        clavesLibre: true,
-      };
+          precio,
+          precioLabel: String(precio),
+          claves: clavesManuales.length,
+          clavesLibre: true,
+        };
+      }
     }
-
     if (!clavesManuales.length) {
       return bad(
         varios
-          ? "Escribe los números que le entregaste (000–700)."
-          : `Ingresa las ${plan.claves} claves impresas (000–700) que le entregaste.`
+          ? `Escribe los números que le entregaste (${textoRango}).`
+          : `Ingresa las ${plan.claves} claves impresas (${textoRango}) que le entregaste.`
       );
     }
+
+    const valores = clavesManuales.map((n) => Number(n));
+    const cabe = (rango) =>
+      rango && valores.every((n) => n >= rango.min && n <= rango.max);
+    const rangoDeEstas = cabe(rangoFisico) ? rangoFisico : cabe(rangoWeb) ? rangoWeb : rangoFisico;
 
     const resultado = await activarMembresiaManual(supabaseAdmin, {
       planId: plan.id,
@@ -169,6 +361,9 @@ export async function POST(request) {
       origen: "manual",
       montoCop: plan.precio,
       clavesManuales,
+      sorteoId: sorteo?.id || null,
+      rangoFisico: rangoDeEstas,
+      rangoWeb,
     });
 
     await registrarActividad(supabaseAdmin, user, "venta_fisica", {
@@ -189,6 +384,7 @@ export async function POST(request) {
       },
       plan: { id: plan.id, nombre: plan.nombre, precio: plan.precio },
       claves: resultado.claves || [],
+      sorteoId: sorteo?.id || null,
       emailOk: resultado.emailOk,
       alreadyActive: Boolean(resultado.alreadyActive),
     });

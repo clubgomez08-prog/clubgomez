@@ -5,6 +5,7 @@ import { getPlanById } from "@/lib/club-gomez/planes";
 import { padClave, periodoDe } from "@/lib/club-gomez/claves-pool";
 import { esEmailPlaceholder } from "@/lib/club-gomez/activar-membresia";
 import { enviarTicketCompra } from "@/lib/email";
+import { leerSorteoPor } from "@/lib/club-gomez/sorteos";
 import { registrarActividad } from "@/lib/admin-actividad";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,7 @@ export async function POST(request) {
 
     const { data: mem, error } = await supabaseAdmin
       .from("membresias")
-      .select("id, plan_id, estado, miembros(id, nombre, email), claves(numero), pagos(monto_cop, estado)")
+      .select("id, plan_id, estado, sorteo_id, miembros(id, nombre, email), claves(numero), pagos(monto_cop, estado)")
       .eq("id", membresiaId)
       .maybeSingle();
 
@@ -69,6 +70,15 @@ export async function POST(request) {
       : getPlanById(mem.plan_id);
     const pago = (mem.pagos || []).find((p) => p.estado === "aprobado");
 
+    let sorteo = null;
+    if (mem.sorteo_id) {
+      try {
+        sorteo = (await leerSorteoPor(supabaseAdmin, { id: mem.sorteo_id })).sorteo;
+      } catch {
+        sorteo = null;
+      }
+    }
+
     await enviarTicketCompra(
       {
         id: miembro.id,
@@ -79,7 +89,7 @@ export async function POST(request) {
       },
       { nombre: `Plan ${plan.nombre}` },
       numeros,
-      { useParticipantEmail: true }
+      { useParticipantEmail: true, sorteo }
     );
 
     await registrarActividad(supabaseAdmin, user, "correo_reenviado", {

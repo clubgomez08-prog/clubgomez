@@ -113,11 +113,19 @@ export async function GET(request) {
     let clavesByMiembro = {};
 
     if (ids.length > 0) {
-      const { data: membresias } = await supabaseAdmin
+      let { data: membresias, error: memErr } = await supabaseAdmin
         .from("membresias")
-        .select("id, miembro_id, plan_id, estado, inicia_en, vence_en, origen")
+        .select("id, miembro_id, plan_id, estado, inicia_en, vence_en, origen, sorteo_id")
         .in("miembro_id", ids)
         .order("created_at", { ascending: false });
+      if (memErr) {
+        const retry = await supabaseAdmin
+          .from("membresias")
+          .select("id, miembro_id, plan_id, estado, inicia_en, vence_en, origen")
+          .in("miembro_id", ids)
+          .order("created_at", { ascending: false });
+        membresias = retry.data;
+      }
 
       const ahora = Date.now();
       const memPorId = {};

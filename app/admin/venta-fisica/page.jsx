@@ -4,8 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { getAdminAuthHeaders } from "@/lib/auth";
 import { useToast } from "@/components/admin/Toast";
-import { usePlanes } from "@/lib/club-gomez/use-planes";
-import { linkWhatsappNumeros } from "@/lib/admin-descarga";
+import { linkWhatsappDeSorteo } from "@/lib/admin-descarga";
 import DateOfBirthSelect from "@/components/club-gomez/DateOfBirthSelect";
 
 const LIME = "#B8E351";
@@ -19,10 +18,16 @@ function hora(d) {
   return new Date(d).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
 }
 
+function pad3(n) {
+  return String(n).padStart(3, "0");
+}
+
+function planesActivos(sorteo) {
+  return (sorteo?.planes || []).filter((p) => p.activo !== false);
+}
+
 export default function VentaFisicaPage() {
   const { addToast } = useToast();
-  const planesMap = usePlanes();
-  const PLANES = Object.values(planesMap);
   const [inventario, setInventario] = useState(null);
   const [caja, setCaja] = useState(null);
   const [ventas, setVentas] = useState([]);
@@ -30,8 +35,10 @@ export default function VentaFisicaPage() {
   const [sugiriendo, setSugiriendo] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [resultado, setResultado] = useState(null);
+  const [sorteos, setSorteos] = useState([]);
+  const [sorteoId, setSorteoId] = useState("");
   const [form, setForm] = useState({
-    planId: "esencial",
+    planId: "varios",
     cantidadLibre: "",
     monto: "",
     nombre: "",
@@ -44,8 +51,9 @@ export default function VentaFisicaPage() {
   });
 
   const cargar = useCallback(async () => {
+    if (!sorteoId) return;
     try {
-      const res = await fetch("/api/admin/venta-fisica", {
+      const res = await fetch(`/api/admin/venta-fisica?sorteo=${sorteoId}`, {
         headers: await getAdminAuthHeaders(),
       });
       const data = await res.json();
@@ -57,19 +65,78 @@ export default function VentaFisicaPage() {
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [sorteoId]);
 
   useEffect(() => {
     cargar();
   }, [cargar]);
 
-  function onChange(e) {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/sorteos", { headers: await getAdminAuthHeaders() });
+        const data = await res.json().catch(() => ({}));
+        if (!vivo || !res.ok) return;
+        const lista = data.sorteos || [];
+        setSorteos(lista);
+        const elegido =
+          lista.find((s) => s.trabajando) ||
+          lista.find((s) => s.es_principal) ||
+          lista[0];
+        if (!elegido) return;
+        const primero = planesActivos(elegido)[0];
+        setSorteoId(elegido.id);
+        setForm((f) => ({ ...f, planId: primero?.id || "varios", clavesTexto: "" }));
+      } catch {
+        if (vivo) setSorteos([]);
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  function sorteoDe(id) {
+    if (!id) return null;
+    return sorteos.find((s) => s.id === id) || null;
   }
 
+  function elegirSorteo(id) {
+    const s = sorteos.find((x) => x.id === id);
+    const primero = planesActivos(s)[0];
+    setSorteoId(id);
+    setResultado(null);
+    setForm((f) => ({
+      ...f,
+      planId: primero?.id || "varios",
+      clavesTexto: "",
+      cantidadLibre: "",
+      monto: "",
+    }));
+  }
+
+  function onChange(e) {
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === "planId" ? { clavesTexto: "" } : {}),
+    }));
+  }
+
+  const sorteo = sorteoDe(sorteoId);
+  const planes = planesActivos(sorteo);
   const varios = form.planId === "varios";
-  const plan = planesMap[form.planId] || planesMap.esencial;
+  const fila = planes.find((p) => p.id === form.planId) || null;
+  const plan = fila
+    ? {
+        id: fila.id,
+        nombre: fila.nombre,
+        precio: Number(fila.precio_cop) || 0,
+        claves: Number(fila.claves) || 1,
+      }
+    : { id: "varios", nombre: "Varios números", precio: 0, claves: 1 };
   const numerosEscritos = form.clavesTexto
     .split(/[\s,;]+/)
     .map((n) => n.trim())
@@ -80,7 +147,15 @@ export default function VentaFisicaPage() {
   );
   const cantidad = varios ? numerosEscritos.length : plan.claves;
   const cantidadVisible = varios ? numerosEscritos.length || cantidadPedida : plan.claves;
-  const valorUnitario = planesMap.esencial?.precio || 20000;
+  const uno = planes.find((p) => Number(p.claves) === 1) || planes[0];
+  const valorUnitario = uno
+    ? Math.round((Number(uno.precio_cop) || 0) / Math.max(1, Number(uno.claves) || 1)) || 20000
+    : 20000;
+  const rangoMin = Number.isFinite(Number(sorteo?.fisico_min)) ? Number(sorteo.fisico_min) : 0;
+  const rangoMax = Number.isFinite(Number(sorteo?.fisico_max)) ? Number(sorteo.fisico_max) : 700;
+  const webMin = Number.isFinite(Number(sorteo?.web_min)) ? Number(sorteo.web_min) : 701;
+  const webMax = Number.isFinite(Number(sorteo?.web_max)) ? Number(sorteo.web_max) : 999;
+  const textoRango = `${pad3(rangoMin)} al ${pad3(rangoMax)}`;
   const montoSugerido = varios
     ? valorUnitario * Math.max(cantidadVisible, 1)
     : plan.precio;
@@ -95,7 +170,7 @@ export default function VentaFisicaPage() {
       const cuanto = varios
         ? Math.min(100, Math.max(1, numerosEscritos.length || cantidadPedida || 1))
         : plan.claves;
-      const res = await fetch(`/api/admin/venta-fisica?sugerir=${cuanto}`, {
+      const res = await fetch(`/api/admin/venta-fisica?sugerir=${cuanto}&sorteo=${sorteoId}`, {
         headers: await getAdminAuthHeaders(),
       });
       const data = await res.json();
@@ -111,12 +186,16 @@ export default function VentaFisicaPage() {
   async function onSubmit(e) {
     e.preventDefault();
     setResultado(null);
+    if (!sorteoId) {
+      addToast("Elige el sorteo.", "error");
+      return;
+    }
     if (!form.nombre.trim() || !form.telefono.trim() || !form.cedula.trim()) {
       addToast("Nombre, teléfono y cédula son obligatorios.", "error");
       return;
     }
     if (!form.clavesTexto.trim()) {
-      addToast("Ingresa los números que le entregaste (000–700).", "error");
+      addToast(`Ingresa los números que le entregaste (${textoRango}).`, "error");
       return;
     }
     if (!varios && numerosEscritos.length !== plan.claves) {
@@ -129,7 +208,9 @@ export default function VentaFisicaPage() {
         method: "POST",
         headers: { ...(await getAdminAuthHeaders()), "Content-Type": "application/json" },
         body: JSON.stringify({
-          planId: form.planId,
+          planId: varios ? "varios" : plan.id,
+          sorteoId,
+          soloFisico: true,
           monto: varios ? montoCobrado : undefined,
           nombre: form.nombre.trim(),
           telefono: form.telefono.trim(),
@@ -200,7 +281,7 @@ export default function VentaFisicaPage() {
   }
 
   const waResultado = resultado
-    ? linkWhatsappNumeros({
+    ? linkWhatsappDeSorteo(sorteoDe(resultado.sorteoId), {
         telefono: resultado.miembro?.telefono,
         nombre: resultado.miembro?.nombre,
         numeros: resultado.claves,
@@ -211,10 +292,26 @@ export default function VentaFisicaPage() {
   return (
     <div className="max-w-4xl">
       <h1 className="text-2xl font-semibold text-white mb-1">Venta física</h1>
+      <label className="grid gap-1 text-sm text-zinc-400 mb-3 max-w-xl">
+        Sorteo
+        <select
+          value={sorteoId}
+          onChange={(e) => elegirSorteo(e.target.value)}
+          className={INPUT}
+        >
+          {sorteos.length === 0 ? <option value="">Sin sorteos</option> : null}
+          {sorteos.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.nombre || s.premio}
+              {s.trabajando ? " · cobrando aquí" : ""}
+            </option>
+          ))}
+        </select>
+      </label>
       <p className="text-sm text-zinc-500 mb-6">
-        Daniel entrega números del <strong className="text-zinc-300">000 al 700</strong>.
-        La web reparte del <strong className="text-zinc-300">701 al 999</strong>. Obligatorio:
-        nombre, teléfono y los números entregados.
+        Boletería física de este sorteo: del <strong className="text-zinc-300">{textoRango}</strong>.
+        La web reparte del <strong className="text-zinc-300">{pad3(webMin)} al {pad3(webMax)}</strong>.
+        Los planes son los de este sorteo.
       </p>
 
       <div
@@ -229,10 +326,10 @@ export default function VentaFisicaPage() {
           </p>
         </div>
         <div className="admin-stat">
-          <p className="admin-stat__title">Físico este mes</p>
-          <p className="admin-stat__value">{caja ? cop(caja.mesTotal) : "—"}</p>
+          <p className="admin-stat__title">De este sorteo</p>
+          <p className="admin-stat__value">{caja ? cop(caja.sorteoTotal) : "—"}</p>
           <p className="text-xs text-zinc-500 mt-1">
-            {caja ? `${caja.mesVentas} venta${caja.mesVentas === 1 ? "" : "s"}` : ""}
+            {caja ? `${caja.sorteoVentas} venta${caja.sorteoVentas === 1 ? "" : "s"}` : ""}
           </p>
         </div>
         <div className="admin-stat">
@@ -241,7 +338,9 @@ export default function VentaFisicaPage() {
             {fisico ? `${fisico.libres} libres` : "—"}
           </p>
           <p className="text-xs text-zinc-500 mt-1">
-            {fisico ? `${fisico.emitidas} usados de ${fisico.total}` : ""}{" "}
+            {fisico
+              ? `${fisico.emitidas} usado${fisico.emitidas === 1 ? "" : "s"} de ${fisico.total}`
+              : ""}{" "}
             <Link href="/admin/numeros" style={{ color: LIME }}>
               Ver mapa →
             </Link>
@@ -261,13 +360,13 @@ export default function VentaFisicaPage() {
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1 text-sm text-zinc-400 sm:col-span-2">
             Plan
-            <select name="planId" value={form.planId} onChange={onChange} className={INPUT}>
-              <option value="varios">Varios números · la cantidad que entregues</option>
-              {PLANES.map((p) => (
+            <select name="planId" value={varios ? "varios" : plan.id} onChange={onChange} className={INPUT}>
+              {planes.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.nombre} · ${p.precioLabel} · {p.claves} oport.
+                  {p.nombre} · ${Number(p.precio_cop || 0).toLocaleString("es-CO")} · {p.claves} oport.
                 </option>
               ))}
+              <option value="varios">Varios números · la cantidad que entregues</option>
             </select>
           </label>
 
@@ -381,8 +480,8 @@ export default function VentaFisicaPage() {
             <div className="flex items-center justify-between gap-2">
               <span>
                 {varios
-                  ? "Números entregados * (los que quieras, del 000 al 700)"
-                  : `Números entregados * (${plan.claves} del plan ${plan.nombre}, 000–700)`}
+                  ? `Números entregados * (los que quieras, del ${textoRango})`
+                  : `Números entregados * (${plan.claves} del plan ${plan.nombre}, ${textoRango})`}
               </span>
               <button
                 type="button"
@@ -469,18 +568,22 @@ export default function VentaFisicaPage() {
         </section>
       ) : null}
 
-      <p className="admin-section-label">Ventas físicas del mes</p>
+      <p className="admin-section-label">Ventas físicas de este sorteo</p>
       <div className="admin-panel">
         {ventas.length === 0 ? (
-          <div className="admin-empty">Aún no hay ventas físicas este mes.</div>
+          <div className="admin-empty">Este sorteo todavía no tiene ventas físicas.</div>
         ) : (
           ventas.map((v) => {
             const anulada = v.estado === "anulado";
-            const wa = linkWhatsappNumeros({
+            const nombrePlan =
+              v.planId === "varios"
+                ? "Varios números"
+                : planes.find((p) => p.id === v.planId)?.nombre || "Plan";
+            const wa = linkWhatsappDeSorteo(sorteoDe(v.sorteoId) || sorteo, {
               telefono: v.telefono,
               nombre: v.nombre,
               numeros: v.numeros,
-              planNombre: planesMap[v.planId]?.nombre || (v.planId === "varios" ? "Varios números" : v.planId),
+              planNombre: nombrePlan,
             });
             return (
               <div key={v.id} className="admin-member-row" style={anulada ? { opacity: 0.5 } : undefined}>
@@ -490,7 +593,7 @@ export default function VentaFisicaPage() {
                     {anulada ? " · ANULADA" : ""}
                   </div>
                   <div className="admin-member-row__email">
-                    {planesMap[v.planId]?.nombre || (v.planId === "varios" ? "Varios números" : v.planId)} · {v.telefono}
+                    {nombrePlan} · {v.telefono}
                     {v.numeros.length ? (
                       <span className="font-mono"> · {v.numeros.join(" ")}</span>
                     ) : null}

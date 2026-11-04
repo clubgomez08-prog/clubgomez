@@ -4,6 +4,7 @@ import { Fragment, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { getAdminAuthHeaders } from "@/lib/auth";
 import { useToast } from "@/components/admin/Toast";
+import { linkWhatsappDeSorteo } from "@/lib/admin-descarga";
 
 const LIME = "#B8E351";
 const PAGE_SIZE_HINT = 20;
@@ -54,7 +55,7 @@ function badgeEstado(estado) {
   );
 }
 
-function ClavesDetalle({ m, periodo, destacarClave }) {
+function ClavesDetalle({ m, periodo, destacarClave, sorteo }) {
   return (
     <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
       <p className="text-xs text-zinc-500 mb-2">
@@ -98,17 +99,26 @@ function ClavesDetalle({ m, periodo, destacarClave }) {
           Membresía hasta {formatFecha(m.membresia.vence_en)}
         </p>
       ) : null}
-      <ReenviarCorreo m={m} />
+      <AvisosCliente m={m} sorteo={sorteo} />
     </div>
   );
 }
 
-function ReenviarCorreo({ m }) {
+function AvisosCliente({ m, sorteo }) {
   const { addToast } = useToast();
   const [enviando, setEnviando] = useState(false);
   const email = String(m.email || "");
   const sinEmail = !email.includes("@") || email.endsWith("@sin-email.clubgomez.co");
-  if (!m.membresia?.id || !m.claves?.length || sinEmail) return null;
+  const wa =
+    m.claves?.length && m.telefono
+      ? linkWhatsappDeSorteo(sorteo, {
+          telefono: m.telefono,
+          nombre: m.nombre,
+          numeros: m.claves,
+          planNombre: m.plan?.nombre,
+        })
+      : null;
+  if (!m.claves?.length || (!wa && (sinEmail || !m.membresia?.id))) return null;
 
   async function reenviar() {
     if (!confirm(`¿Reenviar el correo de oportunidades a ${email}?`)) return;
@@ -130,17 +140,33 @@ function ReenviarCorreo({ m }) {
   }
 
   return (
-    <button
-      type="button"
-      onClick={(e) => {
-        e.stopPropagation();
-        reenviar();
-      }}
-      disabled={enviando}
-      className="mt-3 px-3 py-1.5 rounded-lg text-xs font-semibold border border-zinc-600 text-zinc-200 hover:bg-zinc-800"
-    >
-      {enviando ? "Enviando…" : "Reenviar correo de oportunidades"}
-    </button>
+    <div className="mt-3 flex flex-wrap gap-2">
+      {wa ? (
+        <a
+          href={wa}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="px-3 py-1.5 rounded-lg text-xs font-bold"
+          style={{ background: "#22c55e", color: "#050607" }}
+        >
+          Enviar números por WhatsApp
+        </a>
+      ) : null}
+      {!sinEmail && m.membresia?.id ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            reenviar();
+          }}
+          disabled={enviando}
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-zinc-600 text-zinc-200 hover:bg-zinc-800"
+        >
+          {enviando ? "Enviando…" : "Reenviar correo"}
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -159,6 +185,7 @@ export default function AdminMiembrosPage() {
     page: 1,
   });
   const [buscarDraft, setBuscarDraft] = useState("");
+  const [sorteos, setSorteos] = useState([]);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -194,6 +221,28 @@ export default function AdminMiembrosPage() {
   useEffect(() => {
     cargar();
   }, [cargar]);
+
+  useEffect(() => {
+    let vivo = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/sorteos", { headers: await getAdminAuthHeaders() });
+        const data = await res.json().catch(() => ({}));
+        if (vivo && res.ok) setSorteos(data.sorteos || []);
+      } catch {
+        if (vivo) setSorteos([]);
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  function sorteoDeMiembro(m) {
+    const id = m.membresia?.sorteo_id;
+    if (!id) return null;
+    return sorteos.find((s) => s.id === id) || null;
+  }
 
   function aplicarBusqueda(e) {
     e.preventDefault();
@@ -387,6 +436,7 @@ export default function AdminMiembrosPage() {
                               m={m}
                               periodo={periodo}
                               destacarClave={busquedaClave}
+                              sorteo={sorteoDeMiembro(m)}
                             />
                           </td>
                         </tr>
@@ -446,6 +496,7 @@ export default function AdminMiembrosPage() {
                       m={m}
                       periodo={periodo}
                       destacarClave={busquedaClave}
+                      sorteo={sorteoDeMiembro(m)}
                     />
                   ) : null}
                 </div>
