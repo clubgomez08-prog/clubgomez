@@ -45,7 +45,7 @@ const PASOS = [
 const VACIO = {
   nombre: "",
   slug: "",
-  estado: "borrador",
+  estado: "en_venta",
   es_principal: false,
   trabajando: false,
   fecha_sorteo: "",
@@ -100,7 +100,7 @@ function aForm(s) {
 
 function estadoTexto(estado) {
   if (estado === "en_venta") return "En venta";
-  if (estado === "cerrado") return "Cerrado";
+  if (estado === "cerrado") return "Terminado";
   return "Borrador";
 }
 
@@ -115,6 +115,7 @@ export default function SorteosPage() {
   const [planes, setPlanes] = useState([]);
   const [tab, setTab] = useState("datos");
   const [guardando, setGuardando] = useState(false);
+  const [marcando, setMarcando] = useState("");
   const [dispositivo, setDispositivo] = useState("pc");
   const [verPreview, setVerPreview] = useState(false);
   const [planForm, setPlanForm] = useState(PLAN_VACIO);
@@ -169,6 +170,43 @@ export default function SorteosPage() {
     addToast("No se pudo copiar. Selecciona el link y cópialo a mano.", "error");
   }
 
+  async function marcar(s, cuerpo, aviso) {
+    setMarcando(s.id);
+    try {
+      const res = await fetch(`/api/admin/sorteos/${s.id}`, {
+        method: "PUT",
+        headers: { ...(await getAdminAuthHeaders()), "Content-Type": "application/json" },
+        body: JSON.stringify(cuerpo),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "No se pudo guardar");
+      addToast(aviso, "success");
+      await cargar();
+    } catch (err) {
+      addToast(err.message || "No se pudo guardar", "error");
+    } finally {
+      setMarcando("");
+    }
+  }
+
+  function ponerEnInicio(s) {
+    marcar(
+      s,
+      { es_principal: true },
+      "Este sorteo queda en clubgomez.co. El otro sale de la página de inicio."
+    );
+  }
+
+  function terminar(s) {
+    const extra = s.es_principal
+      ? " Sigue en la página de inicio hasta que marques otro."
+      : "";
+    if (!window.confirm(`¿Terminar ${s.nombre}? El link sigue abriendo, pero ya no se puede comprar.${extra}`)) {
+      return;
+    }
+    marcar(s, { estado: "cerrado" }, "Sorteo terminado. Ya no se vende.");
+  }
+
   function abrir(s, conservarTab) {
     const f = aForm(s);
     setSel(s);
@@ -205,6 +243,7 @@ export default function SorteosPage() {
       delete resto.mensaje_whatsapp;
       delete resto.mensaje_correo_asunto;
       delete resto.mensaje_correo_cuerpo;
+      delete resto.trabajando;
       const cuerpo = {
         ...resto,
         slug: slugificar(form.slug || form.nombre),
@@ -362,17 +401,32 @@ export default function SorteosPage() {
                     <span className={`sorteo-estado is-${s.estado}`}>{estadoTexto(s.estado)}</span>
                     <strong>{s.nombre}</strong>
                     <span className="sorteo-card__meta">
-                      {s.es_principal ? "Abre en clubgomez.co" : "Se entra por su link"}
-                      {s.trabajando ? " · Vendiendo aquí" : ""}
+                      {s.es_principal ? "En la página principal" : "Solo por su link"}
                     </span>
                     <span className="sorteo-card__cta">Editar</span>
                   </button>
                   <div className="sorteo-card__share">
                     <span className="sorteo-card__url">{url}</span>
-                    {s.estado === "borrador" ? (
-                      <span className="sorteo-card__nota">El link ya se puede copiar. La gente entra cuando esté Publicada.</span>
-                    ) : null}
                     <div className="sorteo-card__acciones">
+                      {s.es_principal ? (
+                        <span className="sorteo-card__nota">Este es el que se ve al entrar a clubgomez.co.</span>
+                      ) : (
+                        <button type="button" disabled={marcando === s.id} onClick={() => ponerEnInicio(s)}>
+                          Poner en la página principal
+                        </button>
+                      )}
+                      {s.estado === "borrador" ? (
+                        <button type="button" disabled={marcando === s.id} onClick={() => marcar(s, { estado: "en_venta" }, "El link ya abre y se puede comprar.")}>
+                          Publicar
+                        </button>
+                      ) : null}
+                      {s.estado !== "cerrado" ? (
+                        <button type="button" disabled={marcando === s.id} onClick={() => terminar(s)}>
+                          Terminar sorteo
+                        </button>
+                      ) : (
+                        <span className="sorteo-card__nota">Terminado. El link abre, pero ya no se vende.</span>
+                      )}
                       <button type="button" onClick={() => copiar(url, "Link copiado")}>
                         Copiar link
                       </button>
@@ -398,7 +452,7 @@ export default function SorteosPage() {
         </button>
         <div className="sorteo-editor__titulo">
           <strong>{form.premio || form.nombre || "Sorteo nuevo"}</strong>
-          <span>La página de la derecha cambia mientras escribes. Guardar la publica.</span>
+          <span>La página de la derecha cambia mientras escribes.</span>
         </div>
         <div className="sorteo-editor__acciones">
           {sel && form.estado !== "borrador" ? (
@@ -459,39 +513,7 @@ export default function SorteosPage() {
                   placeholder="pcgamer"
                   onChange={(e) => setCampo("slug", slugificar(e.target.value))}
                 />
-                <span className="sorteo-ayuda">La gente entra por {previewUrl}</span>
-              </label>
-              <p className="sorteo-pregunta">¿La página ya se puede ver?</p>
-              <div className="sorteo-opciones">
-                {[
-                  ["borrador", "Oculta", "El link todavía no abre. Sirve para armarla."],
-                  ["en_venta", "Publicada", "El link abre y ya se puede comprar."],
-                  ["cerrado", "Terminada", "El link abre, pero ya no se vende."],
-                ].map(([id, label, ayuda]) => (
-                  <button
-                    key={id}
-                    type="button"
-                    className={`sorteo-opcion${form.estado === id ? " is-on" : ""}`}
-                    onClick={() => setCampo("estado", id)}
-                  >
-                    <strong>{label}</strong>
-                    <span>{ayuda}</span>
-                  </button>
-                ))}
-              </div>
-              <label className="sorteo-check">
-                <input type="checkbox" checked={form.es_principal} onChange={(e) => setCampo("es_principal", e.target.checked)} />
-                <span>
-                  <strong>Mostrar al entrar a clubgomez.co</strong>
-                  <small>Quien abre la página del club ve este premio. Solo uno puede estar así.</small>
-                </span>
-              </label>
-              <label className="sorteo-check">
-                <input type="checkbox" checked={form.trabajando} onChange={(e) => setCampo("trabajando", e.target.checked)} />
-                <span>
-                  <strong>Cobrar aquí desde el panel</strong>
-                  <small>El panel abre este sorteo para vender en el local. La página de inicio se cambia con la casilla de arriba, cuando tú quieras.</small>
-                </span>
+                <span className="sorteo-ayuda">La gente entra por {previewUrl}. Cuál sale en clubgomez.co, y cuándo se termina, se marca en la lista de sorteos.</span>
               </label>
               <h3>Qué números usa este premio</h3>
               <p>Son solo de este premio. El 537 de aquí no bloquea el 537 de otro.</p>

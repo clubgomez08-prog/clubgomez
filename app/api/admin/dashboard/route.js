@@ -57,7 +57,6 @@ export async function GET(request) {
     const lista = sorteos || [];
     const activo =
       lista.find((s) => pedido && s.id === pedido) ||
-      lista.find((s) => s.trabajando) ||
       lista.find((s) => s.es_principal) ||
       lista[0] ||
       null;
@@ -150,7 +149,7 @@ export async function GET(request) {
       fecha: fechaLegible(s.fecha_sorteo),
       loteria: s.loteria || "",
       pagina: estadoPagina(s),
-      vendiendo: Boolean(s.trabajando),
+      enInicio: Boolean(s.es_principal),
       dadas: cuentas[s.id] || 0,
       total: tamano(s.fisico_min, s.fisico_max) + tamano(s.web_min, s.web_max),
     });

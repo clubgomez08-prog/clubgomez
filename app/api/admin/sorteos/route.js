@@ -90,7 +90,7 @@ export async function POST(request) {
       .select("id", { count: "exact", head: true });
     const primero = !count;
     payload.es_principal = primero;
-    payload.trabajando = primero;
+    delete payload.trabajando;
     payload.estado = primero ? "en_venta" : payload.estado;
 
     let aviso = null;

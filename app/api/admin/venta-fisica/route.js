@@ -184,7 +184,7 @@ export async function GET(request) {
     const sorteoPedido = String(searchParams.get("sorteo") || "").trim();
     const { sorteo } = await leerSorteoPor(
       supabaseAdmin,
-      /^[0-9a-f-]{36}$/i.test(sorteoPedido) ? { id: sorteoPedido } : { trabajando: true }
+      /^[0-9a-f-]{36}$/i.test(sorteoPedido) ? { id: sorteoPedido } : { principal: true }
     );
     const sugerir = Number(searchParams.get("sugerir") || 0);
     if (sugerir > 0) {
@@ -253,7 +253,7 @@ export async function POST(request) {
     const sorteoPedido = String(body.sorteoId || "").trim();
     const { sorteo } = await leerSorteoPor(
       supabaseAdmin,
-      /^[0-9a-f-]{36}$/i.test(sorteoPedido) ? { id: sorteoPedido } : { trabajando: true }
+      /^[0-9a-f-]{36}$/i.test(sorteoPedido) ? { id: sorteoPedido } : { principal: true }
     );
     if (sorteoPedido && !sorteo) return bad("Ese sorteo no existe.");
     const rangoFisico = sorteo ? rangoFisicoDe(sorteo) : null;

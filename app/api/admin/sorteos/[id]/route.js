@@ -49,13 +49,7 @@ export async function PUT(request, { params }) {
         .eq("es_principal", true)
         .neq("id", id);
     }
-    if (payload.trabajando === true) {
-      await supabaseAdmin
-        .from("sorteos_rifa")
-        .update({ trabajando: false, updated_at: ahora })
-        .eq("trabajando", true)
-        .neq("id", id);
-    }
+    delete payload.trabajando;
     payload.updated_at = ahora;
 
     let aviso = null;

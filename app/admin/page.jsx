@@ -98,7 +98,7 @@ export default function AdminDashboardPage() {
       ) : !sorteo ? (
         <div className="dash-vacio">
           <h1>Todavía no hay un sorteo</h1>
-          <p>Cuando crees uno y lo marques para cobrar, los números de ese premio salen aquí.</p>
+          <p>Cuando crees uno, los números de ese premio salen aquí.</p>
           <Link href="/admin/sorteos" className="dash-btn dash-btn--lime">
             Ir a sorteos
           </Link>
@@ -107,14 +107,13 @@ export default function AdminDashboardPage() {
         <>
           <header className="dash-head">
             <div>
-              <p className="dash-kicker">{sorteo.vendiendo ? "Vendiendo ahora" : "Este sorteo"}</p>
+              <p className="dash-kicker">{sorteo.enInicio ? "En la página de inicio" : "Este sorteo"}</p>
               <h1>{sorteo.nombre}</h1>
               <p className="dash-meta">
                 {[sorteo.fecha, sorteo.loteria].filter(Boolean).join(" · ")}
               </p>
               <div className="dash-pills">
                 <span>{sorteo.pagina}</span>
-                {sorteo.vendiendo ? <span className="is-on">Vendiendo</span> : null}
               </div>
             </div>
             <div className="dash-acciones">
@@ -230,7 +229,7 @@ export default function AdminDashboardPage() {
                     <strong>{s.nombre}</strong>
                     <span>
                       {s.dadas} números · {s.pagina}
-                      {s.vendiendo ? " · Vendiendo" : ""}
+                      {s.enInicio ? " · En la página de inicio" : ""}
                     </span>
                   </button>
                 ))}

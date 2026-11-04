@@ -198,7 +198,6 @@ export default function NumerosPage() {
         const lista = data.sorteos || [];
         setSorteos(lista);
         const elegido =
-          lista.find((s) => s.trabajando) ||
           lista.find((s) => s.es_principal) ||
           lista[0];
         setSorteoId(elegido?.id || "");
@@ -407,7 +406,7 @@ export default function NumerosPage() {
             {sorteos.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.nombre || s.premio}
-                {s.trabajando ? " · cobrando aquí" : ""}
+                {s.es_principal ? " · en la página de inicio" : ""}
               </option>
             ))}
           </select>
