@@ -55,6 +55,13 @@ function badgeEstado(estado) {
   );
 }
 
+function mismoNumero(a, b) {
+  const da = String(a ?? "").replace(/\D/g, "");
+  const db = String(b ?? "").replace(/\D/g, "");
+  const ancho = Math.max(da.length, db.length) >= 4 ? 4 : 3;
+  return da.slice(-ancho).padStart(ancho, "0") === db.slice(-ancho).padStart(ancho, "0");
+}
+
 function ClavesDetalle({ m, periodo, destacarClave, sorteo }) {
   return (
     <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
@@ -67,10 +74,7 @@ function ClavesDetalle({ m, periodo, destacarClave, sorteo }) {
       {m.claves?.length ? (
         <div className="flex flex-wrap gap-2">
           {m.claves.map((c) => {
-            const hit =
-              destacarClave &&
-              String(c).replace(/\D/g, "").slice(-3).padStart(3, "0") ===
-              String(destacarClave).replace(/\D/g, "").slice(-3).padStart(3, "0");
+            const hit = destacarClave && mismoNumero(c, destacarClave);
             return (
               <span
                 key={c}
@@ -92,9 +96,11 @@ function ClavesDetalle({ m, periodo, destacarClave, sorteo }) {
           })}
         </div>
       ) : (
-        <p className="text-sm text-zinc-500">Sin oportunidades en este periodo.</p>
+        <p className="text-sm text-zinc-500">
+          {sorteo ? "Sin números en este sorteo." : "Sin oportunidades en este periodo."}
+        </p>
       )}
-      {m.membresia?.vence_en ? (
+      {m.membresia?.vence_en && !m.membresia?.sorteo_id ? (
         <p className="text-xs text-zinc-500 mt-3">
           Membresía hasta {formatFecha(m.membresia.vence_en)}
         </p>

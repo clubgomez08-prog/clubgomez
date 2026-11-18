@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAdminAuthHeaders } from "@/lib/auth";
 import { useToast } from "@/components/admin/Toast";
-import { padClave } from "@/lib/club-gomez/claves-pool";
+import { formatearNumero } from "@/lib/club-gomez/claves-pool";
 import { descargarArchivoAdmin, linkWhatsappDeSorteo } from "@/lib/admin-descarga";
 
 const LIME = "#B8E351";
@@ -11,7 +11,7 @@ const WEB = "#1d4ed8";
 const FISICO = "#b45309";
 const WEB_FONDO = "#dbeafe";
 const FISICO_FONDO = "#fde7c2";
-const TODOS = Array.from({ length: 1000 }, (_, i) => String(i).padStart(3, "0"));
+const MAPA_3 = Array.from({ length: 1000 }, (_, i) => String(i).padStart(3, "0"));
 
 function formatFecha(d) {
   if (!d) return "—";
@@ -258,28 +258,50 @@ export default function NumerosPage() {
     [rangos]
   );
 
+  const ancho = Math.max(rangos?.fisico?.max ?? 0, rangos?.web?.max ?? 0) > 999 ? 4 : 3;
+  const mapaCompleto = ancho === 3;
+
   const resumen = useMemo(() => {
-    const r = { web: { v: 0, t: 0 }, fisico: { v: 0, t: 0 } };
-    for (const num of TODOS) {
-      const c = canalDe(num);
-      r[c].t += 1;
-      if (porNumero[num]) r[c].v += 1;
+    const total = (lado) => (lado ? lado.max - lado.min + 1 : 0);
+    const r = {
+      web: { v: 0, t: mapaCompleto ? 0 : total(rangos?.web) },
+      fisico: { v: 0, t: mapaCompleto ? 0 : total(rangos?.fisico) },
+    };
+    if (mapaCompleto) {
+      for (const num of MAPA_3) {
+        const c = canalDe(num);
+        r[c].t += 1;
+        if (porNumero[num]) r[c].v += 1;
+      }
+      return r;
+    }
+    for (const n of numeros) {
+      if (n.canal === "web" || n.canal === "fisico") r[n.canal].v += 1;
     }
     return r;
-  }, [porNumero, canalDe]);
+  }, [porNumero, canalDe, mapaCompleto, rangos, numeros]);
 
-  const visibles = TODOS.filter((num) => {
-    if (filtro === "todos") return true;
-    if (filtro === "vendidos") return Boolean(porNumero[num]);
-    if (filtro === "libres") return !porNumero[num];
-    return canalDe(num) === filtro;
-  });
+  const visibles = useMemo(() => {
+    const base = mapaCompleto ? MAPA_3 : numeros.map((n) => n.numero);
+    const lista = base.filter((num) => {
+      if (filtro === "todos") return true;
+      if (filtro === "vendidos") return Boolean(porNumero[num]);
+      if (filtro === "libres") return mapaCompleto && !porNumero[num];
+      return canalDe(num) === filtro;
+    });
+    if (!mapaCompleto && seleccion && !lista.includes(seleccion) && !porNumero[seleccion]) {
+      if (filtro === "todos" || filtro === "libres" || canalDe(seleccion) === filtro) {
+        lista.unshift(seleccion);
+      }
+    }
+    return lista;
+  }, [mapaCompleto, numeros, filtro, porNumero, canalDe, seleccion]);
 
   function consultar(e) {
     e.preventDefault();
     const digits = buscar.replace(/\D/g, "");
     if (!digits) return;
-    setSeleccion(padClave(digits));
+    setSeleccion(formatearNumero(digits, ancho));
   }
 
   const precioUno = useMemo(() => {
@@ -386,7 +408,9 @@ export default function NumerosPage() {
     <div className="max-w-6xl">
       <h1 className="text-2xl font-semibold text-white mb-1">Números</h1>
       <p className="text-sm text-zinc-500 mb-6">
-        Mapa del 000 al 999 de este sorteo, web y físico. Toca un vendido para enviarle los números por WhatsApp, o un libre para asignarlo. El texto es el de Correos.
+        {mapaCompleto
+          ? "Mapa del 000 al 999 de este sorteo, web y físico. Toca un vendido para enviarle los números por WhatsApp, o un libre para asignarlo. El texto es el de Correos."
+          : `Este sorteo tiene ${resumen.fisico.t + resumen.web.t} números: en persona del ${formatearNumero(rangos?.fisico?.min ?? 0, 4)} al ${formatearNumero(rangos?.fisico?.max ?? 0, 4)} y en la página del ${formatearNumero(rangos?.web?.min ?? 0, 4)} al ${formatearNumero(rangos?.web?.max ?? 0, 4)}. Busca un número para verlo o asignarlo.`}
       </p>
 
       <div className="flex flex-wrap items-end gap-3 mb-6">
@@ -418,8 +442,8 @@ export default function NumerosPage() {
             </span>
             <input
               value={buscar}
-              onChange={(e) => setBuscar(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              placeholder="Ej. 709"
+              onChange={(e) => setBuscar(e.target.value.replace(/\D/g, "").slice(0, ancho))}
+              placeholder={ancho === 4 ? "Ej. 6001" : "Ej. 709"}
               inputMode="numeric"
               className="px-3 py-2.5 rounded-xl bg-zinc-950 border border-zinc-700 text-white font-mono w-32"
             />

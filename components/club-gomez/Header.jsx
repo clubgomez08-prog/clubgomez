@@ -9,7 +9,7 @@ import CtaButton from "./CtaButton";
 import { SHOW_BENEFICIOS_DEL_MES } from "./BeneficiosDelMes";
 
 const NAV = [
-  { id: "inicio", label: "Inicio", href: "/" },
+  { id: "ver-mis-claves", label: "Mis claves", href: "/#ver-mis-claves" },
   SHOW_BENEFICIOS_DEL_MES
     ? { id: "beneficios-mes", label: "Beneficios", href: "/#beneficios-mes" }
     : { id: "destacado-club", label: "Beneficios", href: "/#destacado-club" },
@@ -23,6 +23,7 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const onHome = pathname === "/";
+  const sinFiltro = pathname === "/navidad";
   const onBeneficiosPage = pathname?.startsWith("/beneficios");
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function Header() {
 
   function goHomeSection(id) {
     setMenuOpen(false);
-    if (onHome) {
+    if (document.getElementById(id)) {
       scrollToId(id);
       return;
     }
@@ -56,10 +57,6 @@ export default function Header() {
 
   function handleNav(item) {
     setMenuOpen(false);
-    if (item.id === "inicio") {
-      if (onHome) scrollToId("inicio");
-      return;
-    }
     if (item.href.startsWith("/#")) {
       goHomeSection(item.id);
     }
@@ -79,7 +76,7 @@ export default function Header() {
           background: scrolled
             ? "rgba(5,6,7,0.42)"
             : "linear-gradient(180deg, rgba(5,6,7,0.45) 0%, rgba(5,6,7,0.12) 70%, transparent 100%)",
-          backdropFilter: scrolled ? "blur(10px)" : "blur(6px)",
+          backdropFilter: sinFiltro ? "none" : scrolled ? "blur(10px)" : "blur(6px)",
           borderBottom: "1px solid transparent",
         }}
       >
@@ -123,7 +120,7 @@ export default function Header() {
           {isDesktop && (
             <nav style={{ display: "flex", alignItems: "center", gap: 4 }}>
               {NAV.map((item) => {
-                const active = item.id === "inicio" && onHome && !onBeneficiosPage;
+                const active = onHome && !onBeneficiosPage && item.href === "/";
                 const commonStyle = {
                   background: "none",
                   border: "none",

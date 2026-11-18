@@ -37,7 +37,7 @@ export default function Footer({ linea = "" }) {
             lineHeight: 1.4,
           }}
         >
-          Membresía exclusiva · Crypton 0 km más $1.000.000 · Premios del Club
+          {linea || "Membresía exclusiva · Crypton 0 km más $1.000.000 · Premios del Club"}
         </p>
         <p
           style={{

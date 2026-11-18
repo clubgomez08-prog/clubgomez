@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
 import { getPlanById } from "@/lib/club-gomez/planes";
-import { padClave, periodoDe } from "@/lib/club-gomez/claves-pool";
+import { formatearNumero, padClave, periodoDe } from "@/lib/club-gomez/claves-pool";
 import { esEmailPlaceholder } from "@/lib/club-gomez/activar-membresia";
 import { enviarTicketCompra } from "@/lib/email";
 import { leerSorteoPor } from "@/lib/club-gomez/sorteos";
@@ -49,15 +49,22 @@ export async function POST(request) {
     const periodo = periodoDe();
     const { data: ventas } = await supabaseAdmin
       .from("membresias")
-      .select("estado, claves(numero, periodo)")
+      .select("estado, sorteo_id, claves(numero, periodo, sorteo_id)")
       .eq("miembro_id", miembro.id)
       .neq("estado", "cancelada");
     const numeros = [
       ...new Set(
         (ventas || []).flatMap((v) =>
           (v.claves || [])
-            .filter((c) => c.periodo === periodo)
-            .map((c) => padClave(c.numero))
+            .filter((c) =>
+              mem.sorteo_id
+                ? c.sorteo_id === mem.sorteo_id
+                : !c.sorteo_id && c.periodo === periodo
+            )
+            .map((c) => {
+              const digits = String(c.numero ?? "").replace(/\D/g, "");
+              return digits.length >= 4 ? formatearNumero(c.numero, 4) : padClave(c.numero);
+            })
         )
       ),
     ].sort();

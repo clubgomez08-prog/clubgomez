@@ -102,7 +102,7 @@ export async function POST(request) {
         ciudad: solicitud.ciudad,
         fecha_nacimiento: metaYa.fecha_nacimiento || null,
         clavesCount: 0,
-        mensaje: "Tu membresía ya estaba activa.",
+        mensaje: "Este pago ya estaba registrado.",
       });
     }
 
@@ -147,6 +147,20 @@ export async function POST(request) {
 
     const notas = parseNotas(solicitud.notas);
     const plan = planDeSolicitud(solicitud.plan_id, notas);
+    let rangoFisico = null;
+    let rangoWeb = null;
+    if (notas.sorteo_id) {
+      const { data: sorteo, error: errorSorteo } = await supabaseAdmin
+        .from("sorteos_rifa")
+        .select("fisico_min, fisico_max, web_min, web_max")
+        .eq("id", notas.sorteo_id)
+        .maybeSingle();
+      if (errorSorteo || !sorteo) {
+        throw new Error("No se pudo leer el sorteo de este pago.");
+      }
+      rangoFisico = { min: sorteo.fisico_min, max: sorteo.fisico_max };
+      rangoWeb = { min: sorteo.web_min, max: sorteo.web_max };
+    }
     const resultado = await activarMembresiaManual(supabaseAdmin, {
       planId: solicitud.plan_id,
       plan,
@@ -161,6 +175,9 @@ export async function POST(request) {
       boldOrderId: orderId,
       boldTransactionId: voucher?.transaction_id || null,
       montoCop: voucher?.total || null,
+      sorteoId: notas.sorteo_id || null,
+      rangoFisico,
+      rangoWeb,
     });
 
     const value =
@@ -190,8 +207,8 @@ export async function POST(request) {
       ciudad: solicitud.ciudad,
       fecha_nacimiento: notas.fecha_nacimiento || null,
       mensaje: resultado.alreadyActive
-        ? "Membresía ya activa."
-        : "Pago aprobado. Membresía activada.",
+        ? "Este pago ya estaba registrado."
+        : "Pago aprobado. Tus números quedaron para el sorteo.",
     });
   } catch (err) {
     console.error("[bold/confirmar]", err);

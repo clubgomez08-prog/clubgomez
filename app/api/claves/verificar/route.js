@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
-import { padClave, periodoDe } from "@/lib/club-gomez/claves-pool";
+import { formatearNumero, padClave, periodoDe } from "@/lib/club-gomez/claves-pool";
 import { getPlanById } from "@/lib/club-gomez/planes";
 
 export const dynamic = "force-dynamic";
@@ -113,7 +113,7 @@ export async function POST(request) {
     const periodo = periodoDe();
     const { data: membresias } = await supabaseAdmin
       .from("membresias")
-      .select("id, plan_id, claves(numero, periodo)")
+      .select("id, plan_id, sorteo_id, claves(numero, periodo, sorteo_id)")
       .eq("miembro_id", miembro.id)
       .eq("estado", "activa");
 
@@ -121,8 +121,15 @@ export async function POST(request) {
       .map((m) => ({
         plan: getPlanById(m.plan_id).nombre,
         numeros: (m.claves || [])
-          .filter((c) => c.periodo === periodo)
-          .map((c) => padClave(c.numero))
+          .filter((c) =>
+            m.sorteo_id
+              ? !c.sorteo_id || c.sorteo_id === m.sorteo_id
+              : c.periodo === periodo && !c.sorteo_id
+          )
+          .map((c) => {
+            const digits = String(c.numero ?? "").replace(/\D/g, "");
+            return digits.length >= 4 ? formatearNumero(c.numero, 4) : padClave(c.numero);
+          })
           .sort(),
       }))
       .filter((g) => g.numeros.length);

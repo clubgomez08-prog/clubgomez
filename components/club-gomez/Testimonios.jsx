@@ -7,6 +7,11 @@ import { scrollToId, useReveal } from "./hooks";
 
 const FOTOS_ARRIBA = [
   {
+    id: "yamaha",
+    src: "/club-gomez/testimonio-ganador-yamaha.jpg",
+    alt: "Ganadores con la moto Yamaha",
+  },
+  {
     id: "n3187",
     src: "/club-gomez/testimonio-3187.jpg",
     alt: "Entrega de moto Club Gómez",

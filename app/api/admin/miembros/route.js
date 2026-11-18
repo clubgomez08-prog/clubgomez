@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
 import { PLANES_MEMBRESIA } from "@/lib/club-gomez/planes";
-import { padClave, periodoDe } from "@/lib/club-gomez/claves-pool";
+import { digitosDeTopes, formatearNumero, padClave, periodoDe } from "@/lib/club-gomez/claves-pool";
 
 export const dynamic = "force-dynamic";
 
@@ -132,7 +132,7 @@ export async function GET(request) {
           paginas: 1,
           page: 1,
           periodo,
-          busquedaClave: padClave(buscar),
+          busquedaClave: formatearNumero(buscar, String(buscar).replace(/\D/g, "").length >= 4 ? 4 : 3),
         });
       }
       query = query.in("id", miembroIds);
@@ -198,6 +198,17 @@ export async function GET(request) {
       }
 
       const memIds = Object.values(membresiasByMiembro).map((m) => m.id);
+      const digitosPorSorteo = {};
+      {
+        const { data: tops } = await supabaseAdmin
+          .from("sorteos_rifa")
+          .select("id, fisico_max, web_max");
+        for (const s of tops || []) {
+          digitosPorSorteo[s.id] = digitosDeTopes(s.fisico_max, s.web_max);
+        }
+      }
+      const verNumero = (n, sorteoId) =>
+        formatearNumero(n, digitosPorSorteo[sorteoId] || 3);
       if (memIds.length > 0) {
         let { data: claves, error: clavesErr } = await supabaseAdmin
           .from("claves")
@@ -221,24 +232,24 @@ export async function GET(request) {
           }
           const miembroId = mem.miembro_id;
           if (!clavesByMiembro[miembroId]) clavesByMiembro[miembroId] = [];
-          const numero = padClave(c.numero);
+          const numero = verNumero(c.numero, c.sorteo_id);
           if (!clavesByMiembro[miembroId].includes(numero)) {
             clavesByMiembro[miembroId].push(numero);
           }
         }
 
         if (porClave) {
-          const padded = padClave(buscar);
+          const padded = verNumero(buscar, sorteo && sorteo !== "sin" ? sorteo : null);
           const { data: extra } = await supabaseAdmin
             .from("claves")
-            .select("membresia_id, numero, periodo")
+            .select("membresia_id, numero, periodo, sorteo_id")
             .in("membresia_id", memIds)
             .eq("numero", padded);
           for (const c of extra || []) {
             const mem = memPorId[c.membresia_id];
             if (!mem) continue;
             if (!clavesByMiembro[mem.miembro_id]) clavesByMiembro[mem.miembro_id] = [];
-            const numero = padClave(c.numero);
+            const numero = verNumero(c.numero, c.sorteo_id);
             if (!clavesByMiembro[mem.miembro_id].includes(numero)) {
               clavesByMiembro[mem.miembro_id].push(numero);
             }
@@ -247,13 +258,32 @@ export async function GET(request) {
       }
     }
 
+    const idsDePlan = [
+      ...new Set(
+        Object.values(membresiasByMiembro)
+          .map((mem) => mem?.plan_id)
+          .filter((id) => id && id !== "varios" && !PLANES_MEMBRESIA[id])
+      ),
+    ];
+    const nombrePorPlan = {};
+    if (idsDePlan.length) {
+      const { data: planes } = await supabaseAdmin
+        .from("planes")
+        .select("id, nombre")
+        .in("id", idsDePlan);
+      for (const plan of planes || []) nombrePorPlan[plan.id] = plan.nombre;
+    }
+
     const items = (miembros || []).map((m) => {
       const mem = membresiasByMiembro[m.id] || null;
       const plan = !mem?.plan_id
         ? null
         : mem.plan_id === "varios"
           ? { id: "varios", nombre: "Varios números" }
-          : PLANES_MEMBRESIA[mem.plan_id] || { id: mem.plan_id, nombre: mem.plan_id };
+          : PLANES_MEMBRESIA[mem.plan_id] || {
+              id: mem.plan_id,
+              nombre: nombrePorPlan[mem.plan_id] || mem.plan_id,
+            };
       const claves = (clavesByMiembro[m.id] || []).sort();
       return {
         ...m,
@@ -272,7 +302,9 @@ export async function GET(request) {
       paginas: Math.max(1, Math.ceil(total / PAGE_SIZE)),
       page,
       periodo,
-      busquedaClave: porClave ? padClave(buscar) : null,
+      busquedaClave: porClave
+        ? formatearNumero(buscar, String(buscar).replace(/\D/g, "").length >= 4 ? 4 : 3)
+        : null,
     });
   } catch (err) {
     console.error("[admin/miembros GET]", err);

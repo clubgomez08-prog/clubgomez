@@ -43,10 +43,10 @@ function ResultadoPagoInner() {
           setClavesCount(data.clavesCount || 0);
           setMensaje(
             data.alreadyActive
-              ? "Tu membresía ya estaba activa."
+              ? "Este pago ya estaba registrado. Tus números están en el correo."
               : data.emailOk
-                ? "Pago aprobado. Revisá tu correo: ahí están tus oportunidades."
-                : "Pago aprobado y membresía activa. Si no ves el correo, revisá spam."
+                ? "Pago aprobado. Revisá tu correo: ahí están tus números para el sorteo."
+                : "Pago aprobado. Si no ves el correo con tus números, revisá spam."
           );
           trackPurchase(
             {

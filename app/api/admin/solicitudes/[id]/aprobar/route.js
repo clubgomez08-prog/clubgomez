@@ -48,15 +48,19 @@ export async function POST(request, { params }) {
     let rangoFisico = null;
     let rangoWeb = null;
     if (notas.sorteo_id) {
-      const { data: sorteo } = await supabaseAdmin
+      const { data: sorteo, error: errorSorteo } = await supabaseAdmin
         .from("sorteos_rifa")
         .select("fisico_min, fisico_max, web_min, web_max")
         .eq("id", notas.sorteo_id)
         .maybeSingle();
-      if (sorteo) {
-        rangoFisico = { min: sorteo.fisico_min, max: sorteo.fisico_max };
-        rangoWeb = { min: sorteo.web_min, max: sorteo.web_max };
+      if (errorSorteo || !sorteo) {
+        return NextResponse.json(
+          { error: "No se pudo leer el sorteo de este pago." },
+          { status: 500 }
+        );
       }
+      rangoFisico = { min: sorteo.fisico_min, max: sorteo.fisico_max };
+      rangoWeb = { min: sorteo.web_min, max: sorteo.web_max };
     }
 
     const resultado = await activarMembresiaManual(supabaseAdmin, {

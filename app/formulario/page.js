@@ -190,6 +190,7 @@ function FormularioMembresia() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planId: plan.id,
+          sorteo: sorteoSlug || undefined,
           precioVisto: plan.precio,
           nombre: form.nombre.trim(),
           cedula: form.cedula.trim(),
@@ -299,11 +300,12 @@ function FormularioMembresia() {
 
       <div className={styles.wrap}>
         <section className={styles.card}>
-          <p className={styles.eyebrow}>Activa tu membresía</p>
+          <p className={styles.eyebrow}>{sorteoSlug ? "Entrá al sorteo" : "Tu compra"}</p>
           <h1 className={styles.title}>
-            Plan <span className={styles.titleAccent}>{plan.nombre}</span>
+            {sorteoSlug ? null : "Plan "}
+            <span className={styles.titleAccent}>{plan.nombre}</span>
           </h1>
-          <p className={styles.tag}>{plan.tag}</p>
+          {plan.tag && !/mes/i.test(plan.tag) ? <p className={styles.tag}>{plan.tag}</p> : null}
           <ul className={styles.facts}>
             <li>
               <span className={styles.factLabel}>Oportunidades</span>
@@ -312,10 +314,9 @@ function FormularioMembresia() {
             <li>
               <span className={styles.factLabel}>Precio</span>
               <strong className={styles.price}>${plan.precioLabel}</strong>
-              <em className={styles.per}>/ mes</em>
             </li>
           </ul>
-          <p className={styles.equiv}>{plan.equiv}</p>
+          {plan.equiv && !/mes/i.test(plan.equiv) ? <p className={styles.equiv}>{plan.equiv}</p> : null}
         </section>
 
         <section className={styles.card}>
@@ -323,8 +324,8 @@ function FormularioMembresia() {
             <div className={styles.done}>
               <h2 className={styles.heading}>Pasarela Bold abierta</h2>
               <p>
-                Completa el pago del plan <strong>{plan.nombre}</strong> en Bold.
-                Al aprobarse activamos tu membresía y te enviamos tus oportunidades.
+                Completa el pago de <strong>{plan.nombre}</strong> en Bold.
+                Al aprobarse te enviamos tus números por correo.
               </p>
               <button
                 type="button"
@@ -347,8 +348,8 @@ function FormularioMembresia() {
               </h2>
               <p className={styles.hint}>
                 {sesion
-                  ? "Revisa tus datos. Al confirmar el pago activamos tu plan y te enviamos tus oportunidades al correo."
-                  : "Solo necesitamos tus datos para activar la membresía. Te enviamos tus oportunidades al correo."}
+                  ? "Revisa tus datos. Al confirmar el pago te enviamos tus números al correo."
+                  : "Solo necesitamos tus datos para el sorteo. Te enviamos tus números al correo."}
               </p>
 
               <label className={styles.field}>
@@ -443,7 +444,7 @@ function FormularioMembresia() {
                   : `Pagar $${plan.precioLabel} con Bold`}
               </button>
               <p className={styles.foot}>
-                Pago seguro con Bold · Solo membresía Club Gómez
+                Pago seguro con Bold · Pago del sorteo
               </p>
               {!sesion ? (
                 <p className={styles.foot}>

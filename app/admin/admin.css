@@ -2626,3 +2626,143 @@
     grid-template-columns: 1fr;
   }
 }
+
+.anti {
+  margin: 0 0 22px;
+  padding: 18px;
+  border: 1px solid #161814;
+  border-radius: 18px;
+  background: #fff;
+  color: #161814;
+}
+
+.anti__kicker {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5d7a16;
+}
+
+.anti h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+
+.anti__nota,
+.anti__pasos {
+  margin: 0 0 14px;
+  max-width: 720px;
+  color: #3d4338;
+  line-height: 1.45;
+}
+
+.anti__pasos {
+  padding-left: 18px;
+}
+
+.anti__pasos li + li {
+  margin-top: 4px;
+}
+
+.anti__busca,
+.anti__dia {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+
+.anti__busca {
+  margin-bottom: 12px;
+}
+
+.anti label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #5f6658;
+}
+
+.anti input {
+  width: 120px;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid rgba(22, 24, 20, 0.16);
+  border-radius: 12px;
+  background: #fff;
+  color: #161814;
+  font-size: 16px;
+}
+
+.anti__resultado,
+.anti__ok,
+.anti__dia p,
+.anti__guardado {
+  margin: 0;
+  flex-basis: 100%;
+  line-height: 1.4;
+}
+
+.anti__resultado,
+.anti__guardado {
+  display: grid;
+  gap: 6px;
+}
+
+.anti__persona {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 0;
+}
+
+.anti__persona div {
+  display: grid;
+}
+
+.anti__persona dt {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5f6658;
+}
+
+.anti__persona dd {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.anti__vacio {
+  margin: 0;
+}
+
+.anti__dias {
+  display: grid;
+  gap: 10px;
+}
+
+.anti__dia {
+  padding: 12px;
+  border-radius: 14px;
+  background: #f4f6ef;
+}
+
+.anti__dia > div {
+  display: grid;
+  min-width: 210px;
+}
+
+.anti__dia strong {
+  font-size: 15px;
+}
+
+.anti__dia span {
+  font-size: 13px;
+  color: #5d7a16;
+  font-weight: 700;
+}

@@ -31,7 +31,8 @@ export async function GET(request) {
         { status: 400 }
       );
     }
-    return NextResponse.json({ ok: true, actividad: data || [] });
+    const actividad = (data || []).filter((a) => a.accion !== "anticipados_estado");
+    return NextResponse.json({ ok: true, actividad });
   } catch (err) {
     console.error("[admin/actividad]", err);
     return NextResponse.json(

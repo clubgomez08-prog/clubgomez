@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
 import { cerrarVencidos, fechaLegible } from "@/lib/club-gomez/sorteos";
-import { padClave } from "@/lib/club-gomez/claves-pool";
+import { digitosDeTopes, formatearNumero } from "@/lib/club-gomez/claves-pool";
 
 export const dynamic = "force-dynamic";
 
@@ -14,8 +14,8 @@ function tamano(min, max) {
 }
 
 function enRango(numero, min, max) {
-  const n = Number(padClave(numero));
-  return n >= Number(min) && n <= Number(max);
+  const n = Number(String(numero ?? "").replace(/\D/g, ""));
+  return Number.isFinite(n) && n >= Number(min) && n <= Number(max);
 }
 
 function estadoPagina(sorteo) {
@@ -25,7 +25,8 @@ function estadoPagina(sorteo) {
 }
 
 function rangoTexto(min, max) {
-  return `${padClave(min)} al ${padClave(max)}`;
+  const digitos = digitosDeTopes(max);
+  return `${formatearNumero(min, digitos)} al ${formatearNumero(max, digitos)}`;
 }
 
 function notasDe(raw) {
@@ -70,8 +71,18 @@ export async function GET(request) {
     }
 
     const ids = lista.map((s) => s.id);
-    const [{ data: claves }, { data: membresias }, { data: solicitudes }] = await Promise.all([
-      supabaseAdmin.from("claves").select("numero, sorteo_id, membresia_id").in("sorteo_id", ids),
+    const claves = [];
+    for (let from = 0; from < 20000; from += 1000) {
+      const { data: page, error: clavesErr } = await supabaseAdmin
+        .from("claves")
+        .select("numero, sorteo_id, membresia_id")
+        .in("sorteo_id", ids)
+        .range(from, from + 999);
+      if (clavesErr) throw new Error(clavesErr.message);
+      claves.push(...(page || []));
+      if (!page || page.length < 1000) break;
+    }
+    const [{ data: membresias }, { data: solicitudes }] = await Promise.all([
       supabaseAdmin
         .from("membresias")
         .select("id, plan_id, origen, created_at, miembro_id, sorteo_id, miembros(nombre)")
@@ -109,11 +120,12 @@ export async function GET(request) {
       for (const p of data || []) planes[p.id] = p.nombre;
     }
 
+    const digitos = digitosDeTopes(activo.fisico_max, activo.web_max);
     const numerosPorMem = {};
     for (const c of delSorteo) {
       if (!c.membresia_id) continue;
       if (!numerosPorMem[c.membresia_id]) numerosPorMem[c.membresia_id] = [];
-      numerosPorMem[c.membresia_id].push(padClave(c.numero));
+      numerosPorMem[c.membresia_id].push(formatearNumero(c.numero, digitos));
     }
 
     const memPorId = Object.fromEntries(mems.map((m) => [m.id, m]));

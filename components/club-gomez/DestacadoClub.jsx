@@ -62,6 +62,7 @@ export default function DestacadoClub({
   anclaPlanes = false,
 }) {
   const FOTOS = campana.fotos?.length ? campana.fotos : CAMPANA_LANDING_DEFAULT.fotos;
+  const esSorteo = Boolean(sorteoSlug || planesLista?.length);
   const { ref, className } = useReveal();
   const planes = usePlanes();
   const MINI_PLANES = planesLista?.length
@@ -164,21 +165,30 @@ export default function DestacadoClub({
         </div>
 
         {soloGaleria ? null : <div className={styles.copy}>
-          <p className={styles.eyebrow}>Entrá este mes</p>
+          <p className={styles.eyebrow}>{esSorteo ? "Entrá al sorteo" : "Entrá este mes"}</p>
           <h2 className={styles.title}>
             Elige tu <span>membresía</span>
           </h2>
           <p className={styles.kicker}>{campana.destacadoKicker}</p>
 
           <div className={styles.cards}>
-            {MINI_PLANES.map((p) => (
+            {MINI_PLANES.map((p) => {
+              const etiqueta = String(p.etiqueta || "").trim();
+              const sufijo = String(p.sufijo || "").trim();
+              const etiquetaVisible = esSorteo
+                ? etiqueta && etiqueta !== "Plan mensual" ? etiqueta : ""
+                : etiqueta || "Plan mensual";
+              const sufijoVisible = esSorteo
+                ? sufijo && sufijo !== "/mes" ? sufijo : ""
+                : sufijo || "/mes";
+              return (
               <article
                 key={p.id}
                 className={`${styles.plan}${p.highlight ? ` ${styles.featured}` : ""}`}
               >
                 <img src={p.sticker} alt="" className={styles.sticker} />
                 {p.badge ? <span className={styles.ribbon}>{p.badge}</span> : null}
-                <span className={styles.period}>{p.etiqueta || "Plan mensual"}</span>
+                {etiquetaVisible ? <span className={styles.period}>{etiquetaVisible}</span> : null}
                 <h3>{p.nombre}</h3>
                 <p className={styles.keys}>
                   <strong>{p.claves}</strong>{" "}
@@ -188,7 +198,7 @@ export default function DestacadoClub({
                   {p.precioAntes ? <span className={styles.before}>${p.precioAntes}</span> : null}
                   <span className={styles.now}>
                     ${p.precio}
-                    <small>{p.sufijo || "/mes"}</small>
+                    {sufijoVisible ? <small>{sufijoVisible}</small> : null}
                   </span>
                 </div>
                 <button
@@ -205,7 +215,8 @@ export default function DestacadoClub({
                   {cerrado ? "Sorteo cerrado" : p.boton || "¡Suscribirme ya!"}
                 </button>
               </article>
-            ))}
+              );
+            })}
           </div>
         </div>}
       </div>

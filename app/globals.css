@@ -542,14 +542,45 @@ body {
   background: var(--cg-lime);
 }
 
+.cg-hero--navidad .cg-hero__media,
+.cg-hero--navidad .cg-hero__picture {
+  position: relative;
+  inset: auto;
+  height: auto;
+}
+.cg-hero--navidad .cg-hero__img {
+  width: 100%;
+  height: auto;
+  object-fit: unset;
+  object-position: center center;
+}
+.cg-hero--navidad .cg-hero__content {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+}
+@media (max-width: 767px) {
+  .cg-hero.cg-hero--navidad .cg-hero__img {
+    object-fit: contain;
+    object-position: center center;
+  }
+}
 @media (min-width: 1100px) {
   .cg-hero__img {
     object-position: 84% 50%;
+  }
+  .cg-hero--navidad .cg-hero__img {
+    object-fit: contain;
+    object-position: center center;
   }
 }
 @media (min-width: 1480px) {
   .cg-hero__img {
     object-position: 90% 48%;
+  }
+  .cg-hero--navidad .cg-hero__img {
+    object-fit: contain;
+    object-position: center center;
   }
   .cg-hero__copy {
     max-width: 560px;
@@ -622,6 +653,10 @@ body {
   }
   .cg-hero__img {
     object-position: var(--cg-hero-pos-mobile, 72% 42%);
+  }
+  .cg-hero.cg-hero--navidad .cg-hero__img {
+    object-fit: contain;
+    object-position: center center;
   }
   .cg-hero--crypton .cg-hero__cta,
   .cg-hero__cta {

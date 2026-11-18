@@ -4,6 +4,8 @@ import { verificarSesionAdmin } from "@/lib/auth-admin";
 import { activarMembresiaManual } from "@/lib/club-gomez/activar-membresia";
 import {
   asignarClavesDelPool,
+  digitosDeTopes,
+  formatearNumero,
   inventarioClavesPeriodo,
   parseClavesInput,
   periodoDe,
@@ -23,8 +25,8 @@ function hoyBogota() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date());
 }
 
-function pad3(n) {
-  return String(n).padStart(3, "0");
+function padDe(n, sorteo) {
+  return formatearNumero(n, digitosDeTopes(sorteo?.fisico_max, sorteo?.web_max));
 }
 
 function rangoFisicoDe(sorteo) {
@@ -38,11 +40,17 @@ function rangoFisicoDe(sorteo) {
 
 async function inventarioDeSorteo(sorteo) {
   const rango = rangoFisicoDe(sorteo);
-  const { data, error } = await supabaseAdmin
-    .from("claves")
-    .select("numero")
-    .eq("sorteo_id", sorteo.id);
-  if (error) throw new Error(error.message);
+  const data = [];
+  for (let from = 0; from < 20000; from += 1000) {
+    const { data: page, error } = await supabaseAdmin
+      .from("claves")
+      .select("numero")
+      .eq("sorteo_id", sorteo.id)
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    data.push(...(page || []));
+    if (!page || page.length < 1000) break;
+  }
   const usados = new Set(
     (data || [])
       .map((r) => Number(r.numero))
@@ -248,7 +256,6 @@ export async function POST(request) {
       return bad("La cédula es obligatoria para que el cliente pueda consultar sus números.");
     }
 
-    const clavesManuales = parseClavesInput(body.claves || body.clavesTexto || "");
     const varios = planPedido === "varios";
     const sorteoPedido = String(body.sorteoId || "").trim();
     const { sorteo } = await leerSorteoPor(
@@ -259,9 +266,13 @@ export async function POST(request) {
     if (sorteo?.estado === "cerrado") {
       return bad("Este sorteo ya terminó. Llegó la fecha y ya no se vende.");
     }
+    const clavesManuales = parseClavesInput(
+      body.claves || body.clavesTexto || "",
+      digitosDeTopes(sorteo?.fisico_max, sorteo?.web_max)
+    );
     const rangoFisico = sorteo ? rangoFisicoDe(sorteo) : null;
     const textoRango = rangoFisico
-      ? `${pad3(rangoFisico.min)} al ${pad3(rangoFisico.max)}`
+      ? `${padDe(rangoFisico.min, sorteo)} al ${padDe(rangoFisico.max, sorteo)}`
       : "000 al 700";
     if (varios && (clavesManuales.length < 1 || clavesManuales.length > 100)) {
       return bad(`Escribe entre 1 y 100 números del ${textoRango}.`);

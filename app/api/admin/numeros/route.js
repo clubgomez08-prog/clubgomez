@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
 import { CLAVES_RANGO, periodoDe } from "@/lib/club-gomez/claves-pool";
+import { rangosDeSorteo } from "@/lib/club-gomez/numeros-admin";
 import { listarNumerosPeriodo } from "@/lib/club-gomez/numeros-admin";
 
 export const dynamic = "force-dynamic";
@@ -30,13 +31,7 @@ export async function GET(request) {
         .select("fisico_min, fisico_max, web_min, web_max")
         .eq("id", idOk)
         .maybeSingle();
-      const ok = (n) => Number.isInteger(n) && n >= 0 && n <= 999;
-      if (sorteo && ok(sorteo.fisico_min) && ok(sorteo.fisico_max) && ok(sorteo.web_min) && ok(sorteo.web_max)) {
-        rangos = {
-          fisico: { min: sorteo.fisico_min, max: sorteo.fisico_max },
-          web: { min: sorteo.web_min, max: sorteo.web_max },
-        };
-      }
+      rangos = rangosDeSorteo(sorteo).rangos;
     }
     const numeros = await listarNumerosPeriodo(supabaseAdmin, periodo, idOk);
     return NextResponse.json({ ok: true, periodo, sorteoId: idOk, rangos, numeros });

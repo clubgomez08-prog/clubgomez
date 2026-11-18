@@ -18,8 +18,8 @@ function hora(d) {
   return new Date(d).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
 }
 
-function pad3(n) {
-  return String(n).padStart(3, "0");
+function padRango(n, max) {
+  return String(n).padStart(Number(max) > 999 ? 4 : 3, "0");
 }
 
 function planesActivos(sorteo) {
@@ -154,7 +154,7 @@ export default function VentaFisicaPage() {
   const rangoMax = Number.isFinite(Number(sorteo?.fisico_max)) ? Number(sorteo.fisico_max) : 700;
   const webMin = Number.isFinite(Number(sorteo?.web_min)) ? Number(sorteo.web_min) : 701;
   const webMax = Number.isFinite(Number(sorteo?.web_max)) ? Number(sorteo.web_max) : 999;
-  const textoRango = `${pad3(rangoMin)} al ${pad3(rangoMax)}`;
+  const textoRango = `${padRango(rangoMin, rangoMax)} al ${padRango(rangoMax, rangoMax)}`;
   const montoSugerido = varios
     ? valorUnitario * Math.max(cantidadVisible, 1)
     : plan.precio;
@@ -309,7 +309,7 @@ export default function VentaFisicaPage() {
       </label>
       <p className="text-sm text-zinc-500 mb-6">
         Boletería física de este sorteo: del <strong className="text-zinc-300">{textoRango}</strong>.
-        La web reparte del <strong className="text-zinc-300">{pad3(webMin)} al {pad3(webMax)}</strong>.
+        La web reparte del <strong className="text-zinc-300">{padRango(webMin, webMax)} al {padRango(webMax, webMax)}</strong>.
         Los planes son los de este sorteo.
       </p>
 
@@ -499,9 +499,9 @@ export default function VentaFisicaPage() {
               rows={2}
               placeholder={
                 varios
-                  ? "Ej: 012 045 188 320"
+                  ? `Ej: ${padRango(12, rangoMax)} ${padRango(45, rangoMax)} ${padRango(188, rangoMax)}`
                   : `Ej: ${Array.from({ length: plan.claves }, (_, i) =>
-                      String(i + 1).padStart(3, "0")
+                      padRango(i + 1, rangoMax)
                     ).join(" ")}`
               }
               className={`${INPUT} font-mono`}

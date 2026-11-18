@@ -61,7 +61,7 @@ export default function VerMisClaves() {
         <h2 className={styles.title}>
           ¿YA ERES MIEMBRO?
           <br />
-          <span>Consulta tus claves del mes</span>
+          <span>Conoce tus números</span>
         </h2>
 
         {!abierto ? (
@@ -105,7 +105,7 @@ export default function VerMisClaves() {
           <div className={styles.resultado} aria-live="polite">
             <p className={styles.hola}>
               Hola, <strong>{resultado.nombre}</strong>. Tienes {resultado.total}{" "}
-              {resultado.total === 1 ? "clave" : "claves"} este mes:
+              {resultado.total === 1 ? "número" : "números"}:
             </p>
             {resultado.grupos.map((g, i) => (
               <div key={i} className={styles.grupo}>
@@ -122,7 +122,10 @@ export default function VerMisClaves() {
             {(fecha || resultado.sorteo?.loteria) && (
               <p className={styles.sorteo}>
                 Juegas{fecha ? ` el ${fecha}` : ""}
-                {resultado.sorteo?.loteria ? ` con la ${resultado.sorteo.loteria}` : ""} (últimas 3 cifras).
+                {resultado.sorteo?.loteria ? ` con la ${resultado.sorteo.loteria}` : ""}{" "}
+                ({resultado.grupos.some((g) => g.numeros.some((n) => String(n).length >= 4))
+                  ? "las 4 cifras"
+                  : "últimas 3 cifras"}).
               </p>
             )}
           </div>

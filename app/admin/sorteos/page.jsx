@@ -18,19 +18,20 @@ function avisoDeRangos(form) {
   const f1 = entero(form.fisico_max);
   const w0 = entero(form.web_min);
   const w1 = entero(form.web_max);
-  const ok = [f0, f1, w0, w1].every((n) => n >= 0 && n <= 999);
+  const ok = [f0, f1, w0, w1].every((n) => n >= 0 && n <= 9999);
   const fisicos = ok && f0 <= f1 ? f1 - f0 + 1 : 0;
   const webs = ok && w0 <= w1 ? w1 - w0 + 1 : 0;
+  const tope = ok && Math.max(f1, w1) > 999 ? 10000 : 1000;
   const fallos = [];
-  if (!ok) fallos.push("Cada número va del 000 al 999.");
+  if (!ok) fallos.push("Cada número va del 0000 al 9999.");
   if (ok && f0 > f1) fallos.push("En persona, Desde tiene que ser menor que Hasta.");
   if (ok && w0 > w1) fallos.push("En la página, Desde tiene que ser menor que Hasta.");
   const seCruzan = ok && f0 <= f1 && w0 <= w1 && f0 <= w1 && w0 <= f1;
   if (seCruzan) fallos.push("Los dos grupos se cruzan. Un número no puede estar en los dos.");
-  if (ok && !seCruzan && f0 <= f1 && w0 <= w1 && fisicos + webs < 1000) {
-    fallos.push(`Quedan ${1000 - fisicos - webs} números por fuera. Nadie los puede vender.`);
+  if (ok && !seCruzan && f0 <= f1 && w0 <= w1 && fisicos + webs < tope) {
+    fallos.push(`Quedan ${tope - fisicos - webs} números por fuera. Nadie los puede vender.`);
   }
-  return { f0, f1, w0, w1, fisicos, webs, fallos };
+  return { f0, f1, w0, w1, fisicos, webs, fallos, tope };
 }
 
 const PASOS = [
@@ -1242,14 +1243,15 @@ function CamposPlan({ row, set }) {
 }
 
 function AvisoRangos({ form }) {
-  const { f0, f1, w0, w1, fisicos, webs, fallos } = avisoDeRangos(form);
-  const pad = (n) => String(n).padStart(3, "0");
+  const { f0, f1, w0, w1, fisicos, webs, fallos, tope } = avisoDeRangos(form);
+  const ancho = tope > 1000 ? 4 : 3;
+  const pad = (n) => String(n).padStart(ancho, "0");
   return (
     <div className={`sorteo-aviso${fallos.length ? " is-mal" : " is-ok"}`}>
-      <strong>Cómo repartir los 1000 números</strong>
+      <strong>Cómo repartir los {tope} números</strong>
       <p>
-        Desde y Hasta son los números, no la cantidad. Para dejar 500 en persona y 500 en la página:
-        persona <b>0</b> y <b>499</b>, página <b>500</b> y <b>999</b>.
+        Desde y Hasta son los números, no la cantidad. Para dejar la mitad en persona y la mitad en la página:
+        persona <b>0</b> y <b>{Math.floor(tope / 2) - 1}</b>, página <b>{Math.floor(tope / 2)}</b> y <b>{tope - 1}</b>.
       </p>
       {Number.isInteger(f0) && Number.isInteger(f1) && f0 <= f1 ? (
         <p>

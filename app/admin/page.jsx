@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { getAdminAuthHeaders } from "@/lib/auth";
+import AnticipadosSorteo from "@/components/admin/AnticipadosSorteo";
 
 function formatFecha(dateStr) {
   if (!dateStr) return "—";
@@ -194,7 +195,13 @@ export default function AdminDashboardPage() {
                   onClick={() => cargar(s.id)}
                 >
                   <strong>{s.nombre}</strong>
-                  <span>{s.enInicio ? "En la página de inicio" : s.pagina}</span>
+                  <span>
+                    {s.slug === "navidad"
+                      ? "Premios de los sábados"
+                      : s.enInicio
+                        ? "En la página de inicio"
+                        : s.pagina}
+                  </span>
                 </button>
               ))}
             </div>
@@ -204,6 +211,8 @@ export default function AdminDashboardPage() {
                 : "Cuando haya otro sorteo, sale aquí al lado. Sus ventas no se suman con este."}
             </p>
           </section>
+
+          {sorteo.slug === "navidad" ? <AnticipadosSorteo sorteoId={sorteo.id} /> : null}
 
           <div className="dash-resumen">
             <article className="dash-card">

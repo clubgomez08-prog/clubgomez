@@ -96,7 +96,9 @@ export default function MiembroPortalPage() {
         planNombre: miembro.planNombre,
         claves: miembro.claves,
       },
-        { incluirMotilon: true }
+      miembro.premio
+        ? { premio: miembro.premio, fecha: miembro.fechaSorteo, loteria: miembro.loteria }
+        : { incluirMotilon: true }
     );
     window.open(url, "_blank", "noopener,noreferrer");
   }
@@ -141,7 +143,11 @@ export default function MiembroPortalPage() {
             </div>
             <div>
               <p className={styles.eyebrow}>
-                {sinMembresia ? "Cuenta creada" : `Membresía ${miembro.estado}`}
+                {sinMembresia
+                  ? "Cuenta creada"
+                  : miembro.fechaSorteo
+                    ? "Ya estás participando"
+                    : `Membresía ${miembro.estado}`}
               </p>
               <h1 className={styles.hello}>Hola, {firstName}</h1>
               <p className={styles.meta}>{miembro.ciudad}</p>
@@ -150,10 +156,9 @@ export default function MiembroPortalPage() {
 
           {sinMembresia ? (
             <div className={styles.pendingBox}>
-              <p className={styles.pendingTitle}>Aún no tienes membresía activa</p>
+              <p className={styles.pendingTitle}>Todavía no tienes números</p>
               <p className={styles.pendingText}>
-                Ya puedes usar tu cuenta. Cuando quieras, elige un plan y entra a la
-                Crypton 0 km más $1.000.000.
+                Ya puedes usar tu cuenta. Cuando pagues un sorteo, aquí aparecen tus números.
               </p>
               <Link href="/#membresias" className={styles.cta}>
                 Ver planes y suscribirme
@@ -165,10 +170,17 @@ export default function MiembroPortalPage() {
                 <span className={styles.statVal}>{miembro.clavesCount}</span>
                 <span className={styles.statLbl}>Oportunidades</span>
               </div>
-              <div className={styles.stat}>
-                <span className={styles.statVal}>{progreso.diasRestantes}</span>
-                <span className={styles.statLbl}>Días resto</span>
-              </div>
+              {miembro.fechaSorteo ? (
+                <div className={styles.stat}>
+                  <span className={styles.statVal}>{miembro.fechaSorteo}</span>
+                  <span className={styles.statLbl}>Día del sorteo</span>
+                </div>
+              ) : (
+                <div className={styles.stat}>
+                  <span className={styles.statVal}>{progreso.diasRestantes}</span>
+                  <span className={styles.statLbl}>Días resto</span>
+                </div>
+              )}
             </div>
           )}
         </section>
@@ -178,27 +190,37 @@ export default function MiembroPortalPage() {
             <section className={styles.planStrip}>
               <div style={{ flex: 1, minWidth: 180 }}>
                 <h2 className={styles.planName}>
-                  Plan <span>{miembro.planNombre}</span>
+                  {miembro.fechaSorteo ? (
+                    <span>{miembro.planNombre}</span>
+                  ) : (
+                    <>
+                      Plan <span>{miembro.planNombre}</span>
+                    </>
+                  )}
                 </h2>
                 <p className={styles.planTag}>{miembro.planTag}</p>
-                <div className={styles.progressBlock}>
-                  <div className={styles.progressLabels}>
-                    <span>{formatFecha(miembro.inicio)}</span>
-                    <span>{progreso.pct}% del mes</span>
-                    <span>{formatFecha(miembro.fin)}</span>
+                {miembro.fechaSorteo ? null : (
+                  <div className={styles.progressBlock}>
+                    <div className={styles.progressLabels}>
+                      <span>{formatFecha(miembro.inicio)}</span>
+                      <span>{progreso.pct}% del mes</span>
+                      <span>{formatFecha(miembro.fin)}</span>
+                    </div>
+                    <div className={styles.progressTrack}>
+                      <div
+                        className={styles.progressFill}
+                        style={{ width: `${progreso.pct}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className={styles.progressTrack}>
-                    <div
-                      className={styles.progressFill}
-                      style={{ width: `${progreso.pct}%` }}
-                    />
-                  </div>
+                )}
+              </div>
+              {miembro.fechaSorteo ? null : (
+                <div className={styles.priceBig}>
+                  ${miembro.precioLabel}
+                  <small> / mes</small>
                 </div>
-              </div>
-              <div className={styles.priceBig}>
-                ${miembro.precioLabel}
-                <small> / mes</small>
-              </div>
+              )}
             </section>
 
             <section className={styles.section}>
@@ -206,7 +228,9 @@ export default function MiembroPortalPage() {
                 <div>
                   <h2 className={styles.sectionTitle}>Tus oportunidades</h2>
                   <p className={styles.sectionHint}>
-                    3 últimos de la Lotería de Boyacá. También las tienes en el correo.
+                    {miembro.premio
+                      ? `${miembro.premio}. ${[miembro.fechaSorteo, miembro.loteria].filter(Boolean).join(" · ")}.`
+                      : "3 últimos de la Lotería de Boyacá. También las tienes en el correo."}
                   </p>
                 </div>
               </div>
@@ -229,9 +253,13 @@ export default function MiembroPortalPage() {
             <section className={styles.section}>
               <div className={styles.sectionHead}>
                 <div>
-                  <h2 className={styles.sectionTitle}>Este mes</h2>
+                  <h2 className={styles.sectionTitle}>
+                    {miembro.fechaSorteo ? "Tu sorteo" : "Este mes"}
+                  </h2>
                   <p className={styles.sectionHint}>
-                    Premio destacado mientras tu plan esté activo.
+                    {miembro.fechaSorteo
+                      ? "Tus números juegan hasta el día del sorteo."
+                      : "Premio destacado mientras tu plan esté activo."}
                   </p>
                 </div>
               </div>
@@ -261,17 +289,17 @@ export default function MiembroPortalPage() {
               <div>
                 <h2 className={styles.sectionTitle}>Siguiente paso</h2>
                 <p className={styles.sectionHint}>
-                  Tu cuenta ya está lista. La membresía se activa al elegir un plan.
+                  Tu cuenta ya está lista. Los números llegan cuando pagas un sorteo.
                 </p>
               </div>
             </div>
             <ul className={styles.nextList}>
-              <li>Elige Élite, Selecto o Esencial</li>
-              <li>Completa el pago o contacto por WhatsApp</li>
-              <li>Recibe tus oportunidades por correo</li>
+              <li>Entra al sorteo que está en venta</li>
+              <li>Paga tus números</li>
+              <li>Recíbelos por correo</li>
             </ul>
-            <Link href="/formulario?plan=esencial" className={styles.cta}>
-              Empezar con plan Esencial
+            <Link href="/#destacado-club" className={styles.cta}>
+              Ver el sorteo
             </Link>
           </section>
         )}
