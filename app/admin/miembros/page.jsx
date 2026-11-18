@@ -381,7 +381,7 @@ export default function AdminMiembrosPage() {
                     Oport.
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-zinc-400 uppercase">
-                    Alta
+                    Compra
                   </th>
                 </tr>
               </thead>
@@ -456,7 +456,7 @@ export default function AdminMiembrosPage() {
                           {m.clavesCount || 0}
                         </td>
                         <td className="px-4 py-3 text-xs text-zinc-400 whitespace-nowrap">
-                          {formatFecha(m.created_at)}
+                          {formatFecha(m.membresia?.created_at)}
                         </td>
                       </tr>
                       {abierto ? (
