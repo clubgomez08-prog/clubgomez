@@ -62,7 +62,7 @@ function mismoNumero(a, b) {
   return da.slice(-ancho).padStart(ancho, "0") === db.slice(-ancho).padStart(ancho, "0");
 }
 
-function ClavesDetalle({ m, periodo, destacarClave, sorteo }) {
+function ClavesDetalle({ m, periodo, destacarClave, sorteo, onCorreo }) {
   return (
     <div className="mt-3 pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
       <p className="text-xs text-zinc-500 mb-2">
@@ -105,14 +105,15 @@ function ClavesDetalle({ m, periodo, destacarClave, sorteo }) {
           Membresía hasta {formatFecha(m.membresia.vence_en)}
         </p>
       ) : null}
-      <AvisosCliente m={m} sorteo={sorteo} />
+      <AvisosCliente m={m} sorteo={sorteo} onCorreo={onCorreo} />
     </div>
   );
 }
 
-function AvisosCliente({ m, sorteo }) {
+function AvisosCliente({ m, sorteo, onCorreo }) {
   const { addToast } = useToast();
   const [enviando, setEnviando] = useState(false);
+  const [correo, setCorreo] = useState(String(m.email || ""));
   const email = String(m.email || "");
   const sinEmail = !email.includes("@") || email.endsWith("@sin-email.clubgomez.co");
   const wa =
@@ -124,20 +125,49 @@ function AvisosCliente({ m, sorteo }) {
           planNombre: m.plan?.nombre,
         })
       : null;
-  if (!m.claves?.length || (!wa && (sinEmail || !m.membresia?.id))) return null;
 
-  async function reenviar() {
-    if (!confirm(`¿Reenviar el correo de oportunidades a ${email}?`)) return;
+  useEffect(() => {
+    setCorreo(email);
+  }, [email]);
+
+  async function guardarYReenviar(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const limpio = correo.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(limpio)) {
+      addToast("Escribe un correo válido.", "error");
+      return;
+    }
+    const cambio = limpio !== email.trim().toLowerCase();
+    const pregunta = cambio
+      ? `¿Guardar ${limpio} y enviarle los números?`
+      : `¿Reenviar los números a ${limpio}?`;
+    if (!confirm(pregunta)) return;
     setEnviando(true);
     try {
+      const headers = { ...(await getAdminAuthHeaders()), "Content-Type": "application/json" };
+      if (cambio) {
+        const res = await fetch("/api/admin/miembros", {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ id: m.id, email: limpio }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "No se pudo guardar el correo");
+        onCorreo?.(m.id, limpio);
+      }
+      if (!m.membresia?.id || !m.claves?.length) {
+        addToast("Correo guardado.", "success");
+        return;
+      }
       const res = await fetch("/api/admin/reenviar-correo", {
         method: "POST",
-        headers: { ...(await getAdminAuthHeaders()), "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ membresiaId: m.membresia.id }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "No se pudo reenviar");
-      addToast(`Correo reenviado a ${data.email}`, "success");
+      addToast(`Correo enviado a ${data.email}`, "success");
     } catch (err) {
       addToast(err.message || "Error", "error");
     } finally {
@@ -146,7 +176,7 @@ function AvisosCliente({ m, sorteo }) {
   }
 
   return (
-    <div className="mt-3 flex flex-wrap gap-2">
+    <form className="mt-3 flex flex-wrap gap-2 items-center" onSubmit={guardarYReenviar} onClick={(e) => e.stopPropagation()}>
       {wa ? (
         <a
           href={wa}
@@ -159,20 +189,21 @@ function AvisosCliente({ m, sorteo }) {
           Enviar números por WhatsApp
         </a>
       ) : null}
-      {!sinEmail && m.membresia?.id ? (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            reenviar();
-          }}
-          disabled={enviando}
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-zinc-600 text-zinc-200 hover:bg-zinc-800"
-        >
-          {enviando ? "Enviando…" : "Reenviar correo"}
-        </button>
-      ) : null}
-    </div>
+      <input
+        type="email"
+        value={correo}
+        onChange={(e) => setCorreo(e.target.value)}
+        placeholder="correo@gmail.com"
+        className="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-white text-xs min-w-[220px]"
+      />
+      <button
+        type="submit"
+        disabled={enviando}
+        className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-zinc-600 text-zinc-200 hover:bg-zinc-800"
+      >
+        {enviando ? "Enviando…" : sinEmail || correo.trim().toLowerCase() !== email.trim().toLowerCase() ? "Guardar y reenviar" : "Reenviar correo"}
+      </button>
+    </form>
   );
 }
 
@@ -250,6 +281,10 @@ export default function AdminMiembrosPage() {
     const id = m.membresia?.sorteo_id;
     if (!id) return null;
     return sorteos.find((s) => s.id === id) || null;
+  }
+
+  function correoGuardado(id, email) {
+    setItems((lista) => lista.map((item) => (item.id === id ? { ...item, email } : item)));
   }
 
   function aplicarBusqueda(e) {
@@ -467,6 +502,7 @@ export default function AdminMiembrosPage() {
                               periodo={periodo}
                               destacarClave={busquedaClave}
                               sorteo={sorteoFila}
+                              onCorreo={correoGuardado}
                             />
                           </td>
                         </tr>
@@ -529,6 +565,7 @@ export default function AdminMiembrosPage() {
                       periodo={periodo}
                       destacarClave={busquedaClave}
                       sorteo={sorteoDeMiembro(m)}
+                      onCorreo={correoGuardado}
                     />
                   ) : null}
                 </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, supabaseMissingEnv } from "@/lib/supabase";
 import { verificarSesionAdmin } from "@/lib/auth-admin";
+import { registrarActividad } from "@/lib/admin-actividad";
 import { PLANES_MEMBRESIA } from "@/lib/club-gomez/planes";
 import { digitosDeTopes, formatearNumero, padClave, periodoDe } from "@/lib/club-gomez/claves-pool";
 
@@ -312,5 +313,88 @@ export async function GET(request) {
       { error: err.message || "Error al listar miembros" },
       { status: 500 }
     );
+  }
+}
+
+export async function PATCH(request) {
+  try {
+    const user = await verificarSesionAdmin(request);
+    if (!user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+    if (supabaseMissingEnv) {
+      return NextResponse.json({ error: "Supabase no configurado" }, { status: 503 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const id = String(body.id || "").trim();
+    const email = String(body.email || "").trim().toLowerCase();
+    if (!id) {
+      return NextResponse.json({ error: "Falta el cliente" }, { status: 400 });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.endsWith("@sin-email.clubgomez.co")) {
+      return NextResponse.json({ error: "Escribe un correo válido." }, { status: 400 });
+    }
+
+    const { data: actual, error } = await supabaseAdmin
+      .from("miembros")
+      .select("id, nombre, email, auth_user_id")
+      .eq("id", id)
+      .maybeSingle();
+    if (error || !actual) {
+      return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
+    }
+    if (String(actual.email || "").toLowerCase() === email) {
+      return NextResponse.json({ ok: true, email, igual: true });
+    }
+
+    const { data: ocupado } = await supabaseAdmin
+      .from("miembros")
+      .select("id")
+      .eq("email", email)
+      .neq("id", id)
+      .maybeSingle();
+    if (ocupado) {
+      return NextResponse.json(
+        { error: "Ese correo ya está en otro cliente." },
+        { status: 409 }
+      );
+    }
+
+    if (actual.auth_user_id) {
+      const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(
+        actual.auth_user_id,
+        { email, email_confirm: true }
+      );
+      if (authErr) {
+        return NextResponse.json(
+          { error: "No se pudo cambiar el acceso de esa persona. Revisa si el correo ya tiene cuenta." },
+          { status: 400 }
+        );
+      }
+    }
+
+    const { error: upErr } = await supabaseAdmin
+      .from("miembros")
+      .update({ email, updated_at: new Date().toISOString() })
+      .eq("id", id);
+    if (upErr) {
+      return NextResponse.json({ error: upErr.message }, { status: 400 });
+    }
+
+    if (actual.email) {
+      await supabaseAdmin.from("solicitudes_membresia").update({ email }).eq("email", actual.email);
+    }
+
+    await registrarActividad(supabaseAdmin, user, "correo_corregido", {
+      nombre: actual.nombre,
+      antes: actual.email,
+      ahora: email,
+    });
+
+    return NextResponse.json({ ok: true, email });
+  } catch (err) {
+    console.error("[admin/miembros PATCH]", err);
+    return NextResponse.json({ error: err.message || "No se pudo guardar el correo" }, { status: 500 });
   }
 }
