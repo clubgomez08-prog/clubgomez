@@ -1,20 +1,20 @@
 import { Suspense } from "react";
 
 export const metadata = {
-  title: "Club Gómez — Membresía exclusiva",
+  title: "Club Gómez — Llévate 3 motos",
   description:
-    "Club Gómez: Yamaha Crypton 0 km más $1.000.000. 17 de octubre, Lotería de Boyacá. Membresía Élite, Selecto o Esencial.",
+    "3 motos 0 km para un solo ganador. El 26 de diciembre, con la Lotería de Boyacá.",
   openGraph: {
-    title: "Club Gómez — Membresía exclusiva",
+    title: "Club Gómez — Llévate 3 motos",
     description:
-      "Club Gómez: Yamaha Crypton 0 km más $1.000.000. 17 de octubre, Lotería de Boyacá. Membresía Élite, Selecto o Esencial.",
+      "3 motos 0 km para un solo ganador. El 26 de diciembre, con la Lotería de Boyacá.",
     type: "website",
     images: [
       {
-        url: "/og-club-gomez.jpg",
-        width: 1254,
-        height: 1254,
-        alt: "Club Gómez",
+        url: "/club-gomez/hero-navidad-ultima.jpg",
+        width: 1024,
+        height: 576,
+        alt: "Llévate 3 motos 0 km",
       },
     ],
   },

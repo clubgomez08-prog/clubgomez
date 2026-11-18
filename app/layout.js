@@ -21,13 +21,13 @@ const oswald = Oswald({
 });
 
 const SITE_URL = "https://clubgomez.co";
-const OG_IMAGE = "/og-club-gomez.jpg";
+const OG_IMAGE = "/club-gomez/hero-navidad-ultima.jpg";
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Club Gómez — Membresía exclusiva",
+  title: "Club Gómez — Llévate 3 motos",
   description:
-    "Club Gómez: Yamaha Crypton 0 km más $1.000.000. 17 de octubre, Lotería de Boyacá. Membresía Élite, Selecto o Esencial.",
+    "3 motos 0 km para un solo ganador. El 26 de diciembre, con la Lotería de Boyacá.",
   icons: {
     icon: [
       { url: "/icon.jpg", type: "image/jpeg" },
@@ -37,9 +37,9 @@ export const metadata = {
     apple: "/club-gomez/logo-mark.jpg",
   },
   openGraph: {
-    title: "Club Gómez — Membresía exclusiva",
+    title: "Club Gómez — Llévate 3 motos",
     description:
-      "Club Gómez: Yamaha Crypton 0 km más $1.000.000. 17 de octubre, Lotería de Boyacá. Membresía Élite, Selecto o Esencial.",
+      "3 motos 0 km para un solo ganador. El 26 de diciembre, con la Lotería de Boyacá.",
     url: SITE_URL,
     siteName: "Club Gómez",
     type: "website",
@@ -47,18 +47,18 @@ export const metadata = {
     images: [
       {
         url: OG_IMAGE,
-        width: 1254,
-        height: 1254,
-        alt: "Club Gómez",
+        width: 1024,
+        height: 576,
+        alt: "Llévate 3 motos 0 km",
       },
     ],
   },
   twitter: {
-    card: "summary",
-    title: "Club Gómez — Membresía exclusiva",
+    card: "summary_large_image",
+    title: "Club Gómez — Llévate 3 motos",
     description:
-      "Club Gómez: Yamaha Crypton 0 km más $1.000.000. 17 de octubre, Lotería de Boyacá. Membresía Élite, Selecto o Esencial.",
-    images: [OG_IMAGE],
+      "3 motos 0 km para un solo ganador. El 26 de diciembre, con la Lotería de Boyacá.",
+    images: ["/club-gomez/hero-navidad-ultima.jpg"],
   },
 };
 

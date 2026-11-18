@@ -5,6 +5,38 @@ import { leerSorteoPor, planesDeSorteo, propsDeSorteo } from "@/lib/club-gomez/s
 
 export const revalidate = 30;
 
+const TITULO = "Club Gómez — Llévate 3 motos";
+const DESCRIPCION =
+  "3 motos 0 km para un solo ganador. El 26 de diciembre, con la Lotería de Boyacá.";
+const IMAGEN = "/club-gomez/hero-navidad-ultima.jpg";
+
+export const metadata = {
+  title: TITULO,
+  description: DESCRIPCION,
+  openGraph: {
+    title: TITULO,
+    description: DESCRIPCION,
+    url: "https://clubgomez.co/navidad",
+    siteName: "Club Gómez",
+    type: "website",
+    locale: "es_CO",
+    images: [
+      {
+        url: IMAGEN,
+        width: 1024,
+        height: 576,
+        alt: "Llévate 3 motos 0 km",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITULO,
+    description: DESCRIPCION,
+    images: [IMAGEN],
+  },
+};
+
 export default async function PaginaNavidad() {
   if (supabaseMissingEnv) notFound();
   const { sorteo } = await leerSorteoPor(supabaseAdmin, { slug: "navidad" });
