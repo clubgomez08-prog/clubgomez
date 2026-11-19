@@ -487,8 +487,8 @@ export default function NumerosPage() {
             <div className="flex flex-wrap gap-2 mb-3 text-xs">
               {[
                 ["todos", "Todos"],
-                ["web", `Web ${resumen.web.v}/${resumen.web.t}`],
-                ["fisico", `Físico ${resumen.fisico.v}/${resumen.fisico.t}`],
+                ["fisico", `Físico del ${formatearNumero(rangos?.fisico?.min ?? 0, ancho)} al ${formatearNumero(rangos?.fisico?.max ?? 0, ancho)}`],
+                ["web", `Virtual del ${formatearNumero(rangos?.web?.min ?? 0, ancho)} al ${formatearNumero(rangos?.web?.max ?? 0, ancho)}`],
                 ["vendidos", "Vendidos"],
                 ["libres", "Libres"],
               ].map(([id, label]) => (
@@ -511,7 +511,7 @@ export default function NumerosPage() {
             <div className="flex flex-wrap gap-4 mb-3 text-xs text-zinc-500">
               <span>
                 <span className="inline-block w-3 h-3 rounded-sm mr-1 align-middle" style={{ background: WEB }} />
-                Web vendido
+                Virtual vendido
               </span>
               <span>
                 <span className="inline-block w-3 h-3 rounded-sm mr-1 align-middle" style={{ background: FISICO }} />
