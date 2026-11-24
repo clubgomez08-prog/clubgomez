@@ -40,6 +40,36 @@ export async function POST(request) {
       return NextResponse.json({ error: "Esa venta está anulada." }, { status: 400 });
     }
     const miembro = mem.miembros || {};
+    const emailNuevo = String(body.email || "")
+      .trim()
+      .toLowerCase();
+    if (emailNuevo) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailNuevo) || emailNuevo.endsWith("@sin-email.clubgomez.co")) {
+        return NextResponse.json({ error: "Escribe un correo válido." }, { status: 400 });
+      }
+      if (emailNuevo !== String(miembro.email || "").trim().toLowerCase()) {
+        const { data: otro } = await supabaseAdmin
+          .from("miembros")
+          .select("id")
+          .eq("email", emailNuevo)
+          .neq("id", miembro.id)
+          .maybeSingle();
+        if (otro) {
+          return NextResponse.json(
+            { error: "Ese correo ya lo tiene otro cliente." },
+            { status: 409 }
+          );
+        }
+        const { error: upErr } = await supabaseAdmin
+          .from("miembros")
+          .update({ email: emailNuevo, updated_at: new Date().toISOString() })
+          .eq("id", miembro.id);
+        if (upErr) {
+          return NextResponse.json({ error: upErr.message || "No se pudo guardar el correo" }, { status: 400 });
+        }
+        miembro.email = emailNuevo;
+      }
+    }
     if (esEmailPlaceholder(miembro.email)) {
       return NextResponse.json(
         { error: "Este cliente no tiene correo registrado. Usa WhatsApp." },
@@ -83,6 +113,14 @@ export async function POST(request) {
         sorteo = (await leerSorteoPor(supabaseAdmin, { id: mem.sorteo_id })).sorteo;
       } catch {
         sorteo = null;
+      }
+    }
+    if (sorteo) {
+      if (typeof body.mensaje_correo_asunto === "string") {
+        sorteo = { ...sorteo, mensaje_correo_asunto: body.mensaje_correo_asunto };
+      }
+      if (typeof body.mensaje_correo_cuerpo === "string") {
+        sorteo = { ...sorteo, mensaje_correo_cuerpo: body.mensaje_correo_cuerpo };
       }
     }
 

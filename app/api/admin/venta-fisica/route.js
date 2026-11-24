@@ -378,6 +378,8 @@ export async function POST(request) {
       sorteoId: sorteo?.id || null,
       rangoFisico: rangoDeEstas,
       rangoWeb,
+      // El correo se arma y se envía en la pantalla, después de registrar.
+      enviarCorreo: false,
     });
 
     await registrarActividad(supabaseAdmin, user, "venta_fisica", {
@@ -396,10 +398,11 @@ export async function POST(request) {
         telefono: resultado.miembro?.telefono,
         email: resultado.miembro?.email,
       },
+      membresiaId: resultado.membresia?.id || null,
       plan: { id: plan.id, nombre: plan.nombre, precio: plan.precio },
       claves: resultado.claves || [],
       sorteoId: sorteo?.id || null,
-      emailOk: resultado.emailOk,
+      emailOk: false,
       alreadyActive: Boolean(resultado.alreadyActive),
     });
   } catch (err) {

@@ -4,8 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { getAdminAuthHeaders } from "@/lib/auth";
 import { useToast } from "@/components/admin/Toast";
-import { linkWhatsappDeSorteo } from "@/lib/admin-descarga";
+import { linkWhatsappDeSorteo, linkWhatsappTexto } from "@/lib/admin-descarga";
 import DateOfBirthSelect from "@/components/club-gomez/DateOfBirthSelect";
+import {
+  fechaLegible,
+  MENSAJE_WHATSAPP_DEFAULT,
+  renderMensaje,
+} from "@/lib/club-gomez/sorteos";
 
 const LIME = "#B8E351";
 const INPUT = "px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-700 text-white";
@@ -26,6 +31,35 @@ function planesActivos(sorteo) {
   return (sorteo?.planes || []).filter((p) => p.activo !== false);
 }
 
+function sinCorreoReal(email) {
+  const e = String(email || "")
+    .trim()
+    .toLowerCase();
+  if (!e || !e.includes("@")) return true;
+  return e.startsWith("fisico.") || e.endsWith("@sin-email.clubgomez.co");
+}
+
+function borradoresDeVenta(sorteo, data) {
+  const nombre = String(data?.miembro?.nombre || "").trim().split(/\s+/)[0] || "Cliente";
+  const numeros = (data?.claves || []).join(" - ");
+  const premio = sorteo?.premio || sorteo?.nombre || "";
+  const fecha = fechaLegible(sorteo?.fecha_sorteo);
+  const loteria = sorteo?.loteria || "";
+  const plan = data?.plan?.nombre || "";
+  const vars = { nombre, numeros, premio, fecha, loteria, plan };
+  const emailGuardado = String(data?.miembro?.email || "").trim();
+  return {
+    whatsapp: renderMensaje(sorteo?.mensaje_whatsapp || MENSAJE_WHATSAPP_DEFAULT, vars),
+    email: sinCorreoReal(emailGuardado) ? "" : emailGuardado,
+    asunto:
+      renderMensaje(sorteo?.mensaje_correo_asunto || "", vars).trim() ||
+      (premio ? `¡Felicitaciones! Ya estás participando por ${premio}` : "Tus números"),
+    cuerpo:
+      renderMensaje(sorteo?.mensaje_correo_cuerpo || "", vars).trim() ||
+      `Hola ${nombre}. Tus números son ${numeros}.`,
+  };
+}
+
 export default function VentaFisicaPage() {
   const { addToast } = useToast();
   const [inventario, setInventario] = useState(null);
@@ -35,6 +69,9 @@ export default function VentaFisicaPage() {
   const [sugiriendo, setSugiriendo] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [resultado, setResultado] = useState(null);
+  const [aviso, setAviso] = useState({ whatsapp: "", email: "", asunto: "", cuerpo: "" });
+  const [enviandoCorreo, setEnviandoCorreo] = useState(false);
+  const [correoEnviado, setCorreoEnviado] = useState(false);
   const [sorteos, setSorteos] = useState([]);
   const [sorteoId, setSorteoId] = useState("");
   const [form, setForm] = useState({
@@ -106,6 +143,8 @@ export default function VentaFisicaPage() {
     const primero = planesActivos(s)[0];
     setSorteoId(id);
     setResultado(null);
+    setAviso({ whatsapp: "", email: "", asunto: "", cuerpo: "" });
+    setCorreoEnviado(false);
     setForm((f) => ({
       ...f,
       planId: primero?.id || "varios",
@@ -225,11 +264,12 @@ export default function VentaFisicaPage() {
         addToast(data.error || "No se pudo registrar.", "error");
         return;
       }
+      const sorteoVenta = sorteoDe(data.sorteoId || sorteoId);
       setResultado(data);
+      setAviso(borradoresDeVenta(sorteoVenta, data));
+      setCorreoEnviado(false);
       addToast(
-        data.emailOk
-          ? `Venta registrada. ${data.claves?.length || 0} números (correo enviado).`
-          : `Venta registrada. ${data.claves?.length || 0} números.`,
+        `Venta registrada. ${data.claves?.length || 0} números. Revisa WhatsApp y correo abajo.`,
         "success"
       );
       setForm((prev) => ({
@@ -248,6 +288,49 @@ export default function VentaFisicaPage() {
       addToast("Error de conexión.", "error");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function enviarCorreoVenta() {
+    if (!resultado?.membresiaId) {
+      addToast("No se encontró la venta para enviar el correo.", "error");
+      return;
+    }
+    const dest = String(aviso.email || "").trim().toLowerCase();
+    if (!dest || !dest.includes("@") || dest.endsWith("@sin-email.clubgomez.co")) {
+      addToast("Escribe un correo válido.", "error");
+      return;
+    }
+    if (!confirm(`¿Enviar el correo a ${dest}?`)) return;
+    setEnviandoCorreo(true);
+    try {
+      const res = await fetch("/api/admin/reenviar-correo", {
+        method: "POST",
+        headers: { ...(await getAdminAuthHeaders()), "Content-Type": "application/json" },
+        body: JSON.stringify({
+          membresiaId: resultado.membresiaId,
+          email: dest,
+          mensaje_correo_asunto: aviso.asunto,
+          mensaje_correo_cuerpo: aviso.cuerpo,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "No se pudo enviar");
+      setCorreoEnviado(true);
+      setResultado((r) =>
+        r
+          ? {
+              ...r,
+              miembro: { ...r.miembro, email: data.email || dest },
+              emailOk: true,
+            }
+          : r
+      );
+      addToast(`Correo enviado a ${data.email || dest}`, "success");
+    } catch (err) {
+      addToast(err.message || "No se pudo enviar el correo", "error");
+    } finally {
+      setEnviandoCorreo(false);
     }
   }
 
@@ -280,12 +363,7 @@ export default function VentaFisicaPage() {
   }
 
   const waResultado = resultado
-    ? linkWhatsappDeSorteo(sorteoDe(resultado.sorteoId), {
-        telefono: resultado.miembro?.telefono,
-        nombre: resultado.miembro?.nombre,
-        numeros: resultado.claves,
-        planNombre: resultado.plan?.nombre,
-      })
+    ? linkWhatsappTexto(resultado.miembro?.telefono, aviso.whatsapp)
     : null;
 
   return (
@@ -428,7 +506,7 @@ export default function VentaFisicaPage() {
               type="email"
               value={form.email}
               onChange={onChange}
-              placeholder="Si lo tiene, se envían los números"
+              placeholder="Si lo tiene, lo editas y envías después"
               className={INPUT}
             />
           </label>
@@ -536,9 +614,9 @@ export default function VentaFisicaPage() {
           <p className="text-sm text-zinc-400 mb-4">
             {resultado.miembro?.telefono}
             {resultado.plan?.nombre ? ` · ${resultado.plan.nombre}` : ""}
-            {resultado.emailOk ? " · correo enviado" : " · sin correo"}
+            {correoEnviado || resultado.emailOk ? " · correo enviado" : " · correo pendiente"}
           </p>
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-5">
             {(resultado.claves || []).map((c) => (
               <span
                 key={c}
@@ -553,17 +631,84 @@ export default function VentaFisicaPage() {
               </span>
             ))}
           </div>
-          {waResultado ? (
-            <a
-              href={waResultado}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-block px-4 py-2 rounded-lg text-sm font-bold"
-              style={{ background: "#22c55e", color: "#050607" }}
-            >
-              Enviar números por WhatsApp
-            </a>
-          ) : null}
+
+          <div className="grid gap-5">
+            <div className="grid gap-2">
+              <p className="text-sm font-semibold text-white">WhatsApp</p>
+              <p className="text-xs text-zinc-500">
+                Puedes editar el mensaje. Se abre el chat y tú pulsas enviar.
+              </p>
+              <textarea
+                value={aviso.whatsapp}
+                onChange={(e) => setAviso((a) => ({ ...a, whatsapp: e.target.value }))}
+                rows={5}
+                className={INPUT}
+              />
+              {waResultado ? (
+                <a
+                  href={waResultado}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block px-4 py-2 rounded-lg text-sm font-bold w-fit"
+                  style={{ background: "#22c55e", color: "#050607" }}
+                >
+                  Abrir WhatsApp
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => addToast("Escribe el mensaje de WhatsApp.", "error")}
+                  className="px-4 py-2 rounded-lg text-sm font-bold w-fit opacity-60"
+                  style={{ background: "#22c55e", color: "#050607" }}
+                >
+                  Abrir WhatsApp
+                </button>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <p className="text-sm font-semibold text-white">Correo</p>
+              <p className="text-xs text-zinc-500">
+                Edita asunto y texto. Solo se envía cuando pulses el botón.
+              </p>
+              <label className="grid gap-1 text-sm text-zinc-400">
+                Para
+                <input
+                  type="email"
+                  value={aviso.email}
+                  onChange={(e) => setAviso((a) => ({ ...a, email: e.target.value }))}
+                  placeholder="correo@gmail.com"
+                  className={INPUT}
+                />
+              </label>
+              <label className="grid gap-1 text-sm text-zinc-400">
+                Asunto
+                <input
+                  value={aviso.asunto}
+                  onChange={(e) => setAviso((a) => ({ ...a, asunto: e.target.value }))}
+                  className={INPUT}
+                />
+              </label>
+              <label className="grid gap-1 text-sm text-zinc-400">
+                Mensaje
+                <textarea
+                  value={aviso.cuerpo}
+                  onChange={(e) => setAviso((a) => ({ ...a, cuerpo: e.target.value }))}
+                  rows={4}
+                  className={INPUT}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={enviarCorreoVenta}
+                disabled={enviandoCorreo}
+                className="px-4 py-2 rounded-lg text-sm font-bold w-fit disabled:opacity-60"
+                style={{ background: LIME, color: "#050607" }}
+              >
+                {enviandoCorreo ? "Enviando…" : correoEnviado ? "Reenviar correo" : "Enviar correo"}
+              </button>
+            </div>
+          </div>
         </section>
       ) : null}
 
