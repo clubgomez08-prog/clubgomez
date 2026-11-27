@@ -31,6 +31,7 @@ export default function HomePage({
   premioPrincipal = "",
   textoFooter = "",
   preview = false,
+  bendecidosVendidos = null,
 }) {
   const esSorteo = Boolean(preview || sorteoSlug);
 
@@ -45,7 +46,9 @@ export default function HomePage({
       <Header />
       <main className="cg-home__main">
         <HeroCarousel campana={campana} />
-        {sorteoSlug === "navidad" ? <BendecidosPublico /> : null}
+        {sorteoSlug === "navidad" ? (
+          <BendecidosPublico vendidos={bendecidosVendidos || []} />
+        ) : null}
         {esSorteo || secciones?.destacado !== false ? (
           <DestacadoClub
             campana={campana}

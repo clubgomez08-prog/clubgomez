@@ -2925,3 +2925,12 @@ body {
     font-size: 0.95rem;
   }
 }
+
+.cg-bend__nums li.is-tachado {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.45);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  box-shadow: none;
+  opacity: 0.85;
+}
