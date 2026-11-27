@@ -31,7 +31,9 @@ export async function GET(request) {
         { status: 400 }
       );
     }
-    const actividad = (data || []).filter((a) => a.accion !== "anticipados_estado");
+    const actividad = (data || []).filter(
+      (a) => a.accion !== "anticipados_estado" && a.accion !== "bendecidos_estado"
+    );
     return NextResponse.json({ ok: true, actividad });
   } catch (err) {
     console.error("[admin/actividad]", err);

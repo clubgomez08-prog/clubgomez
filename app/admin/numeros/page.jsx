@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getAdminAuthHeaders } from "@/lib/auth";
 import { useToast } from "@/components/admin/Toast";
 import { formatearNumero } from "@/lib/club-gomez/claves-pool";
+import { esNumeroBendecido } from "@/lib/club-gomez/bendecidos";
 import { descargarArchivoAdmin, linkWhatsappDeSorteo } from "@/lib/admin-descarga";
 
 const LIME = "#B8E351";
@@ -18,7 +19,7 @@ function formatFecha(d) {
   return new Date(d).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" });
 }
 
-function FichaNumero({ numero, info, canal, precio, sorteo, onAsignar, onReenviar, onAnular, busy }) {
+function FichaNumero({ numero, info, canal, precio, sorteo, onAsignar, onReenviar, onAnular, busy, bendecido }) {
   const color = canal === "web" ? WEB : FISICO;
   const [asignar, setAsignar] = useState(false);
   const [form, setForm] = useState({
@@ -35,6 +36,11 @@ function FichaNumero({ numero, info, canal, precio, sorteo, onAsignar, onReenvia
         <p className="text-sm mt-2" style={{ color }}>
           Libre · {canal === "web" ? "rango web" : "rango físico"}
         </p>
+        {bendecido ? (
+          <p className="text-sm font-bold mt-1" style={{ color: LIME }}>
+            Número bendecido · si se vende gana $1.000.000
+          </p>
+        ) : null}
         <p className="text-sm text-zinc-500 mt-2">Nadie tiene este número en este sorteo.</p>
         {asignar ? (
           <form
@@ -126,6 +132,11 @@ function FichaNumero({ numero, info, canal, precio, sorteo, onAsignar, onReenvia
         {numero}
       </p>
       <p className="text-lg font-semibold text-white mt-2">{info.nombre}</p>
+      {bendecido ? (
+        <p className="text-sm font-bold mt-1" style={{ color: LIME }}>
+          Número bendecido · ganador del $1.000.000
+        </p>
+      ) : null}
       <p className="text-sm text-zinc-400">
         {info.telefono || "sin teléfono"}
         {info.email ? ` · ${info.email}` : ""}
@@ -574,6 +585,10 @@ export default function NumerosPage() {
                 onReenviar={reenviar}
                 onAnular={anular}
                 busy={busy}
+                bendecido={
+                  (sorteos.find((s) => s.id === sorteoId)?.slug === "navidad") &&
+                  esNumeroBendecido(seleccion)
+                }
               />
             ) : (
               <p className="text-sm text-zinc-500">

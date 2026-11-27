@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { getAdminAuthHeaders } from "@/lib/auth";
 import AnticipadosSorteo from "@/components/admin/AnticipadosSorteo";
+import BendecidosSorteo from "@/components/admin/BendecidosSorteo";
 
 function formatFecha(dateStr) {
   if (!dateStr) return "—";
@@ -212,7 +213,12 @@ export default function AdminDashboardPage() {
             </p>
           </section>
 
-          {sorteo.slug === "navidad" ? <AnticipadosSorteo sorteoId={sorteo.id} /> : null}
+          {sorteo.slug === "navidad" ? (
+            <>
+              <BendecidosSorteo sorteoId={sorteo.id} />
+              <AnticipadosSorteo sorteoId={sorteo.id} />
+            </>
+          ) : null}
 
           <div className="dash-resumen">
             <article className="dash-card">

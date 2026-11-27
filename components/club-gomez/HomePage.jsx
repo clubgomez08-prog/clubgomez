@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Header from "@/components/club-gomez/Header";
 import AmbientBg from "@/components/club-gomez/AmbientBg";
 import HeroCarousel from "@/components/club-gomez/HeroCarousel";
+import BendecidosPublico from "@/components/club-gomez/BendecidosPublico";
 import DestacadoClub from "@/components/club-gomez/DestacadoClub";
 import PremiosMismoNumero from "@/components/club-gomez/PremiosMismoNumero";
 import BeneficiosCards from "@/components/club-gomez/BeneficiosCards";
@@ -44,6 +45,7 @@ export default function HomePage({
       <Header />
       <main className="cg-home__main">
         <HeroCarousel campana={campana} />
+        {sorteoSlug === "navidad" ? <BendecidosPublico /> : null}
         {esSorteo || secciones?.destacado !== false ? (
           <DestacadoClub
             campana={campana}
