@@ -518,7 +518,7 @@ export default function VentaFisicaPage() {
               name="cedula"
               value={form.cedula}
               onChange={onChange}
-              placeholder="Para que pueda consultar sus números"
+              placeholder="Cédula real. No uses 0000000000"
               inputMode="numeric"
               className={INPUT}
             />
